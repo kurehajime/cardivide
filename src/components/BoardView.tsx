@@ -1,10 +1,18 @@
 import { Fragment } from 'react'
-import type { Board, CardInstance, CardInstanceId, PlayerId, PlayerState } from '../game'
+import type {
+  Board,
+  CardInstance,
+  CardInstanceId,
+  DamageMarker,
+  PlayerId,
+  PlayerState,
+} from '../game'
 import CardView from './CardView'
 
 type BoardViewProps = {
   board: Board
   cards: Record<CardInstanceId, CardInstance>
+  damageMarkers?: DamageMarker[]
   players: Record<PlayerState['id'], PlayerState>
   activePlayerId: PlayerId
   canInsert?: boolean
@@ -60,6 +68,7 @@ const collectGroups = (
 const BoardView = ({
   board,
   cards,
+  damageMarkers = [],
   players,
   activePlayerId,
   canInsert = false,
@@ -68,6 +77,9 @@ const BoardView = ({
   onGroupAttack,
 }: BoardViewProps) => {
   const groups = collectGroups(board, cards)
+  const damageByCardId = new Map(
+    damageMarkers.map(({ cardId, damage }) => [cardId, damage]),
+  )
   const gridTemplateColumns =
     board.creatures.length === 0
       ? 'minmax(140px, 1fr)'
@@ -108,6 +120,15 @@ const BoardView = ({
                   style={{ gridColumn: index * 2 + 2, gridRow: 2 }}
                 >
                   <CardView card={cards[creature.cardId].card} compact />
+                  {damageByCardId.has(creature.cardId) && (
+                    <span
+                      className="damage-marker card-damage-marker"
+                      role="status"
+                      aria-label={`${damageByCardId.get(creature.cardId)}ダメージ`}
+                    >
+                      {damageByCardId.get(creature.cardId)}
+                    </span>
+                  )}
                 </div>
               </Fragment>
             ))}

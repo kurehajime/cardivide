@@ -54,6 +54,13 @@ const cloneGameState = (state: GameState): GameState => ({
   board: {
     creatures: state.board.creatures.map((creature) => ({ ...creature })),
   },
+  pendingCombat: state.pendingCombat
+    ? {
+        ...state.pendingCombat,
+        damageMarkers: state.pendingCombat.damageMarkers.map((marker) => ({ ...marker })),
+        destroyedCardIds: [...state.pendingCombat.destroyedCardIds],
+      }
+    : null,
 })
 
 const createInitialState = (): GameState => {
@@ -67,6 +74,7 @@ const createInitialState = (): GameState => {
     activePlayerId: 'playerA',
     phase: 'keepUp',
     hasAttackedThisTurn: false,
+    pendingCombat: null,
     cards,
     players: {
       playerA: createPlayer(
@@ -264,6 +272,7 @@ const endTurnState = (state: GameState): GameState => {
     activePlayerId: getOpponentId(state.activePlayerId),
     phase: 'keepUp',
     hasAttackedThisTurn: false,
+    pendingCombat: null,
   }
 
   return resolveKeepUpState(nextTurnState)
@@ -324,6 +333,55 @@ export const assertValidGameState = (state: GameState): void => {
     }
     locate(creature.cardId, instance.ownerId, `board position ${index}`, 'creature')
   })
+
+  if (state.pendingCombat) {
+    if (state.phase !== 'battle' || !state.hasAttackedThisTurn) {
+      throw new Error('Pending combat requires the battle phase and a completed attack.')
+    }
+    if (state.pendingCombat.defendingPlayerId !== getOpponentId(state.activePlayerId)) {
+      throw new Error('Pending combat has the wrong defending player.')
+    }
+    if (
+      !Number.isInteger(state.pendingCombat.playerDamage) ||
+      state.pendingCombat.playerDamage < 0
+    ) {
+      throw new Error('Pending combat player damage must be a non-negative integer.')
+    }
+    if (!state.pendingCombat.playerWasHit && state.pendingCombat.playerDamage !== 0) {
+      throw new Error('Combat cannot damage a player it did not reach.')
+    }
+
+    const boardCardIds = new Set(state.board.creatures.map(({ cardId }) => cardId))
+    const markedCardIds = new Set<CardInstanceId>()
+    state.pendingCombat.damageMarkers.forEach(({ cardId, damage }) => {
+      if (!boardCardIds.has(cardId)) {
+        throw new Error(`Damage marker references card ${cardId} outside the board.`)
+      }
+      if (state.cards[cardId].ownerId !== state.pendingCombat?.defendingPlayerId) {
+        throw new Error(`Damage marker references non-defending card ${cardId}.`)
+      }
+      if (!Number.isInteger(damage) || damage <= 0) {
+        throw new Error(`Damage marker for card ${cardId} must have positive integer damage.`)
+      }
+      if (markedCardIds.has(cardId)) {
+        throw new Error(`Card ${cardId} has more than one damage marker.`)
+      }
+      markedCardIds.add(cardId)
+    })
+
+    const destroyedCardIds = new Set<CardInstanceId>()
+    state.pendingCombat.destroyedCardIds.forEach((cardId) => {
+      if (!markedCardIds.has(cardId)) {
+        throw new Error(`Destroyed card ${cardId} does not have a damage marker.`)
+      }
+      if (destroyedCardIds.has(cardId)) {
+        throw new Error(`Destroyed card ${cardId} is listed more than once.`)
+      }
+      destroyedCardIds.add(cardId)
+    })
+  } else if (state.hasAttackedThisTurn) {
+    throw new Error('A completed attack must have pending combat results.')
+  }
 
   Object.entries(state.cards).forEach(([registryId, instance]) => {
     if (Number(registryId) !== instance.id) {
@@ -396,6 +454,8 @@ export class GameManager {
         return GameManager.playSpell(manager, action.cardId)
       case 'attackGroup':
         return GameManager.attackGroup(manager, action.startIndex, action.endIndex)
+      case 'finishCombat':
+        return GameManager.finishCombat(manager)
       case 'discardFromHand':
         return GameManager.discardFromHand(manager, action.cardId)
     }
@@ -406,6 +466,9 @@ export class GameManager {
   }
 
   static passPhase(manager: GameManager): GameManager {
+    if (manager.state.pendingCombat) {
+      throw new Error('Combat results must finish resolving before the phase can advance.')
+    }
     if (manager.state.phase === 'keepUp') {
       return GameManager.resolveKeepUp(manager)
     }
@@ -537,6 +600,9 @@ export class GameManager {
     if (manager.state.phase !== 'main' && manager.state.phase !== 'battle') {
       throw new Error('Groups can only attack during the main or battle phase.')
     }
+    if (manager.state.pendingCombat) {
+      throw new Error('The previous combat is still resolving.')
+    }
     if (manager.state.hasAttackedThisTurn) {
       throw new Error('Only one group can attack each turn.')
     }
@@ -555,11 +621,18 @@ export class GameManager {
       .reduce((total, creature) => total + getCreatureCard(manager.state, creature).attack, 0)
 
     if (targetIndex < 0 || targetIndex >= board.length) {
-      return GameManager.damagePlayer(
-        GameManager.from({ ...manager.state, phase: 'battle' }),
-        defenderId,
-        Math.max(0, attackPower - PLAYER_BARRIER),
-      )
+      return GameManager.from({
+        ...manager.state,
+        phase: 'battle',
+        hasAttackedThisTurn: true,
+        pendingCombat: {
+          damageMarkers: [],
+          destroyedCardIds: [],
+          defendingPlayerId: defenderId,
+          playerWasHit: true,
+          playerDamage: Math.max(0, attackPower - PLAYER_BARRIER),
+        },
+      })
     }
     if (getCreatureOwner(manager.state, board[targetIndex]) !== defenderId) {
       throw new Error('The attacking group is not adjacent to an enemy group or player.')
@@ -573,66 +646,84 @@ export class GameManager {
     )
     let remainingAttack = attackPower
     const destroyedIndexes: number[] = []
+    const damageMarkers: NonNullable<GameState['pendingCombat']>['damageMarkers'] = []
 
     for (const index of defendingGroupIndexes) {
       const defender = board[index]
-      if (remainingAttack < getCreatureCard(manager.state, defender).defense) {
+      if (remainingAttack <= 0) {
         break
       }
-      remainingAttack -= getCreatureCard(manager.state, defender).defense
+      damageMarkers.push({
+        cardId: defender.cardId,
+        damage: remainingAttack,
+      })
+
+      const defense = getCreatureCard(manager.state, defender).defense
+      if (remainingAttack < defense) {
+        break
+      }
+      remainingAttack -= defense
       destroyedIndexes.push(index)
     }
 
-    const destroyedSet = new Set(destroyedIndexes)
-    const destroyedCreatures = board.filter((_, index) => destroyedSet.has(index))
-    const nextPlayers = refundDestroyedCreatures(manager.state, destroyedCreatures)
-    const nextBoard = board.filter((_, index) => !destroyedSet.has(index))
     const groupTouchedDefenderPlayer =
       direction === 1
         ? defendingGroupIndexes.at(-1) === board.length - 1
         : defendingGroupIndexes.at(-1) === 0
+    const playerWasHit =
+      destroyedIndexes.length === defendingGroupIndexes.length && groupTouchedDefenderPlayer
+    const playerDamage = playerWasHit ? Math.max(0, remainingAttack - PLAYER_BARRIER) : 0
 
-    if (destroyedIndexes.length === defendingGroupIndexes.length && groupTouchedDefenderPlayer) {
-      nextPlayers[defenderId] = {
-        ...nextPlayers[defenderId],
-        hp: nextPlayers[defenderId].hp - Math.max(0, remainingAttack - PLAYER_BARRIER),
-      }
+    return GameManager.from({
+      ...manager.state,
+      phase: 'battle',
+      hasAttackedThisTurn: true,
+      pendingCombat: {
+        damageMarkers,
+        destroyedCardIds: destroyedIndexes.map((index) => board[index].cardId),
+        defendingPlayerId: defenderId,
+        playerWasHit,
+        playerDamage,
+      },
+    })
+  }
+
+  static finishCombat(manager: GameManager): GameManager {
+    const { pendingCombat } = manager.state
+    if (!pendingCombat) {
+      throw new Error('There are no combat results to finish resolving.')
+    }
+
+    const destroyedCardIds = new Set(pendingCombat.destroyedCardIds)
+    const destroyedCreatures = manager.state.board.creatures.filter(({ cardId }) =>
+      destroyedCardIds.has(cardId),
+    )
+    const nextPlayers = refundDestroyedCreatures(manager.state, destroyedCreatures)
+    const defendingPlayer = nextPlayers[pendingCombat.defendingPlayerId]
+    nextPlayers[pendingCombat.defendingPlayerId] = {
+      ...defendingPlayer,
+      hp: defendingPlayer.hp - pendingCombat.playerDamage,
     }
 
     return GameManager.from(
       endTurnState({
         ...manager.state,
-        phase: 'battle',
         players: nextPlayers,
         board: {
-          creatures: nextBoard,
+          creatures: manager.state.board.creatures.filter(
+            ({ cardId }) => !destroyedCardIds.has(cardId),
+          ),
         },
-        hasAttackedThisTurn: true,
+        pendingCombat: null,
       }),
     )
   }
 
   static discardFromHand(manager: GameManager, cardId: CardInstanceId): GameManager {
+    if (manager.state.pendingCombat) {
+      throw new Error('Cards cannot be discarded while combat is resolving.')
+    }
     const activePlayer = GameManager.getCurrentPlayer(manager)
     return GameManager.from(replacePlayer(manager.state, discardCard(activePlayer, cardId)))
-  }
-
-  private static damagePlayer(
-    manager: GameManager,
-    playerId: PlayerId,
-    damage: number,
-  ): GameManager {
-    const player = manager.state.players[playerId]
-    const nextPlayer = {
-      ...player,
-      hp: player.hp - damage,
-    }
-
-    return GameManager.from(
-      endTurnState({
-        ...replacePlayer(manager.state, nextPlayer),
-        hasAttackedThisTurn: true,
-      }),
-    )
   }
 }

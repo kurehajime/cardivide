@@ -52,6 +52,19 @@ export type CreatureInstance = {
   summonedTurn: number
 }
 
+export type DamageMarker = {
+  cardId: CardInstanceId
+  damage: number
+}
+
+export type PendingCombat = {
+  damageMarkers: DamageMarker[]
+  destroyedCardIds: CardInstanceId[]
+  defendingPlayerId: PlayerId
+  playerWasHit: boolean
+  playerDamage: number
+}
+
 export type Board = {
   creatures: CreatureInstance[]
 }
@@ -72,6 +85,7 @@ export type GameState = {
   activePlayerId: PlayerId
   phase: Phase
   hasAttackedThisTurn: boolean
+  pendingCombat: PendingCombat | null
   cards: Record<CardInstanceId, CardInstance>
   players: Record<PlayerId, PlayerState>
   board: Board
@@ -84,4 +98,5 @@ export type GameAction =
   | { type: 'playFormation'; cardId: CardInstanceId }
   | { type: 'playSpell'; cardId: CardInstanceId }
   | { type: 'attackGroup'; startIndex: number; endIndex: number }
+  | { type: 'finishCombat' }
   | { type: 'discardFromHand'; cardId: CardInstanceId }

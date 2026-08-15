@@ -1,9 +1,11 @@
-import { useReducer } from 'react'
+import { useEffect, useReducer } from 'react'
 import { GameManager, type CardInstanceId } from '../game'
 import BoardView from './BoardView'
 import HandView from './HandView'
 import PhaseBar from './PhaseBar'
 import PlayerPanel from './PlayerPanel'
+
+const COMBAT_EFFECT_DURATION_MS = 500
 
 type GameUiState = {
   manager: GameManager
@@ -57,6 +59,29 @@ const GameApp = () => {
   const selectedCard = selectedCardId === null ? null : state.cards[selectedCardId] ?? null
   const playerAHand = playerA.hand.map((cardId) => state.cards[cardId])
   const playerBHand = playerB.hand.map((cardId) => state.cards[cardId])
+  const playerADamage =
+    state.pendingCombat?.playerWasHit && state.pendingCombat.defendingPlayerId === 'playerA'
+      ? state.pendingCombat.playerDamage
+      : null
+  const playerBDamage =
+    state.pendingCombat?.playerWasHit && state.pendingCombat.defendingPlayerId === 'playerB'
+      ? state.pendingCombat.playerDamage
+      : null
+
+  useEffect(() => {
+    if (!state.pendingCombat) {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      dispatch({
+        type: 'applyGameUpdate',
+        update: (currentManager) => GameManager.finishCombat(currentManager),
+      })
+    }, COMBAT_EFFECT_DURATION_MS)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [state.pendingCombat])
 
   const applyGameUpdate = (update: (currentManager: GameManager) => GameManager) => {
     dispatch({ type: 'applyGameUpdate', update })
@@ -105,7 +130,7 @@ const GameApp = () => {
           <button
             className="game-action-button"
             type="button"
-            disabled={state.phase === 'keepUp'}
+            disabled={state.phase === 'keepUp' || state.pendingCombat !== null}
             onClick={handlePassPhase}
           >
             フェイズ進行
@@ -130,18 +155,33 @@ const GameApp = () => {
         onCardClick={handleCardClick}
       />
       <section className="tabletop" aria-label="game table">
-        <PlayerPanel player={playerA} cards={state.cards} align="left" />
+        <PlayerPanel
+          player={playerA}
+          cards={state.cards}
+          align="left"
+          damage={playerADamage}
+        />
         <BoardView
           board={state.board}
           cards={state.cards}
+          damageMarkers={state.pendingCombat?.damageMarkers ?? []}
           players={state.players}
           activePlayerId={state.activePlayerId}
           canInsert={state.phase === 'main' && selectedCard?.card.kind === 'creature'}
-          canAttack={['main', 'battle'].includes(state.phase) && !state.hasAttackedThisTurn}
+          canAttack={
+            ['main', 'battle'].includes(state.phase) &&
+            !state.hasAttackedThisTurn &&
+            state.pendingCombat === null
+          }
           onInsertClick={handleInsertClick}
           onGroupAttack={handleGroupAttack}
         />
-        <PlayerPanel player={playerB} cards={state.cards} align="right" />
+        <PlayerPanel
+          player={playerB}
+          cards={state.cards}
+          align="right"
+          damage={playerBDamage}
+        />
       </section>
       <HandView
         cards={playerAHand}

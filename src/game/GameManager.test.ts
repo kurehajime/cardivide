@@ -98,6 +98,18 @@ describe('GameManager card instance tracking', () => {
     manager = GameManager.summonCreature(manager, summonedCardId, 0)
     manager = GameManager.attackGroup(manager, 0, 0)
 
+    expect(manager.state.activePlayerId).toBe('playerA')
+    expect(manager.state.phase).toBe('battle')
+    expect(manager.state.pendingCombat).toEqual({
+      damageMarkers: [],
+      destroyedCardIds: [],
+      defendingPlayerId: 'playerB',
+      playerWasHit: true,
+      playerDamage: 1,
+    })
+    expect(manager.state.players.playerB.hand).toHaveLength(0)
+    manager = GameManager.finishCombat(manager)
+
     expect(manager.state.activePlayerId).toBe('playerB')
     expect(manager.state.players.playerB.hand).toHaveLength(5)
     manager = passTurnWithoutAttack(manager)
@@ -124,14 +136,28 @@ describe('GameManager card instance tracking', () => {
     const playerACardId = manager.state.players.playerA.hand[0]
     manager = GameManager.summonCreature(manager, playerACardId, 0)
     manager = GameManager.attackGroup(manager, 0, 0)
+    manager = GameManager.finishCombat(manager)
 
     const playerBCardId = manager.state.players.playerB.hand[0]
     manager = GameManager.summonCreature(manager, playerBCardId, 1)
     manager = GameManager.attackGroup(manager, 1, 1)
 
+    expect(manager.state.pendingCombat?.damageMarkers).toEqual([
+      { cardId: playerACardId, damage: 3 },
+    ])
+    expect(manager.state.pendingCombat?.destroyedCardIds).toEqual([playerACardId])
+    expect(manager.state.pendingCombat?.playerWasHit).toBe(true)
+    expect(manager.state.pendingCombat?.playerDamage).toBe(0)
+    expect(manager.state.board.creatures.some(({ cardId }) => cardId === playerACardId)).toBe(true)
+    expect(manager.state.players.playerA.discard).not.toContain(playerACardId)
+    expect(() => GameManager.passPhase(manager)).toThrow(/finish resolving/)
+
+    manager = GameManager.finishCombat(manager)
+
     expect(manager.state.board.creatures.some(({ cardId }) => cardId === playerACardId)).toBe(false)
     expect(manager.state.players.playerA.discard).toContain(playerACardId)
     expect(manager.state.players.playerA.hand).toHaveLength(5)
+    expect(manager.state.pendingCombat).toBeNull()
     expectCardsConserved(manager)
   })
 

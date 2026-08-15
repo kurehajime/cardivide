@@ -123,6 +123,10 @@
   background: #f2f5ee;
 }
 
+.player-hp-stat {
+  position: relative;
+}
+
 .player-panel dt {
   color: #536052;
   font-size: 12px;
@@ -196,8 +200,52 @@
 }
 
 .board-slot {
+  position: relative;
   width: 116px;
   min-width: 0;
+}
+
+.damage-marker {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 50%;
+  background: #d1242f;
+  box-shadow: 0 3px 8px rgb(80 0 5 / 35%);
+  color: #fff;
+  font-size: 18px;
+  font-weight: 900;
+  line-height: 1;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  animation: damage-marker-pop 500ms ease-out;
+}
+
+.card-damage-marker,
+.player-damage-marker {
+  top: 50%;
+  left: 50%;
+}
+
+@keyframes damage-marker-pop {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.65);
+  }
+
+  18% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.12);
+  }
+
+  35%,
+  100% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
 }
 
 .board-insert-slot {
