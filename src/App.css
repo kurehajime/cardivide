@@ -189,7 +189,8 @@
 
 .board-lane-grid {
   display: grid;
-  gap: 10px;
+  column-gap: 10px;
+  row-gap: 8px;
   align-items: stretch;
   overflow-x: auto;
 }
@@ -238,6 +239,15 @@
   color: #f8fbf5;
   font-size: 12px;
   font-weight: 800;
+  white-space: nowrap;
+}
+
+.board-group-playerB {
+  align-self: end;
+}
+
+.board-group-playerA {
+  align-self: start;
 }
 
 .board-group-button:not(:disabled) {
@@ -257,19 +267,10 @@
 
 .hand-panel {
   display: grid;
-  grid-template-columns: 104px repeat(5, minmax(96px, 1fr));
+  grid-template-columns: repeat(5, minmax(96px, 1fr));
   gap: 10px;
   padding: 10px;
   align-items: stretch;
-}
-
-.hand-label {
-  display: grid;
-  place-items: center;
-  color: #374239;
-  font-size: 14px;
-  font-weight: 700;
-  white-space: nowrap;
 }
 
 .hand-card-button {
@@ -478,10 +479,6 @@
   .hand-panel,
   .hand-panel {
     grid-template-columns: repeat(5, minmax(48px, 1fr));
-  }
-
-  .hand-label {
-    grid-column: 1 / -1;
   }
 
   .card-view {

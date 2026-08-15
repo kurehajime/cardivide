@@ -13,28 +13,34 @@ type BoardViewProps = {
 }
 
 type BoardGroup = {
+  ownerId: PlayerId
   startIndex: number
   endIndex: number
+  attack: number
+  defense: number
 }
 
-const collectGroups = (board: Board, playerId: PlayerId): BoardGroup[] => {
+const collectGroups = (board: Board): BoardGroup[] => {
   const groups: BoardGroup[] = []
   let index = 0
 
   while (index < board.creatures.length) {
-    if (board.creatures[index].ownerId !== playerId) {
-      index += 1
-      continue
-    }
-
+    const ownerId = board.creatures[index].ownerId
     const startIndex = index
     while (
       index + 1 < board.creatures.length &&
-      board.creatures[index + 1].ownerId === playerId
+      board.creatures[index + 1].ownerId === ownerId
     ) {
       index += 1
     }
-    groups.push({ startIndex, endIndex: index })
+    const groupCreatures = board.creatures.slice(startIndex, index + 1)
+    groups.push({
+      ownerId,
+      startIndex,
+      endIndex: index,
+      attack: groupCreatures.reduce((total, creature) => total + creature.card.attack, 0),
+      defense: groupCreatures.reduce((total, creature) => total + creature.card.defense, 0),
+    })
     index += 1
   }
 
@@ -50,7 +56,7 @@ const BoardView = ({
   onInsertClick,
   onGroupAttack,
 }: BoardViewProps) => {
-  const groups = collectGroups(board, activePlayerId)
+  const groups = collectGroups(board)
   const gridTemplateColumns =
     board.creatures.length === 0
       ? 'minmax(140px, 1fr)'
@@ -78,7 +84,7 @@ const BoardView = ({
                 <button
                   key={`insert-${index}`}
                   className="board-insert-slot"
-                  style={{ gridColumn: index * 2 + 1, gridRow: 1 }}
+                  style={{ gridColumn: index * 2 + 1, gridRow: 2 }}
                   type="button"
                   disabled={!canInsert}
                   onClick={() => onInsertClick?.(index)}
@@ -88,7 +94,7 @@ const BoardView = ({
                 <div
                   key={creature.instanceId}
                   className="board-slot"
-                  style={{ gridColumn: index * 2 + 2, gridRow: 1 }}
+                  style={{ gridColumn: index * 2 + 2, gridRow: 2 }}
                 >
                   <CardView card={creature.card} compact />
                 </div>
@@ -96,7 +102,7 @@ const BoardView = ({
             ))}
             <button
               className="board-insert-slot"
-              style={{ gridColumn: board.creatures.length * 2 + 1, gridRow: 1 }}
+              style={{ gridColumn: board.creatures.length * 2 + 1, gridRow: 2 }}
               type="button"
               disabled={!canInsert}
               onClick={() => onInsertClick?.(board.creatures.length)}
@@ -106,16 +112,16 @@ const BoardView = ({
             {groups.map((group) => (
               <button
                 key={`group-${group.startIndex}-${group.endIndex}`}
-                className="board-group-button"
+                className={`board-group-button board-group-${group.ownerId}`}
                 style={{
                   gridColumn: `${group.startIndex * 2 + 2} / ${group.endIndex * 2 + 3}`,
-                  gridRow: 2,
+                  gridRow: group.ownerId === 'playerB' ? 1 : 3,
                 }}
                 type="button"
-                disabled={!canAttack}
+                disabled={!canAttack || activePlayerId !== group.ownerId}
                 onClick={() => onGroupAttack?.(group.startIndex, group.endIndex)}
               >
-                グループ攻撃
+                攻{group.attack} / 防{group.defense}
               </button>
             ))}
           </div>

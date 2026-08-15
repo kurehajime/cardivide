@@ -72,7 +72,7 @@ export type GameState = {
 }
 
 export type GameAction =
-  | { type: 'resolveKeepUp'; discardHandIndex?: number }
+  | { type: 'resolveKeepUp' }
   | { type: 'passPhase' }
   | { type: 'summonCreature'; handIndex: number; insertIndex: number }
   | { type: 'playFormation'; handIndex: number }

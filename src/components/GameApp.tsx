@@ -16,10 +16,6 @@ const GameApp = () => {
   const selectedCard =
     selectedHandIndex === null ? null : currentPlayer.hand[selectedHandIndex] ?? null
 
-  const handleResolveKeepUp = () => {
-    applyGameUpdate((currentManager) => GameManager.resolveKeepUp(currentManager))
-  }
-
   const handlePassPhase = () => {
     applyGameUpdate((currentManager) => GameManager.passPhase(currentManager))
   }
@@ -75,14 +71,6 @@ const GameApp = () => {
           <button
             className="game-action-button"
             type="button"
-            disabled={state.phase !== 'keepUp'}
-            onClick={handleResolveKeepUp}
-          >
-            キープアップ解決
-          </button>
-          <button
-            className="game-action-button"
-            type="button"
             disabled={state.phase === 'keepUp'}
             onClick={handlePassPhase}
           >
@@ -114,7 +102,7 @@ const GameApp = () => {
           players={state.players}
           activePlayerId={state.activePlayerId}
           canInsert={state.phase === 'main' && selectedCard?.kind === 'creature'}
-          canAttack={state.phase === 'battle' && !state.hasAttackedThisTurn}
+          canAttack={['main', 'battle'].includes(state.phase) && !state.hasAttackedThisTurn}
           onInsertClick={handleInsertClick}
           onGroupAttack={handleGroupAttack}
         />

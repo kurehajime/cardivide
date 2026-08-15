@@ -10,7 +10,7 @@ import type {
   PlayerState,
 } from './types'
 
-const PHASE_ORDER = ['keepUp', 'main', 'battle', 'cleanup'] satisfies Phase[]
+const PHASE_ORDER = ['main', 'battle', 'cleanup'] satisfies Phase[]
 
 const PLAYER_BARRIER = 2
 
@@ -65,6 +65,9 @@ const createInitialState = (): GameState => ({
   },
 })
 
+const getKeepUpHandSize = (state: GameState): number =>
+  state.turn === 1 && state.activePlayerId === 'playerA' ? 4 : 5
+
 const replacePlayer = (state: GameState, player: PlayerState): GameState => ({
   ...state,
   players: {
@@ -98,6 +101,19 @@ const drawUpTo = (player: PlayerState, handSize: number): PlayerState => {
     ...player,
     hand: [...player.hand, ...player.deck.slice(0, drawCount)],
     deck: player.deck.slice(drawCount),
+  }
+}
+
+const cleanupPlayer = (player: PlayerState): PlayerState => {
+  const maxHandSize = 5
+  if (player.hand.length <= maxHandSize) {
+    return player
+  }
+
+  return {
+    ...player,
+    hand: player.hand.slice(0, maxHandSize),
+    discard: [...player.discard, ...player.hand.slice(maxHandSize)],
   }
 }
 
@@ -191,6 +207,37 @@ const refundDestroyedCreatures = (
   return nextPlayers
 }
 
+const resolveKeepUpState = (state: GameState): GameState => {
+  if (state.phase !== 'keepUp') {
+    throw new Error('Keep up can only be resolved during the keep up phase.')
+  }
+
+  const activePlayer = state.players[state.activePlayerId]
+  const handSize = getKeepUpHandSize(state)
+  const nextPlayer = {
+    ...drawUpTo(activePlayer, handSize),
+    mana: activePlayer.mana + 2,
+  }
+
+  return {
+    ...replacePlayer(state, nextPlayer),
+    phase: 'main',
+  }
+}
+
+const endTurnState = (state: GameState): GameState => {
+  const cleanedState = replacePlayer(state, cleanupPlayer(state.players[state.activePlayerId]))
+  const nextTurnState: GameState = {
+    ...cleanedState,
+    turn: cleanedState.turn + 1,
+    activePlayerId: getOpponentId(cleanedState.activePlayerId),
+    phase: 'keepUp',
+    hasAttackedThisTurn: false,
+  }
+
+  return resolveKeepUpState(nextTurnState)
+}
+
 export class GameManager {
   public readonly state: GameState
 
@@ -199,7 +246,7 @@ export class GameManager {
   }
 
   static create(): GameManager {
-    return new GameManager(createInitialState())
+    return GameManager.from(resolveKeepUpState(createInitialState()))
   }
 
   static from(state: GameState): GameManager {
@@ -225,7 +272,7 @@ export class GameManager {
   static applyAction(manager: GameManager, action: GameAction): GameManager {
     switch (action.type) {
       case 'resolveKeepUp':
-        return GameManager.resolveKeepUp(manager, action.discardHandIndex)
+        return GameManager.resolveKeepUp(manager)
       case 'passPhase':
         return GameManager.passPhase(manager)
       case 'summonCreature':
@@ -241,48 +288,20 @@ export class GameManager {
     }
   }
 
-  static resolveKeepUp(manager: GameManager, discardHandIndex?: number): GameManager {
-    if (manager.state.phase !== 'keepUp') {
-      throw new Error('Keep up can only be resolved during the keep up phase.')
-    }
-
-    const activePlayer = GameManager.getCurrentPlayer(manager)
-    const discardedPlayer =
-      discardHandIndex === undefined ? activePlayer : discardAt(activePlayer, discardHandIndex)
-    const handSize =
-      manager.state.turn === 1 && manager.state.activePlayerId === 'playerA' ? 4 : 5
-    const nextPlayer = {
-      ...drawUpTo(discardedPlayer, handSize),
-      mana: discardedPlayer.mana + 2,
-    }
-
-    return GameManager.from({
-      ...replacePlayer(manager.state, nextPlayer),
-      phase: 'main',
-    })
+  static resolveKeepUp(manager: GameManager): GameManager {
+    return GameManager.from(resolveKeepUpState(manager.state))
   }
 
   static passPhase(manager: GameManager): GameManager {
     if (manager.state.phase === 'keepUp') {
-      throw new Error('Use resolveKeepUp to leave the keep up phase.')
+      return GameManager.resolveKeepUp(manager)
     }
 
     const currentPhaseIndex = PHASE_ORDER.indexOf(manager.state.phase)
     const nextPhase = PHASE_ORDER[currentPhaseIndex + 1]
 
     if (manager.state.phase === 'cleanup') {
-      const activePlayer = GameManager.getCurrentPlayer(manager)
-      if (activePlayer.hand.length > 6) {
-        throw new Error('Cleanup cannot end while the active player has more than 6 cards.')
-      }
-
-      return GameManager.from({
-        ...manager.state,
-        turn: manager.state.turn + 1,
-        activePlayerId: getOpponentId(manager.state.activePlayerId),
-        phase: 'keepUp',
-        hasAttackedThisTurn: false,
-      })
+      return GameManager.from(endTurnState(manager.state))
     }
 
     if (!nextPhase) {
@@ -388,8 +407,8 @@ export class GameManager {
   }
 
   static attackGroup(manager: GameManager, startIndex: number, endIndex: number): GameManager {
-    if (manager.state.phase !== 'battle') {
-      throw new Error('Groups can only attack during the battle phase.')
+    if (manager.state.phase !== 'main' && manager.state.phase !== 'battle') {
+      throw new Error('Groups can only attack during the main or battle phase.')
     }
     if (manager.state.hasAttackedThisTurn) {
       throw new Error('Only one group can attack each turn.')
@@ -409,7 +428,11 @@ export class GameManager {
       .reduce((total, creature) => total + creature.card.attack, 0)
 
     if (targetIndex < 0 || targetIndex >= board.length) {
-      return GameManager.damagePlayer(manager, defenderId, Math.max(0, attackPower - PLAYER_BARRIER))
+      return GameManager.damagePlayer(
+        GameManager.from({ ...manager.state, phase: 'battle' }),
+        defenderId,
+        Math.max(0, attackPower - PLAYER_BARRIER),
+      )
     }
     if (board[targetIndex].ownerId !== defenderId) {
       throw new Error('The attacking group is not adjacent to an enemy group or player.')
@@ -445,12 +468,15 @@ export class GameManager {
     }
 
     return GameManager.from({
-      ...manager.state,
-      players: nextPlayers,
-      board: {
-        creatures: nextBoard,
-      },
-      hasAttackedThisTurn: true,
+      ...endTurnState({
+        ...manager.state,
+        phase: 'battle',
+        players: nextPlayers,
+        board: {
+          creatures: nextBoard,
+        },
+        hasAttackedThisTurn: true,
+      }),
     })
   }
 
@@ -470,9 +496,11 @@ export class GameManager {
       hp: player.hp - damage,
     }
 
-    return GameManager.from({
-      ...replacePlayer(manager.state, nextPlayer),
-      hasAttackedThisTurn: true,
-    })
+    return GameManager.from(
+      endTurnState({
+        ...replacePlayer(manager.state, nextPlayer),
+        hasAttackedThisTurn: true,
+      }),
+    )
   }
 }

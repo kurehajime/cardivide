@@ -24,7 +24,6 @@ const HandView = ({
 
   return (
     <section className={`hand-panel hand-panel-${position}`} aria-label={`${playerName} hand`}>
-      <div className="hand-label">{playerName} Hand</div>
       {visibleCards.map((card, index) => (
         <button
           key={card?.id ?? `empty-${index}`}
