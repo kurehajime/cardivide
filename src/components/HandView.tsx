@@ -1,4 +1,5 @@
 import type { Card } from '../game'
+import CardView from './CardView'
 
 type HandViewProps = {
   cards: Card[]
@@ -15,8 +16,8 @@ const HandView = ({ cards, playerName, position }: HandViewProps) => {
     <section className={`hand-panel hand-panel-${position}`} aria-label={`${playerName} hand`}>
       <div className="hand-label">{playerName} Hand</div>
       {visibleCards.map((card, index) => (
-        <button key={card?.id ?? `empty-${index}`} className="hand-card" type="button" disabled={!card}>
-          {card?.name ?? ''}
+        <button key={card?.id ?? `empty-${index}`} className="hand-card-button" type="button" disabled={!card}>
+          <CardView card={card} compact />
         </button>
       ))}
     </section>

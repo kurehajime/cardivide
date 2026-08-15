@@ -1,16 +1,20 @@
 import { createStandardDeck } from './decks'
 import type { GameState, Phase, PlayerId, PlayerState } from './types'
 
-const createPlayer = (id: PlayerId, name: string): PlayerState => ({
-  id,
-  name,
-  hp: 20,
-  mana: 0,
-  deck: createStandardDeck(),
-  hand: [],
-  discard: [],
-  formation: null,
-})
+const createPlayer = (id: PlayerId, name: string): PlayerState => {
+  const deck = createStandardDeck()
+
+  return {
+    id,
+    name,
+    hp: 20,
+    mana: 0,
+    deck: deck.slice(5),
+    hand: deck.slice(0, 5),
+    discard: [],
+    formation: null,
+  }
+}
 
 const clonePlayer = (player: PlayerState): PlayerState => ({
   ...player,
