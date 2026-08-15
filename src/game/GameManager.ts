@@ -1,3 +1,4 @@
+import { createStandardDeck } from './decks'
 import type { GameState, Phase, PlayerId, PlayerState } from './types'
 
 const createPlayer = (id: PlayerId, name: string): PlayerState => ({
@@ -5,7 +6,7 @@ const createPlayer = (id: PlayerId, name: string): PlayerState => ({
   name,
   hp: 20,
   mana: 0,
-  deck: [],
+  deck: createStandardDeck(),
   hand: [],
   discard: [],
   formation: null,

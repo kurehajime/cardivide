@@ -1,0 +1,100 @@
+import { CARD_BY_ID } from './cards'
+import type { Card } from './types'
+
+export type DeckSummary = {
+  total: number
+  creature: number
+  formation: number
+  spell: number
+  red: number
+  blue: number
+  green: number
+}
+
+export const STANDARD_DECK_LIST = [
+  'red-cost2-attack3-defense2-march1',
+  'red-cost2-attack3-defense2-march1',
+  'red-cost2-attack3-defense2-march1',
+  'red-cost2-attack4-defense1-march1',
+  'red-cost2-attack4-defense1-march1',
+  'red-cost4-attack6-defense4-march2',
+  'red-cost5-attack8-defense6-march3-vanish',
+  'red-cost2-attack2-defense2-march1-lone-warrior-2-0',
+  'red-cost2-attack2-defense2-march1-lone-warrior-2-0',
+  'red-cost2-attack3-defense1-march1-withdraw',
+  'red-cost2-attack3-defense1-march1-withdraw',
+  'red-cost2-attack2-defense2-march1-assassin2',
+  'red-cost2-attack2-defense2-march1-assassin2',
+  'red-cost4-attack5-defense3-march2-lone-warrior-2-1',
+  'red-cost4-attack5-defense3-march2-withdraw',
+  'red-cost4-formation',
+
+  'blue-cost2-attack1-defense2-march2',
+  'blue-cost2-attack1-defense2-march2',
+  'blue-cost2-attack1-defense2-march2',
+  'blue-cost2-attack0-defense1-march3',
+  'blue-cost2-attack0-defense1-march3',
+  'blue-cost4-attack2-defense4-march3',
+  'blue-cost5-attack4-defense6-march4-vanish',
+  'blue-cost2-attack3-defense1-march1-counter',
+  'blue-cost2-attack3-defense1-march1-counter',
+  'blue-cost2-attack1-defense1-march2-return',
+  'blue-cost2-attack1-defense1-march2-return',
+  'blue-cost2-attack2-defense2-march1-beachhead1',
+  'blue-cost2-attack2-defense2-march1-beachhead1',
+  'blue-cost4-attack3-defense4-march2-counter',
+  'blue-cost4-attack4-defense2-march2-return',
+  'blue-cost4-formation',
+
+  'green-cost2-attack2-defense3-march1',
+  'green-cost2-attack2-defense3-march1',
+  'green-cost2-attack2-defense3-march1',
+  'green-cost2-attack1-defense4-march1',
+  'green-cost2-attack1-defense4-march1',
+  'green-cost4-attack4-defense6-march1',
+  'green-cost5-attack6-defense8-march3-vanish',
+  'green-cost2-attack1-defense3-march1-capture1',
+  'green-cost2-attack1-defense3-march1-capture1',
+  'green-cost2-attack2-defense2-march1-mining1',
+  'green-cost2-attack2-defense2-march1-mining1',
+  'green-cost2-attack2-defense2-march1-rearguard-0-2',
+  'green-cost2-attack2-defense2-march1-rearguard-0-2',
+  'green-cost4-attack2-defense5-march2-capture1',
+  'green-cost4-attack3-defense4-march2-mining1',
+  'green-cost4-formation',
+] satisfies string[]
+
+const getCard = (cardId: string): Card => {
+  const card = CARD_BY_ID[cardId]
+  if (!card) {
+    throw new Error(`Unknown card id: ${cardId}`)
+  }
+  return card
+}
+
+const summarizeDeck = (deck: Card[]): DeckSummary =>
+  deck.reduce<DeckSummary>(
+    (summary, card) => {
+      summary.total += 1
+      summary[card.kind] += 1
+      if (card.kind === 'creature' || card.kind === 'formation') {
+        summary[card.color] += 1
+      }
+      return summary
+    },
+    {
+      total: 0,
+      creature: 0,
+      formation: 0,
+      spell: 0,
+      red: 0,
+      blue: 0,
+      green: 0,
+    },
+  )
+
+export const createStandardDeck = (): Card[] => STANDARD_DECK_LIST.map((cardId) => getCard(cardId))
+
+export const STANDARD_DECK = createStandardDeck()
+
+export const STANDARD_DECK_SUMMARY = summarizeDeck(STANDARD_DECK)
