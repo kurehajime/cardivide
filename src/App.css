@@ -22,6 +22,12 @@
   letter-spacing: 0;
 }
 
+.game-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .phase-bar {
   display: flex;
   align-items: center;
@@ -36,6 +42,41 @@
 
 .phase-bar strong {
   color: #171a17;
+}
+
+.game-action-button {
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid #2d3f38;
+  border-radius: 8px;
+  background: #26342f;
+  color: #f8fbf5;
+  font-weight: 700;
+}
+
+.game-action-button:not(:disabled) {
+  cursor: pointer;
+}
+
+.game-action-button:disabled {
+  border-color: #b9c2b5;
+  background: #d9dfd4;
+  color: #778174;
+}
+
+.game-action-button:focus-visible {
+  outline: 3px solid #276fbf;
+  outline-offset: 3px;
+}
+
+.game-message {
+  padding: 8px 12px;
+  border: 1px solid #b96554;
+  border-radius: 8px;
+  background: #fff4ef;
+  color: #7d2f22;
+  font-size: 14px;
+  font-weight: 700;
 }
 
 .tabletop {
@@ -141,16 +182,77 @@
   text-align: center;
 }
 
-.board-lane-cards {
+.board-lane-scroll {
   min-width: 0;
+  overflow-x: auto;
+}
+
+.board-lane-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(82px, 1fr));
   gap: 10px;
-  align-items: center;
+  align-items: stretch;
+  overflow-x: auto;
 }
 
 .board-slot {
+  width: 116px;
   min-width: 0;
+}
+
+.board-insert-slot {
+  width: 34px;
+  min-width: 34px;
+  min-height: 132px;
+  border: 1px dashed #5c6f5c;
+  border-radius: 8px;
+  background: #edf4e9;
+  color: #2d3f38;
+  font-weight: 800;
+}
+
+.board-insert-slot-empty {
+  width: 140px;
+  min-width: 140px;
+}
+
+.board-insert-slot:not(:disabled) {
+  cursor: pointer;
+  border-style: solid;
+  background: #ddecda;
+}
+
+.board-insert-slot:disabled {
+  color: #96a094;
+}
+
+.board-insert-slot:focus-visible {
+  outline: 3px solid #276fbf;
+  outline-offset: 3px;
+}
+
+.board-group-button {
+  min-height: 30px;
+  border: 1px solid #2d3f38;
+  border-radius: 999px;
+  background: #26342f;
+  color: #f8fbf5;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.board-group-button:not(:disabled) {
+  cursor: pointer;
+}
+
+.board-group-button:disabled {
+  border-color: #b9c2b5;
+  background: #d9dfd4;
+  color: #778174;
+}
+
+.board-group-button:focus-visible {
+  outline: 3px solid #276fbf;
+  outline-offset: 3px;
 }
 
 .hand-panel {
@@ -185,6 +287,11 @@
 }
 
 .hand-card-button:focus-visible {
+  outline: 3px solid #276fbf;
+  outline-offset: 3px;
+}
+
+.hand-card-selected {
   outline: 3px solid #276fbf;
   outline-offset: 3px;
 }
@@ -346,10 +453,6 @@
     grid-template-columns: 1fr;
   }
 
-  .board-lane-cards {
-    grid-template-columns: repeat(5, minmax(72px, 1fr));
-  }
-
   .board-endpoint {
     height: 56px;
   }
@@ -364,12 +467,16 @@
     display: grid;
   }
 
+  .game-header-controls {
+    display: grid;
+  }
+
   .phase-bar {
     align-items: stretch;
   }
 
   .hand-panel,
-  .board-lane-cards {
+  .hand-panel {
     grid-template-columns: repeat(5, minmax(48px, 1fr));
   }
 

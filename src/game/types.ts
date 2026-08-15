@@ -43,7 +43,6 @@ export type CreatureInstance = {
   instanceId: string
   ownerId: PlayerId
   card: CreatureCard
-  damage: number
   summonedTurn: number
 }
 
@@ -66,13 +65,17 @@ export type GameState = {
   turn: number
   activePlayerId: PlayerId
   phase: Phase
+  hasAttackedThisTurn: boolean
+  nextCreatureInstanceId: number
   players: Record<PlayerId, PlayerState>
   board: Board
 }
 
 export type GameAction =
+  | { type: 'resolveKeepUp'; discardHandIndex?: number }
   | { type: 'passPhase' }
-  | { type: 'summonCreature'; cardId: string; insertIndex: number }
-  | { type: 'playFormation'; cardId: string }
-  | { type: 'playSpell'; cardId: string }
+  | { type: 'summonCreature'; handIndex: number; insertIndex: number }
+  | { type: 'playFormation'; handIndex: number }
+  | { type: 'playSpell'; handIndex: number }
   | { type: 'attackGroup'; startIndex: number; endIndex: number }
+  | { type: 'discardFromHand'; handIndex: number }
