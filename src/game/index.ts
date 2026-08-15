@@ -1,6 +1,12 @@
 export { GameAI } from './GameAI'
-export { GameManager } from './GameManager'
-export { CARD_BY_ID, CARD_LIST, CREATURE_CARDS, FORMATION_CARDS, SPELL_CARDS } from './cards'
+export { GameManager, assertValidGameState } from './GameManager'
+export {
+  CARD_BY_DEFINITION_ID,
+  CARD_LIST,
+  CREATURE_CARDS,
+  FORMATION_CARDS,
+  SPELL_CARDS,
+} from './cards'
 export {
   STANDARD_DECK,
   STANDARD_DECK_LIST,
@@ -13,6 +19,8 @@ export type {
   Card,
   CardBase,
   CardColor,
+  CardInstance,
+  CardInstanceId,
   CardKind,
   CreatureCard,
   CreatureInstance,

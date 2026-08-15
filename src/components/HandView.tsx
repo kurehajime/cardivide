@@ -1,13 +1,13 @@
-import type { Card } from '../game'
+import type { CardInstance, CardInstanceId } from '../game'
 import CardView from './CardView'
 
 type HandViewProps = {
-  cards: Card[]
+  cards: CardInstance[]
   playerName: string
   position: 'top' | 'bottom'
   disabled?: boolean
-  selectedIndex?: number | null
-  onCardClick?: (handIndex: number) => void
+  selectedCardId?: CardInstanceId | null
+  onCardClick?: (cardId: CardInstanceId) => void
 }
 
 const EMPTY_HAND_SLOTS = 5
@@ -17,7 +17,7 @@ const HandView = ({
   playerName,
   position,
   disabled = false,
-  selectedIndex = null,
+  selectedCardId = null,
   onCardClick,
 }: HandViewProps) => {
   const visibleCards = cards.length > 0 ? cards : Array.from({ length: EMPTY_HAND_SLOTS }, () => null)
@@ -27,12 +27,13 @@ const HandView = ({
       {visibleCards.map((card, index) => (
         <button
           key={card?.id ?? `empty-${index}`}
-          className={`hand-card-button ${selectedIndex === index ? 'hand-card-selected' : ''}`}
+          data-card-id={card?.id}
+          className={`hand-card-button ${selectedCardId === card?.id ? 'hand-card-selected' : ''}`}
           type="button"
           disabled={!card || disabled}
-          onClick={() => onCardClick?.(index)}
+          onClick={() => card && onCardClick?.(card.id)}
         >
-          <CardView card={card} compact />
+          <CardView card={card?.card ?? null} compact />
         </button>
       ))}
     </section>

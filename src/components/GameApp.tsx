@@ -1,59 +1,93 @@
-import { useState } from 'react'
-import { GameManager } from '../game'
+import { useReducer } from 'react'
+import { GameManager, type CardInstanceId } from '../game'
 import BoardView from './BoardView'
 import HandView from './HandView'
 import PhaseBar from './PhaseBar'
 import PlayerPanel from './PlayerPanel'
 
+type GameUiState = {
+  manager: GameManager
+  selectedCardId: CardInstanceId | null
+  message: string | null
+}
+
+type GameUiAction =
+  | { type: 'selectCard'; cardId: CardInstanceId }
+  | { type: 'applyGameUpdate'; update: (manager: GameManager) => GameManager }
+
+const createGameUiState = (): GameUiState => ({
+  manager: GameManager.create(),
+  selectedCardId: null,
+  message: null,
+})
+
+const gameUiReducer = (state: GameUiState, action: GameUiAction): GameUiState => {
+  if (action.type === 'selectCard') {
+    return {
+      ...state,
+      selectedCardId: state.selectedCardId === action.cardId ? null : action.cardId,
+      message: null,
+    }
+  }
+
+  try {
+    return {
+      manager: action.update(state.manager),
+      selectedCardId: null,
+      message: null,
+    }
+  } catch (error) {
+    return {
+      ...state,
+      message: error instanceof Error ? error.message : '操作できません。',
+    }
+  }
+}
+
 const GameApp = () => {
-  const [manager, setManager] = useState(() => GameManager.create())
-  const [selectedHandIndex, setSelectedHandIndex] = useState<number | null>(null)
-  const [message, setMessage] = useState<string | null>(null)
+  const [{ manager, selectedCardId, message }, dispatch] = useReducer(
+    gameUiReducer,
+    undefined,
+    createGameUiState,
+  )
   const { state } = manager
   const playerA = state.players.playerA
   const playerB = state.players.playerB
   const currentPlayer = GameManager.getCurrentPlayer(manager)
-  const selectedCard =
-    selectedHandIndex === null ? null : currentPlayer.hand[selectedHandIndex] ?? null
+  const selectedCard = selectedCardId === null ? null : state.cards[selectedCardId] ?? null
+  const playerAHand = playerA.hand.map((cardId) => state.cards[cardId])
+  const playerBHand = playerB.hand.map((cardId) => state.cards[cardId])
+
+  const applyGameUpdate = (update: (currentManager: GameManager) => GameManager) => {
+    dispatch({ type: 'applyGameUpdate', update })
+  }
 
   const handlePassPhase = () => {
     applyGameUpdate((currentManager) => GameManager.passPhase(currentManager))
   }
 
-  const applyGameUpdate = (updater: (currentManager: GameManager) => GameManager) => {
-    try {
-      const nextManager = updater(manager)
-      setManager(nextManager)
-      setSelectedHandIndex(null)
-      setMessage(null)
-    } catch (error) {
-      setMessage(error instanceof Error ? error.message : '操作できません。')
-    }
-  }
-
-  const handleCardClick = (handIndex: number) => {
-    setSelectedHandIndex((currentIndex) => (currentIndex === handIndex ? null : handIndex))
-    setMessage(null)
+  const handleCardClick = (cardId: CardInstanceId) => {
+    dispatch({ type: 'selectCard', cardId })
   }
 
   const handleInsertClick = (insertIndex: number) => {
-    if (selectedHandIndex === null) {
-      setMessage('配置するカードを手札から選んでください。')
+    if (selectedCardId === null) {
       return
     }
 
     applyGameUpdate((currentManager) =>
-      GameManager.summonCreature(currentManager, selectedHandIndex, insertIndex),
+      GameManager.summonCreature(currentManager, selectedCardId, insertIndex),
     )
   }
 
   const handlePlayFormation = () => {
-    if (selectedHandIndex === null) {
-      setMessage('布陣に配置するカードを手札から選んでください。')
+    if (selectedCardId === null) {
       return
     }
 
-    applyGameUpdate((currentManager) => GameManager.playFormation(currentManager, selectedHandIndex))
+    applyGameUpdate((currentManager) =>
+      GameManager.playFormation(currentManager, selectedCardId),
+    )
   }
 
   const handleGroupAttack = (startIndex: number, endIndex: number) => {
@@ -79,7 +113,7 @@ const GameApp = () => {
           <button
             className="game-action-button"
             type="button"
-            disabled={state.phase !== 'main' || selectedCard?.kind !== 'formation'}
+            disabled={state.phase !== 'main' || selectedCard?.card.kind !== 'formation'}
             onClick={handlePlayFormation}
           >
             布陣に配置
@@ -88,32 +122,33 @@ const GameApp = () => {
       </header>
       {message && <div className="game-message">{message}</div>}
       <HandView
-        cards={playerB.hand}
+        cards={playerBHand}
         playerName={playerB.name}
         position="top"
         disabled={state.activePlayerId !== 'playerB' || state.phase !== 'main'}
-        selectedIndex={state.activePlayerId === 'playerB' ? selectedHandIndex : null}
+        selectedCardId={state.activePlayerId === 'playerB' ? selectedCardId : null}
         onCardClick={handleCardClick}
       />
       <section className="tabletop" aria-label="game table">
-        <PlayerPanel player={playerA} align="left" />
+        <PlayerPanel player={playerA} cards={state.cards} align="left" />
         <BoardView
           board={state.board}
+          cards={state.cards}
           players={state.players}
           activePlayerId={state.activePlayerId}
-          canInsert={state.phase === 'main' && selectedCard?.kind === 'creature'}
+          canInsert={state.phase === 'main' && selectedCard?.card.kind === 'creature'}
           canAttack={['main', 'battle'].includes(state.phase) && !state.hasAttackedThisTurn}
           onInsertClick={handleInsertClick}
           onGroupAttack={handleGroupAttack}
         />
-        <PlayerPanel player={playerB} align="right" />
+        <PlayerPanel player={playerB} cards={state.cards} align="right" />
       </section>
       <HandView
-        cards={playerA.hand}
+        cards={playerAHand}
         playerName={playerA.name}
         position="bottom"
         disabled={state.activePlayerId !== 'playerA' || state.phase !== 'main'}
-        selectedIndex={state.activePlayerId === 'playerA' ? selectedHandIndex : null}
+        selectedCardId={state.activePlayerId === 'playerA' ? selectedCardId : null}
         onCardClick={handleCardClick}
       />
     </main>

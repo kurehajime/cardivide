@@ -1,5 +1,5 @@
-import { CARD_BY_ID } from './cards'
-import type { Card } from './types'
+import { CARD_BY_DEFINITION_ID } from './cards'
+import type { Card, CardInstance, CardInstanceId, PlayerId } from './types'
 
 export type DeckSummary = {
   total: number
@@ -64,17 +64,18 @@ export const STANDARD_DECK_LIST = [
   'green-cost4-formation',
 ] satisfies string[]
 
-const getCard = (cardId: string): Card => {
-  const card = CARD_BY_ID[cardId]
+const getCardDefinition = (definitionId: string): Card => {
+  const card = CARD_BY_DEFINITION_ID[definitionId]
   if (!card) {
-    throw new Error(`Unknown card id: ${cardId}`)
+    throw new Error(`Unknown card definition: ${definitionId}`)
   }
   return card
 }
 
-const summarizeDeck = (deck: Card[]): DeckSummary =>
+const summarizeDeck = (deck: CardInstance[]): DeckSummary =>
   deck.reduce<DeckSummary>(
-    (summary, card) => {
+    (summary, instance) => {
+      const { card } = instance
       summary.total += 1
       summary[card.kind] += 1
       if (card.kind === 'creature' || card.kind === 'formation') {
@@ -93,8 +94,16 @@ const summarizeDeck = (deck: Card[]): DeckSummary =>
     },
   )
 
-export const createStandardDeck = (): Card[] => STANDARD_DECK_LIST.map((cardId) => getCard(cardId))
+export const createStandardDeck = (
+  ownerId: PlayerId,
+  firstCardId: CardInstanceId,
+): CardInstance[] =>
+  STANDARD_DECK_LIST.map((definitionId, index) => ({
+    id: firstCardId + index,
+    ownerId,
+    card: getCardDefinition(definitionId),
+  }))
 
-export const STANDARD_DECK = createStandardDeck()
+export const STANDARD_DECK = createStandardDeck('playerA', 1)
 
 export const STANDARD_DECK_SUMMARY = summarizeDeck(STANDARD_DECK)

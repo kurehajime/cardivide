@@ -10,8 +10,10 @@ export type Phase = 'keepUp' | 'main' | 'battle' | 'cleanup'
 
 export type AbilityText = string
 
+export type CardInstanceId = number
+
 export type CardBase = {
-  id: string
+  definitionId: string
   name: string
   kind: CardKind
   cost: number
@@ -39,10 +41,14 @@ export type SpellCard = CardBase & {
 
 export type Card = CreatureCard | FormationCard | SpellCard
 
-export type CreatureInstance = {
-  instanceId: string
+export type CardInstance = {
+  id: CardInstanceId
   ownerId: PlayerId
-  card: CreatureCard
+  card: Card
+}
+
+export type CreatureInstance = {
+  cardId: CardInstanceId
   summonedTurn: number
 }
 
@@ -55,10 +61,10 @@ export type PlayerState = {
   name: string
   hp: number
   mana: number
-  deck: Card[]
-  hand: Card[]
-  discard: Card[]
-  formation: FormationCard | null
+  deck: CardInstanceId[]
+  hand: CardInstanceId[]
+  discard: CardInstanceId[]
+  formation: CardInstanceId | null
 }
 
 export type GameState = {
@@ -66,7 +72,7 @@ export type GameState = {
   activePlayerId: PlayerId
   phase: Phase
   hasAttackedThisTurn: boolean
-  nextCreatureInstanceId: number
+  cards: Record<CardInstanceId, CardInstance>
   players: Record<PlayerId, PlayerState>
   board: Board
 }
@@ -74,8 +80,8 @@ export type GameState = {
 export type GameAction =
   | { type: 'resolveKeepUp' }
   | { type: 'passPhase' }
-  | { type: 'summonCreature'; handIndex: number; insertIndex: number }
-  | { type: 'playFormation'; handIndex: number }
-  | { type: 'playSpell'; handIndex: number }
+  | { type: 'summonCreature'; cardId: CardInstanceId; insertIndex: number }
+  | { type: 'playFormation'; cardId: CardInstanceId }
+  | { type: 'playSpell'; cardId: CardInstanceId }
   | { type: 'attackGroup'; startIndex: number; endIndex: number }
-  | { type: 'discardFromHand'; handIndex: number }
+  | { type: 'discardFromHand'; cardId: CardInstanceId }

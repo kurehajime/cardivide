@@ -1,6 +1,8 @@
-import { createStandardDeck } from './decks'
+import { createStandardDeck, STANDARD_DECK_LIST } from './decks'
+import { PLAYER_IDS } from './types'
 import type {
-  Card,
+  CardInstance,
+  CardInstanceId,
   CreatureCard,
   CreatureInstance,
   GameAction,
@@ -13,24 +15,25 @@ import type {
 const PHASE_ORDER = ['main', 'battle', 'cleanup'] satisfies Phase[]
 
 const PLAYER_BARRIER = 2
+const MAX_HAND_SIZE = 5
 
 const getOpponentId = (playerId: PlayerId): PlayerId =>
   playerId === 'playerA' ? 'playerB' : 'playerA'
 
-const createPlayer = (id: PlayerId, name: string): PlayerState => {
-  const deck = createStandardDeck()
-
-  return {
-    id,
-    name,
-    hp: 20,
-    mana: 0,
-    deck,
-    hand: [],
-    discard: [],
-    formation: null,
-  }
-}
+const createPlayer = (
+  id: PlayerId,
+  name: string,
+  deck: CardInstanceId[],
+): PlayerState => ({
+  id,
+  name,
+  hp: 20,
+  mana: 0,
+  deck,
+  hand: [],
+  discard: [],
+  formation: null,
+})
 
 const clonePlayer = (player: PlayerState): PlayerState => ({
   ...player,
@@ -41,6 +44,9 @@ const clonePlayer = (player: PlayerState): PlayerState => ({
 
 const cloneGameState = (state: GameState): GameState => ({
   ...state,
+  cards: Object.fromEntries(
+    Object.entries(state.cards).map(([id, instance]) => [id, { ...instance }]),
+  ) as GameState['cards'],
   players: {
     playerA: clonePlayer(state.players.playerA),
     playerB: clonePlayer(state.players.playerB),
@@ -50,23 +56,38 @@ const cloneGameState = (state: GameState): GameState => ({
   },
 })
 
-const createInitialState = (): GameState => ({
-  turn: 1,
-  activePlayerId: 'playerA',
-  phase: 'keepUp',
-  hasAttackedThisTurn: false,
-  nextCreatureInstanceId: 1,
-  players: {
-    playerA: createPlayer('playerA', 'Player A'),
-    playerB: createPlayer('playerB', 'Player B'),
-  },
-  board: {
-    creatures: [],
-  },
-})
+const createInitialState = (): GameState => {
+  const playerACards = createStandardDeck('playerA', 1)
+  const playerBCards = createStandardDeck('playerB', playerACards.length + 1)
+  const cardInstances = [...playerACards, ...playerBCards]
+  const cards = Object.fromEntries(cardInstances.map((instance) => [instance.id, instance]))
+
+  return {
+    turn: 1,
+    activePlayerId: 'playerA',
+    phase: 'keepUp',
+    hasAttackedThisTurn: false,
+    cards,
+    players: {
+      playerA: createPlayer(
+        'playerA',
+        'Player A',
+        playerACards.map(({ id }) => id),
+      ),
+      playerB: createPlayer(
+        'playerB',
+        'Player B',
+        playerBCards.map(({ id }) => id),
+      ),
+    },
+    board: {
+      creatures: [],
+    },
+  }
+}
 
 const getKeepUpHandSize = (state: GameState): number =>
-  state.turn === 1 && state.activePlayerId === 'playerA' ? 4 : 5
+  state.turn === 1 && state.activePlayerId === 'playerA' ? 4 : MAX_HAND_SIZE
 
 const replacePlayer = (state: GameState, player: PlayerState): GameState => ({
   ...state,
@@ -76,21 +97,33 @@ const replacePlayer = (state: GameState, player: PlayerState): GameState => ({
   },
 })
 
-const removeHandCard = (
-  player: PlayerState,
-  handIndex: number,
-): { player: PlayerState; card: Card } => {
-  const card = player.hand[handIndex]
-  if (!card) {
-    throw new Error(`Invalid hand index: ${handIndex}`)
+const getCardInstance = (state: GameState, cardId: CardInstanceId): CardInstance => {
+  const instance = state.cards[cardId]
+  if (!instance) {
+    throw new Error(`Unknown card instance: ${cardId}`)
+  }
+  return instance
+}
+
+const getCreatureCard = (state: GameState, creature: CreatureInstance): CreatureCard => {
+  const card = getCardInstance(state, creature.cardId).card
+  if (card.kind !== 'creature') {
+    throw new Error(`Card instance ${creature.cardId} on the board is not a creature.`)
+  }
+  return card
+}
+
+const getCreatureOwner = (state: GameState, creature: CreatureInstance): PlayerId =>
+  getCardInstance(state, creature.cardId).ownerId
+
+const removeHandCard = (player: PlayerState, cardId: CardInstanceId): PlayerState => {
+  if (!player.hand.includes(cardId)) {
+    throw new Error(`Card instance ${cardId} is not in ${player.name}'s hand.`)
   }
 
   return {
-    card,
-    player: {
-      ...player,
-      hand: player.hand.filter((_, index) => index !== handIndex),
-    },
+    ...player,
+    hand: player.hand.filter((id) => id !== cardId),
   }
 }
 
@@ -104,34 +137,22 @@ const drawUpTo = (player: PlayerState, handSize: number): PlayerState => {
   }
 }
 
-const cleanupPlayer = (player: PlayerState): PlayerState => {
-  const maxHandSize = 5
-  if (player.hand.length <= maxHandSize) {
-    return player
-  }
-
-  return {
-    ...player,
-    hand: player.hand.slice(0, maxHandSize),
-    discard: [...player.discard, ...player.hand.slice(maxHandSize)],
-  }
-}
-
-const discardAt = (player: PlayerState, handIndex: number): PlayerState => {
-  const { card, player: playerWithoutCard } = removeHandCard(player, handIndex)
+const discardCard = (player: PlayerState, cardId: CardInstanceId): PlayerState => {
+  const playerWithoutCard = removeHandCard(player, cardId)
 
   return {
     ...playerWithoutCard,
-    discard: [...playerWithoutCard.discard, card],
+    discard: [...playerWithoutCard.discard, cardId],
   }
 }
 
 const canInsertCreature = (
-  board: CreatureInstance[],
+  state: GameState,
   ownerId: PlayerId,
   card: CreatureCard,
   insertIndex: number,
 ): boolean => {
+  const board = state.board.creatures
   if (insertIndex < 0 || insertIndex > board.length) {
     return false
   }
@@ -144,7 +165,7 @@ const canInsertCreature = (
   }
 
   return board.some((creature, index) => {
-    if (creature.ownerId !== ownerId) {
+    if (getCreatureOwner(state, creature) !== ownerId) {
       return false
     }
     return Math.max(0, Math.abs(insertIndex - index) - 1) <= card.march
@@ -152,33 +173,44 @@ const canInsertCreature = (
 }
 
 const isWholeGroup = (
-  board: CreatureInstance[],
+  state: GameState,
   ownerId: PlayerId,
   startIndex: number,
   endIndex: number,
 ): boolean => {
+  const board = state.board.creatures
   if (
     startIndex < 0 ||
     endIndex >= board.length ||
     startIndex > endIndex ||
-    board.slice(startIndex, endIndex + 1).some((creature) => creature.ownerId !== ownerId)
+    board
+      .slice(startIndex, endIndex + 1)
+      .some((creature) => getCreatureOwner(state, creature) !== ownerId)
   ) {
     return false
   }
 
-  return board[startIndex - 1]?.ownerId !== ownerId && board[endIndex + 1]?.ownerId !== ownerId
+  return (
+    (board[startIndex - 1] === undefined ||
+      getCreatureOwner(state, board[startIndex - 1]) !== ownerId) &&
+    (board[endIndex + 1] === undefined ||
+      getCreatureOwner(state, board[endIndex + 1]) !== ownerId)
+  )
 }
 
 const collectDefendingGroup = (
-  board: CreatureInstance[],
+  state: GameState,
   defenderId: PlayerId,
   targetIndex: number,
   direction: 1 | -1,
 ): number[] => {
+  const board = state.board.creatures
   const indexes: number[] = []
   for (
     let index = targetIndex;
-    index >= 0 && index < board.length && board[index].ownerId === defenderId;
+    index >= 0 &&
+    index < board.length &&
+    getCreatureOwner(state, board[index]) === defenderId;
     index += direction
   ) {
     indexes.push(index)
@@ -187,20 +219,21 @@ const collectDefendingGroup = (
 }
 
 const refundDestroyedCreatures = (
-  players: GameState['players'],
+  state: GameState,
   destroyedCreatures: CreatureInstance[],
 ): GameState['players'] => {
   const nextPlayers = {
-    playerA: { ...players.playerA, discard: [...players.playerA.discard] },
-    playerB: { ...players.playerB, discard: [...players.playerB.discard] },
+    playerA: { ...state.players.playerA, discard: [...state.players.playerA.discard] },
+    playerB: { ...state.players.playerB, discard: [...state.players.playerB.discard] },
   }
 
   destroyedCreatures.forEach((creature) => {
-    const owner = nextPlayers[creature.ownerId]
-    nextPlayers[creature.ownerId] = {
+    const instance = getCardInstance(state, creature.cardId)
+    const owner = nextPlayers[instance.ownerId]
+    nextPlayers[instance.ownerId] = {
       ...owner,
-      mana: owner.mana + Math.floor(creature.card.cost / 2),
-      discard: [...owner.discard, creature.card],
+      mana: owner.mana + Math.floor(instance.card.cost / 2),
+      discard: [...owner.discard, instance.id],
     }
   })
 
@@ -213,9 +246,8 @@ const resolveKeepUpState = (state: GameState): GameState => {
   }
 
   const activePlayer = state.players[state.activePlayerId]
-  const handSize = getKeepUpHandSize(state)
   const nextPlayer = {
-    ...drawUpTo(activePlayer, handSize),
+    ...drawUpTo(activePlayer, getKeepUpHandSize(state)),
     mana: activePlayer.mana + 2,
   }
 
@@ -226,16 +258,91 @@ const resolveKeepUpState = (state: GameState): GameState => {
 }
 
 const endTurnState = (state: GameState): GameState => {
-  const cleanedState = replacePlayer(state, cleanupPlayer(state.players[state.activePlayerId]))
   const nextTurnState: GameState = {
-    ...cleanedState,
-    turn: cleanedState.turn + 1,
-    activePlayerId: getOpponentId(cleanedState.activePlayerId),
+    ...state,
+    turn: state.turn + 1,
+    activePlayerId: getOpponentId(state.activePlayerId),
     phase: 'keepUp',
     hasAttackedThisTurn: false,
   }
 
   return resolveKeepUpState(nextTurnState)
+}
+
+export const assertValidGameState = (state: GameState): void => {
+  const locations = new Map<CardInstanceId, string>()
+
+  const locate = (
+    cardId: CardInstanceId,
+    ownerId: PlayerId,
+    location: string,
+    expectedKind?: CardInstance['card']['kind'],
+  ) => {
+    const instance = state.cards[cardId]
+    if (!instance) {
+      throw new Error(`Game state references unknown card instance ${cardId} at ${location}.`)
+    }
+    if (instance.id !== cardId) {
+      throw new Error(`Card registry key ${cardId} does not match instance id ${instance.id}.`)
+    }
+    if (instance.ownerId !== ownerId) {
+      throw new Error(`Card instance ${cardId} is in ${ownerId}'s ${location} but belongs to ${instance.ownerId}.`)
+    }
+    if (expectedKind && instance.card.kind !== expectedKind) {
+      throw new Error(`Card instance ${cardId} at ${location} must be a ${expectedKind}.`)
+    }
+
+    const previousLocation = locations.get(cardId)
+    if (previousLocation) {
+      throw new Error(
+        `Card instance ${cardId} exists in both ${previousLocation} and ${location}.`,
+      )
+    }
+    locations.set(cardId, location)
+  }
+
+  PLAYER_IDS.forEach((playerId) => {
+    const player = state.players[playerId]
+    if (player.id !== playerId) {
+      throw new Error(`Player registry key ${playerId} does not match player id ${player.id}.`)
+    }
+    if (player.hand.length > MAX_HAND_SIZE) {
+      throw new Error(`${player.name}'s hand cannot contain more than ${MAX_HAND_SIZE} cards.`)
+    }
+    player.deck.forEach((cardId) => locate(cardId, playerId, 'deck'))
+    player.hand.forEach((cardId) => locate(cardId, playerId, 'hand'))
+    player.discard.forEach((cardId) => locate(cardId, playerId, 'discard'))
+    if (player.formation !== null) {
+      locate(player.formation, playerId, 'formation', 'formation')
+    }
+  })
+
+  state.board.creatures.forEach((creature, index) => {
+    const instance = state.cards[creature.cardId]
+    if (!instance) {
+      throw new Error(`Board references unknown card instance ${creature.cardId}.`)
+    }
+    locate(creature.cardId, instance.ownerId, `board position ${index}`, 'creature')
+  })
+
+  Object.entries(state.cards).forEach(([registryId, instance]) => {
+    if (Number(registryId) !== instance.id) {
+      throw new Error(`Card registry key ${registryId} does not match instance id ${instance.id}.`)
+    }
+    if (!Number.isInteger(instance.id) || instance.id <= 0) {
+      throw new Error(`Card instance id must be a positive integer: ${instance.id}.`)
+    }
+    if (!locations.has(instance.id)) {
+      throw new Error(`Card instance ${instance.id} is not in any game zone.`)
+    }
+  })
+
+  const expectedCardCount = STANDARD_DECK_LIST.length * 2
+  if (locations.size !== expectedCardCount || Object.keys(state.cards).length !== expectedCardCount) {
+    throw new Error(
+      `Game state must contain exactly ${expectedCardCount} card instances; found ${locations.size}.`,
+    )
+  }
 }
 
 export class GameManager {
@@ -250,7 +357,9 @@ export class GameManager {
   }
 
   static from(state: GameState): GameManager {
-    return new GameManager(cloneGameState(state))
+    const clonedState = cloneGameState(state)
+    assertValidGameState(clonedState)
+    return new GameManager(clonedState)
   }
 
   static setPhase(manager: GameManager, phase: Phase): GameManager {
@@ -269,6 +378,10 @@ export class GameManager {
     return manager.state.players[opponentId]
   }
 
+  static getCard(manager: GameManager, cardId: CardInstanceId): CardInstance {
+    return getCardInstance(manager.state, cardId)
+  }
+
   static applyAction(manager: GameManager, action: GameAction): GameManager {
     switch (action.type) {
       case 'resolveKeepUp':
@@ -276,15 +389,15 @@ export class GameManager {
       case 'passPhase':
         return GameManager.passPhase(manager)
       case 'summonCreature':
-        return GameManager.summonCreature(manager, action.handIndex, action.insertIndex)
+        return GameManager.summonCreature(manager, action.cardId, action.insertIndex)
       case 'playFormation':
-        return GameManager.playFormation(manager, action.handIndex)
+        return GameManager.playFormation(manager, action.cardId)
       case 'playSpell':
-        return GameManager.playSpell(manager, action.handIndex)
+        return GameManager.playSpell(manager, action.cardId)
       case 'attackGroup':
         return GameManager.attackGroup(manager, action.startIndex, action.endIndex)
       case 'discardFromHand':
-        return GameManager.discardFromHand(manager, action.handIndex)
+        return GameManager.discardFromHand(manager, action.cardId)
     }
   }
 
@@ -303,7 +416,6 @@ export class GameManager {
     if (manager.state.phase === 'cleanup') {
       return GameManager.from(endTurnState(manager.state))
     }
-
     if (!nextPhase) {
       throw new Error(`Invalid phase: ${manager.state.phase}`)
     }
@@ -314,29 +426,36 @@ export class GameManager {
     })
   }
 
-  static summonCreature(manager: GameManager, handIndex: number, insertIndex: number): GameManager {
+  static summonCreature(
+    manager: GameManager,
+    cardId: CardInstanceId,
+    insertIndex: number,
+  ): GameManager {
     if (manager.state.phase !== 'main') {
       throw new Error('Creatures can only be summoned during the main phase.')
     }
 
     const activePlayer = GameManager.getCurrentPlayer(manager)
-    const { card, player: playerWithoutCard } = removeHandCard(activePlayer, handIndex)
+    if (!activePlayer.hand.includes(cardId)) {
+      throw new Error(`Card instance ${cardId} is not in ${activePlayer.name}'s hand.`)
+    }
+    const instance = getCardInstance(manager.state, cardId)
+    const { card } = instance
     if (card.kind !== 'creature') {
       throw new Error('Selected card is not a creature.')
     }
     if (activePlayer.mana < card.cost) {
       throw new Error('Not enough mana to summon this creature.')
     }
-    if (!canInsertCreature(manager.state.board.creatures, activePlayer.id, card, insertIndex)) {
+    if (!canInsertCreature(manager.state, activePlayer.id, card, insertIndex)) {
       throw new Error('The creature cannot be summoned at this position.')
     }
 
     const creature: CreatureInstance = {
-      instanceId: `creature-${manager.state.nextCreatureInstanceId}`,
-      ownerId: activePlayer.id,
-      card,
+      cardId,
       summonedTurn: manager.state.turn,
     }
+    const playerWithoutCard = removeHandCard(activePlayer, cardId)
     const nextPlayer = {
       ...playerWithoutCard,
       mana: playerWithoutCard.mana - card.cost,
@@ -349,58 +468,66 @@ export class GameManager {
 
     return GameManager.from({
       ...replacePlayer(manager.state, nextPlayer),
-      nextCreatureInstanceId: manager.state.nextCreatureInstanceId + 1,
       board: {
         creatures: nextCreatures,
       },
     })
   }
 
-  static playFormation(manager: GameManager, handIndex: number): GameManager {
+  static playFormation(manager: GameManager, cardId: CardInstanceId): GameManager {
     if (manager.state.phase !== 'main') {
       throw new Error('Formations can only be played during the main phase.')
     }
 
     const activePlayer = GameManager.getCurrentPlayer(manager)
-    const { card, player: playerWithoutCard } = removeHandCard(activePlayer, handIndex)
-    if (card.kind !== 'formation') {
+    if (!activePlayer.hand.includes(cardId)) {
+      throw new Error(`Card instance ${cardId} is not in ${activePlayer.name}'s hand.`)
+    }
+    const instance = getCardInstance(manager.state, cardId)
+    if (instance.card.kind !== 'formation') {
       throw new Error('Selected card is not a formation.')
     }
-    if (activePlayer.mana < card.cost) {
+    if (activePlayer.mana < instance.card.cost) {
       throw new Error('Not enough mana to play this formation.')
     }
 
-    const oldFormation = activePlayer.formation
+    const playerWithoutCard = removeHandCard(activePlayer, cardId)
+    const oldFormationId = activePlayer.formation
     const nextPlayer = {
       ...playerWithoutCard,
-      mana: playerWithoutCard.mana - card.cost,
-      formation: card,
-      discard: oldFormation
-        ? [...playerWithoutCard.discard, oldFormation]
-        : playerWithoutCard.discard,
+      mana: playerWithoutCard.mana - instance.card.cost,
+      formation: cardId,
+      discard:
+        oldFormationId === null
+          ? playerWithoutCard.discard
+          : [...playerWithoutCard.discard, oldFormationId],
     }
 
     return GameManager.from(replacePlayer(manager.state, nextPlayer))
   }
 
-  static playSpell(manager: GameManager, handIndex: number): GameManager {
+  static playSpell(manager: GameManager, cardId: CardInstanceId): GameManager {
     if (manager.state.phase !== 'main') {
       throw new Error('Spells can only be played during the main phase.')
     }
 
     const activePlayer = GameManager.getCurrentPlayer(manager)
-    const { card, player: playerWithoutCard } = removeHandCard(activePlayer, handIndex)
-    if (card.kind !== 'spell') {
+    if (!activePlayer.hand.includes(cardId)) {
+      throw new Error(`Card instance ${cardId} is not in ${activePlayer.name}'s hand.`)
+    }
+    const instance = getCardInstance(manager.state, cardId)
+    if (instance.card.kind !== 'spell') {
       throw new Error('Selected card is not a spell.')
     }
-    if (activePlayer.mana < card.cost) {
+    if (activePlayer.mana < instance.card.cost) {
       throw new Error('Not enough mana to play this spell.')
     }
 
+    const playerWithoutCard = removeHandCard(activePlayer, cardId)
     const nextPlayer = {
       ...playerWithoutCard,
-      mana: playerWithoutCard.mana - card.cost,
-      discard: [...playerWithoutCard.discard, card],
+      mana: playerWithoutCard.mana - instance.card.cost,
+      discard: [...playerWithoutCard.discard, cardId],
     }
 
     return GameManager.from(replacePlayer(manager.state, nextPlayer))
@@ -417,7 +544,7 @@ export class GameManager {
     const attackerId = manager.state.activePlayerId
     const defenderId = getOpponentId(attackerId)
     const board = manager.state.board.creatures
-    if (!isWholeGroup(board, attackerId, startIndex, endIndex)) {
+    if (!isWholeGroup(manager.state, attackerId, startIndex, endIndex)) {
       throw new Error('The selected range is not one whole attacking group.')
     }
 
@@ -425,7 +552,7 @@ export class GameManager {
     const targetIndex = direction === 1 ? endIndex + 1 : startIndex - 1
     const attackPower = board
       .slice(startIndex, endIndex + 1)
-      .reduce((total, creature) => total + creature.card.attack, 0)
+      .reduce((total, creature) => total + getCreatureCard(manager.state, creature).attack, 0)
 
     if (targetIndex < 0 || targetIndex >= board.length) {
       return GameManager.damagePlayer(
@@ -434,26 +561,31 @@ export class GameManager {
         Math.max(0, attackPower - PLAYER_BARRIER),
       )
     }
-    if (board[targetIndex].ownerId !== defenderId) {
+    if (getCreatureOwner(manager.state, board[targetIndex]) !== defenderId) {
       throw new Error('The attacking group is not adjacent to an enemy group or player.')
     }
 
-    const defendingGroupIndexes = collectDefendingGroup(board, defenderId, targetIndex, direction)
+    const defendingGroupIndexes = collectDefendingGroup(
+      manager.state,
+      defenderId,
+      targetIndex,
+      direction,
+    )
     let remainingAttack = attackPower
     const destroyedIndexes: number[] = []
 
     for (const index of defendingGroupIndexes) {
       const defender = board[index]
-      if (remainingAttack < defender.card.defense) {
+      if (remainingAttack < getCreatureCard(manager.state, defender).defense) {
         break
       }
-      remainingAttack -= defender.card.defense
+      remainingAttack -= getCreatureCard(manager.state, defender).defense
       destroyedIndexes.push(index)
     }
 
     const destroyedSet = new Set(destroyedIndexes)
     const destroyedCreatures = board.filter((_, index) => destroyedSet.has(index))
-    const nextPlayers = refundDestroyedCreatures(manager.state.players, destroyedCreatures)
+    const nextPlayers = refundDestroyedCreatures(manager.state, destroyedCreatures)
     const nextBoard = board.filter((_, index) => !destroyedSet.has(index))
     const groupTouchedDefenderPlayer =
       direction === 1
@@ -467,8 +599,8 @@ export class GameManager {
       }
     }
 
-    return GameManager.from({
-      ...endTurnState({
+    return GameManager.from(
+      endTurnState({
         ...manager.state,
         phase: 'battle',
         players: nextPlayers,
@@ -477,12 +609,12 @@ export class GameManager {
         },
         hasAttackedThisTurn: true,
       }),
-    })
+    )
   }
 
-  static discardFromHand(manager: GameManager, handIndex: number): GameManager {
+  static discardFromHand(manager: GameManager, cardId: CardInstanceId): GameManager {
     const activePlayer = GameManager.getCurrentPlayer(manager)
-    return GameManager.from(replacePlayer(manager.state, discardAt(activePlayer, handIndex)))
+    return GameManager.from(replacePlayer(manager.state, discardCard(activePlayer, cardId)))
   }
 
   private static damagePlayer(

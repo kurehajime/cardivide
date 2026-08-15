@@ -1,9 +1,10 @@
 import { Fragment } from 'react'
-import type { Board, PlayerId, PlayerState } from '../game'
+import type { Board, CardInstance, CardInstanceId, PlayerId, PlayerState } from '../game'
 import CardView from './CardView'
 
 type BoardViewProps = {
   board: Board
+  cards: Record<CardInstanceId, CardInstance>
   players: Record<PlayerState['id'], PlayerState>
   activePlayerId: PlayerId
   canInsert?: boolean
@@ -20,16 +21,19 @@ type BoardGroup = {
   defense: number
 }
 
-const collectGroups = (board: Board): BoardGroup[] => {
+const collectGroups = (
+  board: Board,
+  cards: Record<CardInstanceId, CardInstance>,
+): BoardGroup[] => {
   const groups: BoardGroup[] = []
   let index = 0
 
   while (index < board.creatures.length) {
-    const ownerId = board.creatures[index].ownerId
+    const ownerId = cards[board.creatures[index].cardId].ownerId
     const startIndex = index
     while (
       index + 1 < board.creatures.length &&
-      board.creatures[index + 1].ownerId === ownerId
+      cards[board.creatures[index + 1].cardId].ownerId === ownerId
     ) {
       index += 1
     }
@@ -38,8 +42,14 @@ const collectGroups = (board: Board): BoardGroup[] => {
       ownerId,
       startIndex,
       endIndex: index,
-      attack: groupCreatures.reduce((total, creature) => total + creature.card.attack, 0),
-      defense: groupCreatures.reduce((total, creature) => total + creature.card.defense, 0),
+      attack: groupCreatures.reduce((total, creature) => {
+        const card = cards[creature.cardId].card
+        return total + (card.kind === 'creature' ? card.attack : 0)
+      }, 0),
+      defense: groupCreatures.reduce((total, creature) => {
+        const card = cards[creature.cardId].card
+        return total + (card.kind === 'creature' ? card.defense : 0)
+      }, 0),
     })
     index += 1
   }
@@ -49,6 +59,7 @@ const collectGroups = (board: Board): BoardGroup[] => {
 
 const BoardView = ({
   board,
+  cards,
   players,
   activePlayerId,
   canInsert = false,
@@ -56,7 +67,7 @@ const BoardView = ({
   onInsertClick,
   onGroupAttack,
 }: BoardViewProps) => {
-  const groups = collectGroups(board)
+  const groups = collectGroups(board, cards)
   const gridTemplateColumns =
     board.creatures.length === 0
       ? 'minmax(140px, 1fr)'
@@ -80,7 +91,7 @@ const BoardView = ({
         ) : (
           <div className="board-lane-grid" style={{ gridTemplateColumns }}>
             {board.creatures.map((creature, index) => (
-              <Fragment key={creature.instanceId}>
+              <Fragment key={creature.cardId}>
                 <button
                   key={`insert-${index}`}
                   className="board-insert-slot"
@@ -92,11 +103,11 @@ const BoardView = ({
                   +
                 </button>
                 <div
-                  key={creature.instanceId}
+                  data-card-id={creature.cardId}
                   className="board-slot"
                   style={{ gridColumn: index * 2 + 2, gridRow: 2 }}
                 >
-                  <CardView card={creature.card} compact />
+                  <CardView card={cards[creature.cardId].card} compact />
                 </div>
               </Fragment>
             ))}

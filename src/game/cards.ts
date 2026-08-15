@@ -2,7 +2,7 @@ import type { Card, CreatureCard, FormationCard, SpellCard } from './types'
 
 export const CREATURE_CARDS = [
   {
-    id: 'red-cost2-attack3-defense2-march1',
+    definitionId: 'red-cost2-attack3-defense2-march1',
     name: '赤 コスト2 攻3 防2 進1',
     kind: 'creature',
     color: 'red',
@@ -13,7 +13,7 @@ export const CREATURE_CARDS = [
     abilities: [],
   },
   {
-    id: 'blue-cost2-attack1-defense2-march2',
+    definitionId: 'blue-cost2-attack1-defense2-march2',
     name: '青 コスト2 攻1 防2 進2',
     kind: 'creature',
     color: 'blue',
@@ -24,7 +24,7 @@ export const CREATURE_CARDS = [
     abilities: [],
   },
   {
-    id: 'green-cost2-attack2-defense3-march1',
+    definitionId: 'green-cost2-attack2-defense3-march1',
     name: '緑 コスト2 攻2 防3 進1',
     kind: 'creature',
     color: 'green',
@@ -35,7 +35,7 @@ export const CREATURE_CARDS = [
     abilities: [],
   },
   {
-    id: 'red-cost2-attack4-defense1-march1',
+    definitionId: 'red-cost2-attack4-defense1-march1',
     name: '赤 コスト2 攻4 防1 進1',
     kind: 'creature',
     color: 'red',
@@ -46,7 +46,7 @@ export const CREATURE_CARDS = [
     abilities: [],
   },
   {
-    id: 'blue-cost2-attack0-defense1-march3',
+    definitionId: 'blue-cost2-attack0-defense1-march3',
     name: '青 コスト2 攻0 防1 進3',
     kind: 'creature',
     color: 'blue',
@@ -57,7 +57,7 @@ export const CREATURE_CARDS = [
     abilities: [],
   },
   {
-    id: 'green-cost2-attack1-defense4-march1',
+    definitionId: 'green-cost2-attack1-defense4-march1',
     name: '緑 コスト2 攻1 防4 進1',
     kind: 'creature',
     color: 'green',
@@ -68,7 +68,7 @@ export const CREATURE_CARDS = [
     abilities: [],
   },
   {
-    id: 'red-cost4-attack6-defense4-march2',
+    definitionId: 'red-cost4-attack6-defense4-march2',
     name: '赤 コスト4 攻6 防4 進2',
     kind: 'creature',
     color: 'red',
@@ -79,7 +79,7 @@ export const CREATURE_CARDS = [
     abilities: [],
   },
   {
-    id: 'blue-cost4-attack2-defense4-march3',
+    definitionId: 'blue-cost4-attack2-defense4-march3',
     name: '青 コスト4 攻2 防4 進3',
     kind: 'creature',
     color: 'blue',
@@ -90,7 +90,7 @@ export const CREATURE_CARDS = [
     abilities: [],
   },
   {
-    id: 'green-cost4-attack4-defense6-march1',
+    definitionId: 'green-cost4-attack4-defense6-march1',
     name: '緑 コスト4 攻4 防6 進1',
     kind: 'creature',
     color: 'green',
@@ -101,7 +101,7 @@ export const CREATURE_CARDS = [
     abilities: [],
   },
   {
-    id: 'red-cost5-attack8-defense6-march3-vanish',
+    definitionId: 'red-cost5-attack8-defense6-march3-vanish',
     name: '赤 コスト5 攻8 防6 進3 消滅',
     kind: 'creature',
     color: 'red',
@@ -112,7 +112,7 @@ export const CREATURE_CARDS = [
     abilities: ['消滅'],
   },
   {
-    id: 'blue-cost5-attack4-defense6-march4-vanish',
+    definitionId: 'blue-cost5-attack4-defense6-march4-vanish',
     name: '青 コスト5 攻4 防6 進4 消滅',
     kind: 'creature',
     color: 'blue',
@@ -123,7 +123,7 @@ export const CREATURE_CARDS = [
     abilities: ['消滅'],
   },
   {
-    id: 'green-cost5-attack6-defense8-march3-vanish',
+    definitionId: 'green-cost5-attack6-defense8-march3-vanish',
     name: '緑 コスト5 攻6 防8 進3 消滅',
     kind: 'creature',
     color: 'green',
@@ -134,7 +134,7 @@ export const CREATURE_CARDS = [
     abilities: ['消滅'],
   },
   {
-    id: 'red-cost2-attack2-defense2-march1-lone-warrior-2-0',
+    definitionId: 'red-cost2-attack2-defense2-march1-lone-warrior-2-0',
     name: '赤 コスト2 一騎当千',
     kind: 'creature',
     color: 'red',
@@ -145,7 +145,7 @@ export const CREATURE_CARDS = [
     abilities: ['一騎当千(+2/+0)'],
   },
   {
-    id: 'red-cost2-attack3-defense1-march1-withdraw',
+    definitionId: 'red-cost2-attack3-defense1-march1-withdraw',
     name: '赤 コスト2 撤去',
     kind: 'creature',
     color: 'red',
@@ -156,7 +156,7 @@ export const CREATURE_CARDS = [
     abilities: ['撤去'],
   },
   {
-    id: 'red-cost2-attack2-defense2-march1-assassin2',
+    definitionId: 'red-cost2-attack2-defense2-march1-assassin2',
     name: '赤 コスト2 刺客2',
     kind: 'creature',
     color: 'red',
@@ -167,7 +167,7 @@ export const CREATURE_CARDS = [
     abilities: ['刺客2'],
   },
   {
-    id: 'blue-cost2-attack3-defense1-march1-counter',
+    definitionId: 'blue-cost2-attack3-defense1-march1-counter',
     name: '青 コスト2 反撃',
     kind: 'creature',
     color: 'blue',
@@ -178,7 +178,7 @@ export const CREATURE_CARDS = [
     abilities: ['反撃'],
   },
   {
-    id: 'blue-cost2-attack1-defense1-march2-return',
+    definitionId: 'blue-cost2-attack1-defense1-march2-return',
     name: '青 コスト2 帰還',
     kind: 'creature',
     color: 'blue',
@@ -189,7 +189,7 @@ export const CREATURE_CARDS = [
     abilities: ['帰還'],
   },
   {
-    id: 'blue-cost2-attack2-defense2-march1-beachhead1',
+    definitionId: 'blue-cost2-attack2-defense2-march1-beachhead1',
     name: '青 コスト2 橋頭堡1',
     kind: 'creature',
     color: 'blue',
@@ -200,7 +200,7 @@ export const CREATURE_CARDS = [
     abilities: ['橋頭堡1'],
   },
   {
-    id: 'green-cost2-attack1-defense3-march1-capture1',
+    definitionId: 'green-cost2-attack1-defense3-march1-capture1',
     name: '緑 コスト2 捕獲1',
     kind: 'creature',
     color: 'green',
@@ -211,7 +211,7 @@ export const CREATURE_CARDS = [
     abilities: ['捕獲1'],
   },
   {
-    id: 'green-cost2-attack2-defense2-march1-mining1',
+    definitionId: 'green-cost2-attack2-defense2-march1-mining1',
     name: '緑 コスト2 採掘1',
     kind: 'creature',
     color: 'green',
@@ -222,7 +222,7 @@ export const CREATURE_CARDS = [
     abilities: ['採掘1'],
   },
   {
-    id: 'green-cost2-attack2-defense2-march1-rearguard-0-2',
+    definitionId: 'green-cost2-attack2-defense2-march1-rearguard-0-2',
     name: '緑 コスト2 しんがり',
     kind: 'creature',
     color: 'green',
@@ -233,7 +233,7 @@ export const CREATURE_CARDS = [
     abilities: ['しんがり(+0/+2)'],
   },
   {
-    id: 'red-cost4-attack5-defense3-march2-lone-warrior-2-1',
+    definitionId: 'red-cost4-attack5-defense3-march2-lone-warrior-2-1',
     name: '赤 コスト4 一騎当千',
     kind: 'creature',
     color: 'red',
@@ -244,7 +244,7 @@ export const CREATURE_CARDS = [
     abilities: ['一騎当千(+2/+1)'],
   },
   {
-    id: 'red-cost4-attack5-defense3-march2-withdraw',
+    definitionId: 'red-cost4-attack5-defense3-march2-withdraw',
     name: '赤 コスト4 撤去',
     kind: 'creature',
     color: 'red',
@@ -255,7 +255,7 @@ export const CREATURE_CARDS = [
     abilities: ['撤去'],
   },
   {
-    id: 'blue-cost4-attack3-defense4-march2-counter',
+    definitionId: 'blue-cost4-attack3-defense4-march2-counter',
     name: '青 コスト4 反撃',
     kind: 'creature',
     color: 'blue',
@@ -266,7 +266,7 @@ export const CREATURE_CARDS = [
     abilities: ['反撃'],
   },
   {
-    id: 'blue-cost4-attack4-defense2-march2-return',
+    definitionId: 'blue-cost4-attack4-defense2-march2-return',
     name: '青 コスト4 帰還',
     kind: 'creature',
     color: 'blue',
@@ -277,7 +277,7 @@ export const CREATURE_CARDS = [
     abilities: ['帰還'],
   },
   {
-    id: 'green-cost4-attack2-defense5-march2-capture1',
+    definitionId: 'green-cost4-attack2-defense5-march2-capture1',
     name: '緑 コスト4 捕獲1',
     kind: 'creature',
     color: 'green',
@@ -288,7 +288,7 @@ export const CREATURE_CARDS = [
     abilities: ['捕獲1'],
   },
   {
-    id: 'green-cost4-attack3-defense4-march2-mining1',
+    definitionId: 'green-cost4-attack3-defense4-march2-mining1',
     name: '緑 コスト4 採掘1',
     kind: 'creature',
     color: 'green',
@@ -302,7 +302,7 @@ export const CREATURE_CARDS = [
 
 export const FORMATION_CARDS = [
   {
-    id: 'red-cost4-formation',
+    definitionId: 'red-cost4-formation',
     name: '赤の布陣',
     kind: 'formation',
     color: 'red',
@@ -310,7 +310,7 @@ export const FORMATION_CARDS = [
     text: '自分の赤クリーチャーを含むグループが2つ以上ある間、グループが1体の自分のすべての赤クリーチャーは一騎当千(+1/+1)を持つ。',
   },
   {
-    id: 'blue-cost4-formation',
+    definitionId: 'blue-cost4-formation',
     name: '青の布陣',
     kind: 'formation',
     color: 'blue',
@@ -318,7 +318,7 @@ export const FORMATION_CARDS = [
     text: '自分の青クリーチャーを含むグループが2つ以上ある間、グループが1体の自分のすべての青クリーチャーは反撃を持つ。既に反撃を持っている場合攻撃力+1する。',
   },
   {
-    id: 'green-cost4-formation',
+    definitionId: 'green-cost4-formation',
     name: '緑の布陣',
     kind: 'formation',
     color: 'green',
@@ -335,7 +335,6 @@ export const CARD_LIST = [
   ...SPELL_CARDS,
 ] satisfies Card[]
 
-export const CARD_BY_ID = Object.fromEntries(CARD_LIST.map((card) => [card.id, card])) as Record<
-  string,
-  Card
->
+export const CARD_BY_DEFINITION_ID = Object.fromEntries(
+  CARD_LIST.map((card) => [card.definitionId, card]),
+) as Record<string, Card>
