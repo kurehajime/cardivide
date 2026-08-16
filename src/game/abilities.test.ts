@@ -536,7 +536,7 @@ describe('formation creature effects', () => {
     })
     expect(GameManager.getCreatureStats(manager, redCreatures[0])).toMatchObject({
       attack: 4,
-      defense: 3,
+      defense: 2,
     })
 
     const [blueCounter] = findCardIds(
@@ -634,7 +634,7 @@ describe('combat abilities', () => {
     const [attacker] = findCardIds(
       initial.state,
       'playerA',
-      'red-cost5-attack7-defense5-march2-vanish',
+      'red-cost5-attack7-defense4-march2-vanish',
     )
     const [vanishingDefender] = findCardIds(
       initial.state,

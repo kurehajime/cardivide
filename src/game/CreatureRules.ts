@@ -271,7 +271,7 @@ export class CreatureRules {
       card.color === 'red' &&
       countOwnerGroupsContainingColor(state, ownerId, 'red') >= 2
     ) {
-      return [{ type: 'loneWarrior', attack: 1, defense: 1 }]
+      return [{ type: 'loneWarrior', attack: 1, defense: 0 }]
     }
 
     if (
