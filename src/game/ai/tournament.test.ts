@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { THEME_DECKS } from '../themeDecks'
 import {
+  DEFAULT_TOURNAMENT_GAMES_PER_SIDE,
   createRoundRobinSchedule,
   playAiMatch,
   summarizeTournament,
@@ -10,7 +11,7 @@ describe('AI tournament', () => {
   it('creates five games for both player orders of every deck pairing', () => {
     const schedule = createRoundRobinSchedule(THEME_DECKS)
 
-    expect(schedule).toHaveLength(30)
+    expect(schedule).toHaveLength(300)
     for (let firstIndex = 0; firstIndex < THEME_DECKS.length; firstIndex += 1) {
       for (let secondIndex = firstIndex + 1; secondIndex < THEME_DECKS.length; secondIndex += 1) {
         const firstDeckId = THEME_DECKS[firstIndex].id
@@ -20,13 +21,13 @@ describe('AI tournament', () => {
             ({ playerADeckId, playerBDeckId }) =>
               playerADeckId === firstDeckId && playerBDeckId === secondDeckId,
           ),
-        ).toHaveLength(5)
+        ).toHaveLength(DEFAULT_TOURNAMENT_GAMES_PER_SIDE)
         expect(
           schedule.filter(
             ({ playerADeckId, playerBDeckId }) =>
               playerADeckId === secondDeckId && playerBDeckId === firstDeckId,
           ),
-        ).toHaveLength(5)
+        ).toHaveLength(DEFAULT_TOURNAMENT_GAMES_PER_SIDE)
 
         const firstOrderSeeds = schedule
           .filter(

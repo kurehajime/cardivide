@@ -129,7 +129,7 @@ describe('CreatureRules position modifiers', () => {
     const [loneWarrior] = findCardIds(
       initial.state,
       'playerA',
-      'red-cost2-attack2-defense2-march1-lone-warrior-2-0',
+      'red-cost2-attack2-defense1-march1-lone-warrior-2-0',
     )
     const [enemyLeft, enemyRight] = findCardIds(
       initial.state,
@@ -146,7 +146,7 @@ describe('CreatureRules position modifiers', () => {
     })
     expect(GameManager.getCreatureStats(manager, loneWarrior)).toEqual({
       attack: 4,
-      defense: 2,
+      defense: 1,
       march: 1,
     })
     expect(GameManager.getCreatureStatModifier(manager, loneWarrior)).toEqual({
@@ -157,7 +157,7 @@ describe('CreatureRules position modifiers', () => {
     const [assassin] = findCardIds(
       initial.state,
       'playerA',
-      'red-cost2-attack2-defense2-march1-assassin2',
+      'red-cost2-attack2-defense1-march1-assassin2',
     )
     manager = configureManager(initial, { board: [{ cardId: assassin }] })
     expect(GameManager.getCreatureStats(manager, assassin).attack).toBe(4)
@@ -227,7 +227,7 @@ describe('CreatureRules position modifiers', () => {
     const [source] = findCardIds(
       initial.state,
       'playerA',
-      'red-cost2-attack2-defense2-march1-lone-warrior-2-0',
+      'red-cost2-attack2-defense1-march1-lone-warrior-2-0',
     )
     const [enemyLeft, enemyRight] = findCardIds(
       initial.state,
@@ -261,7 +261,7 @@ describe('CreatureRules position modifiers', () => {
 
     expect(GameManager.getCreatureStats(manager, source)).toEqual({
       attack: 5,
-      defense: 3,
+      defense: 2,
       march: 1,
     })
     expect(JSON.parse(JSON.stringify(manager.state.cards[source]))).toEqual(

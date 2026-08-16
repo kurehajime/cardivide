@@ -12,6 +12,10 @@ import {
 const deckNames = new Map<ThemeDeckId, string>(
   THEME_DECKS.map((deck) => [deck.id, deck.name]),
 )
+const pairingCount = (THEME_DECKS.length * (THEME_DECKS.length - 1)) / 2
+const totalMatches =
+  pairingCount * 2 * DEFAULT_TOURNAMENT_GAMES_PER_SIDE
+const matchNumberWidth = String(totalMatches).length
 
 const getDeckName = (deckId: ThemeDeckId): string =>
   deckNames.get(deckId) ?? deckId
@@ -24,7 +28,7 @@ const formatMatchResult = (result: AiMatchResult): string => {
     : `未決着（${result.termination === 'turnLimit' ? 'ターン上限' : '行動上限'}）`
 
   return [
-    `[${String(result.matchNumber).padStart(2, '0')}/30]`,
+    `[${String(result.matchNumber).padStart(matchNumberWidth, '0')}/${totalMatches}]`,
     `${playerAName}（先） vs ${playerBName}（後）:`,
     resultText,
     `Turn ${result.turn}`,
@@ -34,7 +38,7 @@ const formatMatchResult = (result: AiMatchResult): string => {
 
 console.log('AIテーマデッキ総当たり戦')
 console.log(
-  `3組 × 先後2通り × ${DEFAULT_TOURNAMENT_GAMES_PER_SIDE}戦 = 30戦`,
+  `${pairingCount}組 × 先後2通り × ${DEFAULT_TOURNAMENT_GAMES_PER_SIDE}戦 = ${totalMatches}戦`,
 )
 console.log(
   `固定シード: ${DEFAULT_TOURNAMENT_SEED} / 未決着判定: ${DEFAULT_MATCH_TURN_LIMIT}ターン超過`,

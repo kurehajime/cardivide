@@ -3,7 +3,7 @@ import type { PlayerId } from '../types'
 import type { ThemeDeck, ThemeDeckId } from '../themeDecks'
 import { GameAI } from './GameAI'
 
-export const DEFAULT_TOURNAMENT_GAMES_PER_SIDE = 5
+export const DEFAULT_TOURNAMENT_GAMES_PER_SIDE = 10
 export const DEFAULT_TOURNAMENT_SEED = 20260816
 export const DEFAULT_MATCH_TURN_LIMIT = 200
 
@@ -89,7 +89,7 @@ const shuffleDeck = (deck: ThemeDeck, seed: number): string[] => {
 
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
     const swapIndex = Math.floor(random() * (index + 1))
-    ;[shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]]
+      ;[shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]]
   }
 
   return shuffled
