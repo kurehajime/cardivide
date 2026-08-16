@@ -1,11 +1,11 @@
-import { formatAbility, type Card, type EffectiveCreatureStats } from '../game'
+import { formatAbility, type Card, type CreatureStatModifier } from '../game'
 
 type CardViewProps = {
   card: Card | null
   compact?: boolean
   faceDown?: boolean
   label?: string
-  stats?: EffectiveCreatureStats
+  statModifier?: CreatureStatModifier
 }
 
 const COLOR_LABELS = {
@@ -32,7 +32,7 @@ const CardView = ({
   compact = false,
   faceDown = false,
   label,
-  stats,
+  statModifier,
 }: CardViewProps) => {
   if (!card || faceDown) {
     return (
@@ -45,9 +45,35 @@ const CardView = ({
 
   const colorClass = card.kind === 'spell' ? 'neutral' : card.color
   const colorLabel = card.kind === 'spell' ? '無' : COLOR_LABELS[card.color]
+  const hasAttackModifier = statModifier !== undefined && statModifier.attack !== 0
+  const hasDefenseModifier = statModifier !== undefined && statModifier.defense !== 0
+  const hasStatModifier = hasAttackModifier || hasDefenseModifier
+  const formatModifier = (value: number) => `${value > 0 ? '+' : ''}${value}`
 
   return (
-    <article className={`card-view card-${colorClass} ${compact ? 'card-compact' : ''}`}>
+    <article
+      className={`card-view card-${colorClass} ${compact ? 'card-compact' : ''} ${hasStatModifier ? 'card-with-stat-modifiers' : ''}`}
+    >
+      {hasStatModifier && (
+        <div className="card-stat-modifiers" aria-label="ステータス補正">
+          {hasAttackModifier && (
+            <span
+              className="card-stat-modifier card-stat-modifier-attack"
+              aria-label={`攻撃力補正 ${formatModifier(statModifier.attack)}`}
+            >
+              攻{formatModifier(statModifier.attack)}
+            </span>
+          )}
+          {hasDefenseModifier && (
+            <span
+              className="card-stat-modifier card-stat-modifier-defense"
+              aria-label={`防御力補正 ${formatModifier(statModifier.defense)}`}
+            >
+              防{formatModifier(statModifier.defense)}
+            </span>
+          )}
+        </div>
+      )}
       <header className="card-title-row">
         <span className="card-color-cost">
           <span className="card-color">{colorLabel}</span>
@@ -62,15 +88,15 @@ const CardView = ({
         <dl className="card-stats">
           <div>
             <dt>攻</dt>
-            <dd>{stats?.attack ?? card.attack}</dd>
+            <dd>{card.attack}</dd>
           </div>
           <div>
             <dt>防</dt>
-            <dd>{stats?.defense ?? card.defense}</dd>
+            <dd>{card.defense}</dd>
           </div>
           <div>
             <dt>進</dt>
-            <dd>{stats?.march ?? card.march}</dd>
+            <dd>{card.march}</dd>
           </div>
         </dl>
       )}

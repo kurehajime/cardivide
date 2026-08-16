@@ -64,10 +64,10 @@ const GameApp = () => {
   const playerAHand = playerA.hand.map((cardId) => state.cards[cardId])
   const playerBHand = playerB.hand.map((cardId) => state.cards[cardId])
   const boardGroups = GameManager.getBoardGroups(manager)
-  const creatureStats = Object.fromEntries(
+  const creatureStatModifiers = Object.fromEntries(
     state.board.creatures.map(({ cardId }) => [
       cardId,
-      GameManager.getCreatureStats(manager, cardId),
+      GameManager.getCreatureStatModifier(manager, cardId),
     ]),
   )
   const selectedSummonOptions =
@@ -197,7 +197,7 @@ const GameApp = () => {
             players={state.players}
             activePlayerId={state.activePlayerId}
             groups={boardGroups}
-            creatureStats={creatureStats}
+            creatureStatModifiers={creatureStatModifiers}
             summonOptions={selectedSummonOptions}
             activatedAbilities={activatedAbilities}
             canAttack={

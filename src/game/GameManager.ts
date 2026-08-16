@@ -8,6 +8,8 @@ import {
   getCrossedIndexes,
   getCreatureOwnerAt,
   getOpponentId,
+  isAdjacentInsertToAnchor,
+  isForwardInsertFromAnchor,
   isWholeGroup,
 } from './boardQueries'
 import { PLAYER_IDS } from './types'
@@ -18,6 +20,7 @@ import type {
   CardInstanceId,
   CreatureCard,
   CreatureInstance,
+  CreatureStatModifier,
   EffectiveBoardGroup,
   EffectiveCreatureStats,
   GameAction,
@@ -197,21 +200,28 @@ const getSummonOptionsForState = (
 
   return Array.from({ length: board.length + 1 }, (_, insertIndex) => {
     const requiredMarch = Math.min(
-      ...anchorIndexes.map((anchorIndex) => {
-        const crossedIndexes = getCrossedIndexes(
-          board.length,
-          ownerId,
-          anchorIndex,
-          insertIndex,
+      ...anchorIndexes
+        .filter(
+          (anchorIndex) =>
+            anchorIndex === null ||
+            isAdjacentInsertToAnchor(anchorIndex, insertIndex) ||
+            isForwardInsertFromAnchor(ownerId, anchorIndex, insertIndex),
         )
-        return crossedIndexes.reduce(
-          (distance, crossedIndex) =>
-            distance +
-            1 +
-            new CreatureRules(state, crossedIndex).getOpponentMarchCost(ownerId),
-          0,
-        )
-      }),
+        .map((anchorIndex) => {
+          const crossedIndexes = getCrossedIndexes(
+            board.length,
+            ownerId,
+            anchorIndex,
+            insertIndex,
+          )
+          return crossedIndexes.reduce(
+            (distance, crossedIndex) =>
+              distance +
+              1 +
+              new CreatureRules(state, crossedIndex).getOpponentMarchCost(ownerId),
+            0,
+          )
+        }),
     )
     const costModifier = board.reduce(
       (total, _, boardIndex) =>
@@ -494,6 +504,13 @@ export class GameManager {
     cardId: CardInstanceId,
   ): EffectiveCreatureStats {
     return CreatureRules.fromCardId(manager.state, cardId).getEffectiveStats()
+  }
+
+  static getCreatureStatModifier(
+    manager: GameManager,
+    cardId: CardInstanceId,
+  ): CreatureStatModifier {
+    return CreatureRules.fromCardId(manager.state, cardId).getPositionStatModifier()
   }
 
   static getBoardGroups(manager: GameManager): EffectiveBoardGroup[] {

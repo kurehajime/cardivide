@@ -176,6 +176,10 @@
   min-width: 0;
 }
 
+.board-slot > .card-view {
+  height: 100%;
+}
+
 .board-ability-actions {
   position: absolute;
   z-index: 1;
@@ -381,6 +385,7 @@
 }
 
 .card-view {
+  position: relative;
   min-height: 158px;
   display: grid;
   grid-template-rows: auto auto auto 1fr;
@@ -392,6 +397,45 @@
   color: #171a17;
   text-align: left;
   overflow: hidden;
+}
+
+.card-with-stat-modifiers {
+  padding-top: 42px;
+}
+
+.card-stat-modifiers {
+  position: absolute;
+  z-index: 1;
+  top: 5px;
+  right: 5px;
+  left: 5px;
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  pointer-events: none;
+}
+
+.card-stat-modifier {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 2px 5px rgb(20 24 21 / 28%);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.card-stat-modifier-attack {
+  background: rgb(165 66 53 / 72%);
+}
+
+.card-stat-modifier-defense {
+  background: rgb(55 105 168 / 72%);
 }
 
 .card-compact {

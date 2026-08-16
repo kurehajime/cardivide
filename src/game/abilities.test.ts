@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import { CreatureRules } from './CreatureRules'
 import { GameManager } from './GameManager'
-import { getCrossedIndexes } from './boardQueries'
+import {
+  getCrossedIndexes,
+  isAdjacentInsertToAnchor,
+  isForwardInsertFromAnchor,
+} from './boardQueries'
 import { CREATURE_CARDS } from './cards'
 import type {
   CardInstanceId,
@@ -105,10 +109,17 @@ const configureManager = (
 }
 
 describe('board march distance', () => {
-  it('counts every crossed card on either side of a creature anchor', () => {
+  it('counts crossed cards and only uses creature anchors toward the opponent', () => {
     expect(getCrossedIndexes(4, 'playerA', 2, 0)).toEqual([0, 1])
     expect(getCrossedIndexes(4, 'playerA', 1, 4)).toEqual([2, 3])
     expect(getCrossedIndexes(4, 'playerB', null, 1)).toEqual([1, 2, 3])
+    expect(isForwardInsertFromAnchor('playerA', 2, 2)).toBe(false)
+    expect(isForwardInsertFromAnchor('playerA', 2, 3)).toBe(true)
+    expect(isForwardInsertFromAnchor('playerB', 2, 2)).toBe(true)
+    expect(isForwardInsertFromAnchor('playerB', 2, 3)).toBe(false)
+    expect(isAdjacentInsertToAnchor(2, 2)).toBe(true)
+    expect(isAdjacentInsertToAnchor(2, 3)).toBe(true)
+    expect(isAdjacentInsertToAnchor(2, 1)).toBe(false)
   })
 })
 
@@ -137,6 +148,10 @@ describe('CreatureRules position modifiers', () => {
       attack: 4,
       defense: 2,
       march: 1,
+    })
+    expect(GameManager.getCreatureStatModifier(manager, loneWarrior)).toEqual({
+      attack: 2,
+      defense: 0,
     })
 
     const [assassin] = findCardIds(
@@ -256,6 +271,92 @@ describe('CreatureRules position modifiers', () => {
 })
 
 describe('summon modifiers', () => {
+  it('does not use an advanced creature as an anchor for a backward interruption', () => {
+    const initial = createTestManager()
+    const enemies = findCardIds(
+      initial.state,
+      'playerB',
+      'red-cost2-attack3-defense2-march1',
+      3,
+    )
+    const [advancedAlly] = findCardIds(
+      initial.state,
+      'playerA',
+      'green-cost2-attack2-defense3-march1',
+    )
+    const [summonCard] = findCardIds(
+      initial.state,
+      'playerA',
+      'red-cost2-attack3-defense2-march1',
+    )
+    let manager = configureManager(initial, {
+      board: [
+        { cardId: enemies[0] },
+        { cardId: enemies[1] },
+        { cardId: enemies[2] },
+        { cardId: advancedAlly },
+      ],
+      mana: { playerA: 2 },
+    })
+
+    expect(GameManager.getSummonOptions(manager, summonCard)[2]).toMatchObject({
+      requiredMarch: 2,
+      canReach: false,
+    })
+    expect(GameManager.getSummonOptions(manager, summonCard)[3]).toMatchObject({
+      requiredMarch: 0,
+      canReach: true,
+    })
+    expect(GameManager.getSummonOptions(manager, summonCard)[4]).toMatchObject({
+      requiredMarch: 0,
+      canReach: true,
+    })
+    expect(() => GameManager.summonCreature(manager, summonCard, 2)).toThrow(
+      /cannot be summoned at this position/,
+    )
+
+    const mirroredEnemies = findCardIds(
+      initial.state,
+      'playerA',
+      'red-cost2-attack3-defense2-march1',
+      3,
+    )
+    const [advancedAllyB] = findCardIds(
+      initial.state,
+      'playerB',
+      'green-cost2-attack2-defense3-march1',
+    )
+    const [summonCardB] = findCardIds(
+      initial.state,
+      'playerB',
+      'red-cost2-attack3-defense2-march1',
+    )
+    manager = configureManager(initial, {
+      board: [
+        { cardId: advancedAllyB },
+        { cardId: mirroredEnemies[0] },
+        { cardId: mirroredEnemies[1] },
+        { cardId: mirroredEnemies[2] },
+      ],
+      activePlayerId: 'playerB',
+      mana: { playerB: 2 },
+      handAdditions: [summonCardB],
+    })
+
+    expect(GameManager.getSummonOptions(manager, summonCardB)[2]).toMatchObject({
+      requiredMarch: 2,
+      canReach: false,
+    })
+    expect(GameManager.getSummonOptions(manager, summonCardB)[1]).toMatchObject({
+      requiredMarch: 0,
+      canReach: true,
+    })
+    expect(GameManager.getSummonOptions(manager, summonCardB)[0]).toMatchObject({
+      requiredMarch: 0,
+      canReach: true,
+    })
+  })
+
   it('adds capture to crossed march distance for both player directions', () => {
     const initial = createTestManager()
     const [captureB] = findCardIds(

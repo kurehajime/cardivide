@@ -7,7 +7,7 @@ import type {
   CardInstanceId,
   DamageMarker,
   EffectiveBoardGroup,
-  EffectiveCreatureStats,
+  CreatureStatModifier,
   PlayerId,
   PlayerState,
   SummonOption,
@@ -22,7 +22,7 @@ type BoardViewProps = {
   players: Record<PlayerState['id'], PlayerState>
   activePlayerId: PlayerId
   groups: EffectiveBoardGroup[]
-  creatureStats: Record<CardInstanceId, EffectiveCreatureStats>
+  creatureStatModifiers: Record<CardInstanceId, CreatureStatModifier>
   summonOptions?: SummonOption[]
   activatedAbilities?: ActivatedAbilityOption[]
   canAttack?: boolean
@@ -79,7 +79,7 @@ const BoardView = ({
   players,
   activePlayerId,
   groups,
-  creatureStats,
+  creatureStatModifiers,
   summonOptions = [],
   activatedAbilities = [],
   canAttack = false,
@@ -154,7 +154,7 @@ const BoardView = ({
                   <CardView
                     card={cards[creature.cardId].card}
                     compact
-                    stats={creatureStats[creature.cardId]}
+                    statModifier={creatureStatModifiers[creature.cardId]}
                   />
                   {(abilitiesByCardId.get(creature.cardId) ?? []).length > 0 && (
                     <div className="board-ability-actions">

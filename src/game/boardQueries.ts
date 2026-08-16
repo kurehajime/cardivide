@@ -179,6 +179,21 @@ export const isWholeGroup = (
       group.endIndex === endIndex,
   )
 
+export const isForwardInsertFromAnchor = (
+  ownerId: PlayerId,
+  anchorIndex: number,
+  insertIndex: number,
+): boolean =>
+  ownerId === 'playerA'
+    ? insertIndex > anchorIndex
+    : insertIndex <= anchorIndex
+
+export const isAdjacentInsertToAnchor = (
+  anchorIndex: number,
+  insertIndex: number,
+): boolean =>
+  insertIndex === anchorIndex || insertIndex === anchorIndex + 1
+
 export const getCrossedIndexes = (
   boardLength: number,
   ownerId: PlayerId,
