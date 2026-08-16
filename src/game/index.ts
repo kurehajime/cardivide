@@ -1,10 +1,17 @@
 export {
   AI_EVALUATION_PARAMETERS,
+  DEFAULT_MATCH_TURN_LIMIT,
+  DEFAULT_TOURNAMENT_GAMES_PER_SIDE,
+  DEFAULT_TOURNAMENT_SEED,
   GameAI,
   evaluateBase,
   evaluateBattleEntry,
   evaluateMainContinuation,
   getDeployableHandValue,
+  createRoundRobinSchedule,
+  playAiMatch,
+  runRoundRobinTournament,
+  summarizeTournament,
 } from './ai'
 export { GameManager, assertValidGameState } from './GameManager'
 export { CreatureRules, formatAbility } from './CreatureRules'
@@ -60,5 +67,13 @@ export type {
   SummonOption,
 } from './types'
 export type { DeckSummary } from './decks'
-export type { EvaluationBreakdown, HandPlayCandidate } from './ai'
+export type {
+  AiMatchResult,
+  DeckTournamentRecord,
+  EvaluationBreakdown,
+  HandPlayCandidate,
+  MatchTermination,
+  TournamentMatch,
+  TournamentSummary,
+} from './ai'
 export type { ThemeDeck, ThemeDeckId } from './themeDecks'
