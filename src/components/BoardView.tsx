@@ -37,6 +37,42 @@ type BoardPlayerProps = {
   damage: number | null
 }
 
+type SummonSlotState = 'available' | 'reachable' | 'unreachable'
+
+const getSummonSlotState = (option?: SummonOption): SummonSlotState | null => {
+  if (!option) {
+    return null
+  }
+  if (!option.canReach) {
+    return 'unreachable'
+  }
+  return option.affordable ? 'available' : 'reachable'
+}
+
+const getSummonSlotClassName = (option?: SummonOption, empty = false): string => {
+  const state = getSummonSlotState(option)
+  return [
+    'board-insert-slot',
+    empty ? 'board-insert-slot-empty' : '',
+    state ? `board-insert-slot-${state}` : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+}
+
+const getSummonSlotTitle = (option?: SummonOption): string | undefined => {
+  if (!option) {
+    return undefined
+  }
+  if (!option.canReach) {
+    return `進軍不可 / 必要進軍 ${option.requiredMarch}`
+  }
+  if (!option.affordable) {
+    return `進軍可能 / コスト ${option.effectiveCost}（マナ不足）`
+  }
+  return `進軍可能 / コスト ${option.effectiveCost}`
+}
+
 const BoardPlayer = ({ player, cards, damage }: BoardPlayerProps) => (
   <section className="board-player" aria-label={`${player.name} field`}>
     <dl className="board-player-stats">
@@ -93,6 +129,8 @@ const BoardView = ({
   const summonOptionByIndex = new Map(
     summonOptions.map((option) => [option.insertIndex, option]),
   )
+  const firstSummonOption = summonOptionByIndex.get(0)
+  const lastSummonOption = summonOptionByIndex.get(board.creatures.length)
   const abilitiesByCardId = new Map<CardInstanceId, ActivatedAbilityOption[]>()
   activatedAbilities.forEach((ability) => {
     abilitiesByCardId.set(ability.sourceCardId, [
@@ -116,10 +154,11 @@ const BoardView = ({
         {board.creatures.length === 0 ? (
           <div className="board-lane-grid" style={{ gridTemplateColumns }}>
             <button
-              className="board-insert-slot board-insert-slot-empty"
+              className={getSummonSlotClassName(firstSummonOption, true)}
+              data-summon-state={getSummonSlotState(firstSummonOption) ?? undefined}
               type="button"
-              disabled={!summonOptionByIndex.get(0)?.canSummon}
-              title={summonOptionByIndex.has(0) ? `コスト ${summonOptionByIndex.get(0)?.effectiveCost}` : undefined}
+              disabled={!firstSummonOption?.canSummon}
+              title={getSummonSlotTitle(firstSummonOption)}
               onClick={() => onInsertClick?.(0)}
             >
               配置
@@ -127,19 +166,18 @@ const BoardView = ({
           </div>
         ) : (
           <div className="board-lane-grid" style={{ gridTemplateColumns }}>
-            {board.creatures.map((creature, index) => (
-              <Fragment key={creature.cardId}>
+            {board.creatures.map((creature, index) => {
+              const summonOption = summonOptionByIndex.get(index)
+              return (
+                <Fragment key={creature.cardId}>
                 <button
                   key={`insert-${index}`}
-                  className="board-insert-slot"
+                  className={getSummonSlotClassName(summonOption)}
+                  data-summon-state={getSummonSlotState(summonOption) ?? undefined}
                   style={{ gridColumn: index * 2 + 1, gridRow: 2 }}
                   type="button"
-                  disabled={!summonOptionByIndex.get(index)?.canSummon}
-                  title={
-                    summonOptionByIndex.has(index)
-                      ? `コスト ${summonOptionByIndex.get(index)?.effectiveCost}`
-                      : undefined
-                  }
+                  disabled={!summonOption?.canSummon}
+                  title={getSummonSlotTitle(summonOption)}
                   onClick={() => onInsertClick?.(index)}
                 >
                   +
@@ -181,18 +219,16 @@ const BoardView = ({
                     </span>
                   )}
                 </motion.div>
-              </Fragment>
-            ))}
+                </Fragment>
+              )
+            })}
             <button
-              className="board-insert-slot"
+              className={getSummonSlotClassName(lastSummonOption)}
+              data-summon-state={getSummonSlotState(lastSummonOption) ?? undefined}
               style={{ gridColumn: board.creatures.length * 2 + 1, gridRow: 2 }}
               type="button"
-              disabled={!summonOptionByIndex.get(board.creatures.length)?.canSummon}
-              title={
-                summonOptionByIndex.has(board.creatures.length)
-                  ? `コスト ${summonOptionByIndex.get(board.creatures.length)?.effectiveCost}`
-                  : undefined
-              }
+              disabled={!lastSummonOption?.canSummon}
+              title={getSummonSlotTitle(lastSummonOption)}
               onClick={() => onInsertClick?.(board.creatures.length)}
             >
               +
