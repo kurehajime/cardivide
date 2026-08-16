@@ -153,6 +153,8 @@ export type PlayerState = {
   formation: CardInstanceId | null
 }
 
+export type GameDeckLists = Record<PlayerId, readonly string[]>
+
 export type GameState = {
   turn: number
   activePlayerId: PlayerId

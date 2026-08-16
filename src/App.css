@@ -1,3 +1,175 @@
+.setup-shell {
+  min-height: 100svh;
+  padding: 24px;
+  background: #e7ebdf;
+  color: #171a17;
+}
+
+.setup-header,
+.setup-panel {
+  width: min(920px, 100%);
+  margin-inline: auto;
+}
+
+.setup-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.setup-header h1 {
+  margin: 0;
+  font-size: 32px;
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.setup-header span {
+  color: #566158;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.setup-panel {
+  display: grid;
+  gap: 18px;
+  padding: 20px;
+  border: 1px solid #9aa596;
+  border-radius: 8px;
+  background: #fbfcf8;
+}
+
+.setup-deck-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.setup-deck-fieldset {
+  min-width: 0;
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid #c3cbc0;
+  border-radius: 8px;
+}
+
+.setup-deck-fieldset legend {
+  padding-inline: 6px;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.setup-select-label {
+  display: grid;
+  gap: 6px;
+  color: #4e594f;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.setup-select-label select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 36px 0 11px;
+  border: 1px solid #7f8b7c;
+  border-radius: 6px;
+  background: #fff;
+  color: #171a17;
+  font: inherit;
+  font-size: 14px;
+}
+
+.setup-select-label select:focus-visible {
+  outline: 3px solid #276fbf;
+  outline-offset: 2px;
+}
+
+.setup-deck-summary {
+  display: grid;
+  gap: 10px;
+  padding-top: 14px;
+  border-top: 1px solid #d6ddd0;
+}
+
+.setup-deck-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.setup-deck-heading strong {
+  font-size: 20px;
+}
+
+.setup-deck-heading span {
+  color: #59635a;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.setup-deck-colors {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.setup-deck-color {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.setup-color-swatch {
+  width: 14px;
+  height: 14px;
+  border: 1px solid rgb(23 26 23 / 35%);
+  border-radius: 3px;
+}
+
+.setup-color-red {
+  background: #b84c3e;
+}
+
+.setup-color-blue {
+  background: #3f73b8;
+}
+
+.setup-color-green {
+  background: #43815b;
+}
+
+.setup-deck-summary p {
+  min-height: 42px;
+  margin: 0;
+  color: #3d473f;
+  font-size: 13px;
+  line-height: 1.6;
+}
+
+.setup-start-button {
+  min-height: 44px;
+  justify-self: end;
+  padding: 0 24px;
+  border: 1px solid #2d3f38;
+  border-radius: 8px;
+  background: #26342f;
+  color: #f8fbf5;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.setup-start-button:focus-visible {
+  outline: 3px solid #276fbf;
+  outline-offset: 3px;
+}
+
 .game-shell {
   min-height: 100svh;
   display: grid;
@@ -68,6 +240,12 @@
 .game-action-button:focus-visible {
   outline: 3px solid #276fbf;
   outline-offset: 3px;
+}
+
+.game-action-secondary {
+  border-color: #788278;
+  background: #fbfcf8;
+  color: #354038;
 }
 
 .game-message {
@@ -612,6 +790,26 @@
 }
 
 @media (max-width: 720px) {
+  .setup-shell {
+    padding: 16px 12px;
+  }
+
+  .setup-header {
+    align-items: center;
+  }
+
+  .setup-deck-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .setup-panel {
+    padding: 14px;
+  }
+
+  .setup-start-button {
+    width: 100%;
+  }
+
   .game-shell {
     padding: 12px;
   }

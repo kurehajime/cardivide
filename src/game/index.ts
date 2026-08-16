@@ -19,8 +19,14 @@ export {
   STANDARD_DECK,
   STANDARD_DECK_LIST,
   STANDARD_DECK_SUMMARY,
+  createDeck,
   createStandardDeck,
 } from './decks'
+export {
+  THEME_DECK_BY_ID,
+  THEME_DECK_IDS,
+  THEME_DECKS,
+} from './themeDecks'
 export type {
   ActivatedAbilityOption,
   ActivatedAbilityResolution,
@@ -41,6 +47,7 @@ export type {
   EffectiveCreatureStats,
   FormationCard,
   GameAction,
+  GameDeckLists,
   GameState,
   KeepUpManaContribution,
   KeywordAbility,
@@ -54,3 +61,4 @@ export type {
 } from './types'
 export type { DeckSummary } from './decks'
 export type { EvaluationBreakdown, HandPlayCandidate } from './ai'
+export type { ThemeDeck, ThemeDeckId } from './themeDecks'

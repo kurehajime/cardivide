@@ -1,4 +1,4 @@
-import { createStandardDeck, STANDARD_DECK_LIST } from './decks'
+import { createDeck, STANDARD_DECK_LIST } from './decks'
 import {
   CreatureRules,
   getGreenFormationKeepUpMana,
@@ -25,6 +25,7 @@ import type {
   EffectiveBoardGroup,
   EffectiveCreatureStats,
   GameAction,
+  GameDeckLists,
   GameState,
   Phase,
   PlayerId,
@@ -36,6 +37,10 @@ const PHASE_ORDER = ['main', 'battle', 'cleanup'] satisfies Phase[]
 
 const PLAYER_BARRIER = 2
 const MAX_HAND_SIZE = 5
+const DEFAULT_DECK_LISTS: GameDeckLists = {
+  playerA: STANDARD_DECK_LIST,
+  playerB: STANDARD_DECK_LIST,
+}
 
 const getWinnerFromState = (state: GameState): PlayerId | null => {
   if (state.players.playerA.hp <= 0) {
@@ -110,9 +115,16 @@ const cloneGameState = (state: GameState): GameState => ({
     : null,
 })
 
-const createInitialState = (random: () => number): GameState => {
-  const playerACards = createStandardDeck('playerA', 1)
-  const playerBCards = createStandardDeck('playerB', playerACards.length + 1)
+const createInitialState = (
+  random: () => number,
+  deckLists: GameDeckLists,
+): GameState => {
+  const playerACards = createDeck(deckLists.playerA, 'playerA', 1)
+  const playerBCards = createDeck(
+    deckLists.playerB,
+    'playerB',
+    playerACards.length + 1,
+  )
   const cardInstances = [...playerACards, ...playerBCards]
   const cards = Object.fromEntries(cardInstances.map((instance) => [instance.id, instance]))
   const playerADeck = shuffleCardIds(
@@ -525,10 +537,10 @@ export const assertValidGameState = (state: GameState): void => {
     }
   })
 
-  const expectedCardCount = STANDARD_DECK_LIST.length * 2
-  if (locations.size !== expectedCardCount || Object.keys(state.cards).length !== expectedCardCount) {
+  const registeredCardCount = Object.keys(state.cards).length
+  if (locations.size !== registeredCardCount) {
     throw new Error(
-      `Game state must contain exactly ${expectedCardCount} card instances; found ${locations.size}.`,
+      `Game state contains ${registeredCardCount} registered cards but ${locations.size} cards in zones.`,
     )
   }
 }
@@ -540,8 +552,11 @@ export class GameManager {
     this.state = state
   }
 
-  static create(random: () => number = Math.random): GameManager {
-    return GameManager.from(resolveKeepUpState(createInitialState(random)))
+  static create(
+    random: () => number = Math.random,
+    deckLists: GameDeckLists = DEFAULT_DECK_LISTS,
+  ): GameManager {
+    return GameManager.from(resolveKeepUpState(createInitialState(random, deckLists)))
   }
 
   static from(state: GameState): GameManager {

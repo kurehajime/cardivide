@@ -94,15 +94,21 @@ const summarizeDeck = (deck: CardInstance[]): DeckSummary =>
     },
   )
 
-export const createStandardDeck = (
+export const createDeck = (
+  definitionIds: readonly string[],
   ownerId: PlayerId,
   firstCardId: CardInstanceId,
 ): CardInstance[] =>
-  STANDARD_DECK_LIST.map((definitionId, index) => ({
+  definitionIds.map((definitionId, index) => ({
     id: firstCardId + index,
     ownerId,
     card: getCardDefinition(definitionId),
   }))
+
+export const createStandardDeck = (
+  ownerId: PlayerId,
+  firstCardId: CardInstanceId,
+): CardInstance[] => createDeck(STANDARD_DECK_LIST, ownerId, firstCardId)
 
 export const STANDARD_DECK = createStandardDeck('playerA', 1)
 

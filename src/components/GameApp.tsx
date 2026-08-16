@@ -1,12 +1,15 @@
-import { useEffect, useReducer } from 'react'
+import { useEffect, useReducer, useState } from 'react'
 import { LayoutGroup, MotionConfig } from 'motion/react'
 import {
   GameAI,
   GameManager,
+  THEME_DECK_BY_ID,
   type ActivatedAbilityOption,
   type CardInstanceId,
+  type ThemeDeckId,
 } from '../game'
 import BoardView from './BoardView'
+import GameSetup from './GameSetup'
 import HandView from './HandView'
 import PhaseBar from './PhaseBar'
 
@@ -24,8 +27,23 @@ type GameUiAction =
   | { type: 'selectCard'; cardId: CardInstanceId }
   | { type: 'applyGameUpdate'; update: (manager: GameManager) => GameManager }
 
-const createGameUiState = (): GameUiState => ({
-  manager: GameManager.create(),
+type GameSelection = {
+  playerDeckId: ThemeDeckId
+  comDeckId: ThemeDeckId
+}
+
+type GameSessionProps = GameSelection & {
+  onChangeDecks: () => void
+}
+
+const createGameUiState = ({
+  playerDeckId,
+  comDeckId,
+}: GameSelection): GameUiState => ({
+  manager: GameManager.create(Math.random, {
+    playerA: THEME_DECK_BY_ID[playerDeckId].cardDefinitionIds,
+    playerB: THEME_DECK_BY_ID[comDeckId].cardDefinitionIds,
+  }),
   selectedCardId: null,
   message: null,
 })
@@ -53,10 +71,14 @@ const gameUiReducer = (state: GameUiState, action: GameUiAction): GameUiState =>
   }
 }
 
-const GameApp = () => {
+const GameSession = ({
+  playerDeckId,
+  comDeckId,
+  onChangeDecks,
+}: GameSessionProps) => {
   const [{ manager, selectedCardId, message }, dispatch] = useReducer(
     gameUiReducer,
-    undefined,
+    { playerDeckId, comDeckId },
     createGameUiState,
   )
   const { state } = manager
@@ -222,6 +244,13 @@ const GameApp = () => {
               >
                 布陣に配置
               </button>
+              <button
+                className="game-action-button game-action-secondary"
+                type="button"
+                onClick={onChangeDecks}
+              >
+                デッキ変更
+              </button>
             </div>
           </header>
           {(winnerMessage ?? message) && (
@@ -282,6 +311,35 @@ const GameApp = () => {
         </main>
       </LayoutGroup>
     </MotionConfig>
+  )
+}
+
+const GameApp = () => {
+  const [selection, setSelection] = useState<GameSelection>({
+    playerDeckId: 'red-blue-skirmish',
+    comDeckId: 'blue-green-intercept',
+  })
+  const [gameStarted, setGameStarted] = useState(false)
+
+  if (!gameStarted) {
+    return (
+      <GameSetup
+        initialPlayerDeckId={selection.playerDeckId}
+        initialComDeckId={selection.comDeckId}
+        onStart={(playerDeckId, comDeckId) => {
+          setSelection({ playerDeckId, comDeckId })
+          setGameStarted(true)
+        }}
+      />
+    )
+  }
+
+  return (
+    <GameSession
+      key={`${selection.playerDeckId}-${selection.comDeckId}`}
+      {...selection}
+      onChangeDecks={() => setGameStarted(false)}
+    />
   )
 }
 
