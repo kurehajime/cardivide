@@ -316,8 +316,8 @@ const GameSession = ({
 
 const GameApp = () => {
   const [selection, setSelection] = useState<GameSelection>({
-    playerDeckId: 'red-blue-skirmish',
-    comDeckId: 'blue-green-intercept',
+    playerDeckId: 'green-red-frontline',
+    comDeckId: 'red-blue-skirmish',
   })
   const [gameStarted, setGameStarted] = useState(false)
 
