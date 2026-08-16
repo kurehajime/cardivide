@@ -1,3 +1,4 @@
+import { motion } from 'motion/react'
 import type { CardInstance, CardInstanceId } from '../game'
 import CardView from './CardView'
 
@@ -25,8 +26,10 @@ const HandView = ({
   return (
     <section className={`hand-panel hand-panel-${position}`} aria-label={`${playerName} hand`}>
       {visibleCards.map((card, index) => (
-        <button
+        <motion.button
           key={card?.id ?? `empty-${index}`}
+          layout="position"
+          layoutId={card ? `card-${card.id}` : undefined}
           data-card-id={card?.id}
           className={`hand-card-button ${selectedCardId === card?.id ? 'hand-card-selected' : ''}`}
           type="button"
@@ -34,7 +37,7 @@ const HandView = ({
           onClick={() => card && onCardClick?.(card.id)}
         >
           <CardView card={card?.card ?? null} compact />
-        </button>
+        </motion.button>
       ))}
     </section>
   )

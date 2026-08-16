@@ -1,4 +1,5 @@
 import { useEffect, useReducer } from 'react'
+import { LayoutGroup, MotionConfig } from 'motion/react'
 import { GameManager, type CardInstanceId } from '../game'
 import BoardView from './BoardView'
 import HandView from './HandView'
@@ -122,76 +123,83 @@ const GameApp = () => {
   }
 
   return (
-    <main className="game-shell">
-      <header className="game-header">
-        <h1>Card Line</h1>
-        <div className="game-header-controls">
-          <PhaseBar phase={state.phase} turn={state.turn} activePlayer={currentPlayer.name} />
-          <button
-            className="game-action-button"
-            type="button"
-            disabled={state.phase === 'keepUp' || state.pendingCombat !== null}
-            onClick={handlePassPhase}
-          >
-            フェイズ進行
-          </button>
-          <button
-            className="game-action-button"
-            type="button"
-            disabled={state.phase !== 'main' || selectedCard?.card.kind !== 'formation'}
-            onClick={handlePlayFormation}
-          >
-            布陣に配置
-          </button>
-        </div>
-      </header>
-      {message && <div className="game-message">{message}</div>}
-      <HandView
-        cards={playerBHand}
-        playerName={playerB.name}
-        position="top"
-        disabled={state.activePlayerId !== 'playerB' || state.phase !== 'main'}
-        selectedCardId={state.activePlayerId === 'playerB' ? selectedCardId : null}
-        onCardClick={handleCardClick}
-      />
-      <section className="tabletop" aria-label="game table">
-        <PlayerPanel
-          player={playerA}
-          cards={state.cards}
-          align="left"
-          damage={playerADamage}
-        />
-        <BoardView
-          board={state.board}
-          cards={state.cards}
-          damageMarkers={state.pendingCombat?.damageMarkers ?? []}
-          players={state.players}
-          activePlayerId={state.activePlayerId}
-          canInsert={state.phase === 'main' && selectedCard?.card.kind === 'creature'}
-          canAttack={
-            ['main', 'battle'].includes(state.phase) &&
-            !state.hasAttackedThisTurn &&
-            state.pendingCombat === null
-          }
-          onInsertClick={handleInsertClick}
-          onGroupAttack={handleGroupAttack}
-        />
-        <PlayerPanel
-          player={playerB}
-          cards={state.cards}
-          align="right"
-          damage={playerBDamage}
-        />
-      </section>
-      <HandView
-        cards={playerAHand}
-        playerName={playerA.name}
-        position="bottom"
-        disabled={state.activePlayerId !== 'playerA' || state.phase !== 'main'}
-        selectedCardId={state.activePlayerId === 'playerA' ? selectedCardId : null}
-        onCardClick={handleCardClick}
-      />
-    </main>
+    <MotionConfig
+      reducedMotion="user"
+      transition={{ type: 'spring', stiffness: 420, damping: 36, mass: 0.8 }}
+    >
+      <LayoutGroup id="game-card-layout">
+        <main className="game-shell">
+          <header className="game-header">
+            <h1>Card Line</h1>
+            <div className="game-header-controls">
+              <PhaseBar phase={state.phase} turn={state.turn} activePlayer={currentPlayer.name} />
+              <button
+                className="game-action-button"
+                type="button"
+                disabled={state.phase === 'keepUp' || state.pendingCombat !== null}
+                onClick={handlePassPhase}
+              >
+                フェイズ進行
+              </button>
+              <button
+                className="game-action-button"
+                type="button"
+                disabled={state.phase !== 'main' || selectedCard?.card.kind !== 'formation'}
+                onClick={handlePlayFormation}
+              >
+                布陣に配置
+              </button>
+            </div>
+          </header>
+          {message && <div className="game-message">{message}</div>}
+          <HandView
+            cards={playerBHand}
+            playerName={playerB.name}
+            position="top"
+            disabled={state.activePlayerId !== 'playerB' || state.phase !== 'main'}
+            selectedCardId={state.activePlayerId === 'playerB' ? selectedCardId : null}
+            onCardClick={handleCardClick}
+          />
+          <section className="tabletop" aria-label="game table">
+            <PlayerPanel
+              player={playerA}
+              cards={state.cards}
+              align="left"
+              damage={playerADamage}
+            />
+            <BoardView
+              board={state.board}
+              cards={state.cards}
+              damageMarkers={state.pendingCombat?.damageMarkers ?? []}
+              players={state.players}
+              activePlayerId={state.activePlayerId}
+              canInsert={state.phase === 'main' && selectedCard?.card.kind === 'creature'}
+              canAttack={
+                ['main', 'battle'].includes(state.phase) &&
+                !state.hasAttackedThisTurn &&
+                state.pendingCombat === null
+              }
+              onInsertClick={handleInsertClick}
+              onGroupAttack={handleGroupAttack}
+            />
+            <PlayerPanel
+              player={playerB}
+              cards={state.cards}
+              align="right"
+              damage={playerBDamage}
+            />
+          </section>
+          <HandView
+            cards={playerAHand}
+            playerName={playerA.name}
+            position="bottom"
+            disabled={state.activePlayerId !== 'playerA' || state.phase !== 'main'}
+            selectedCardId={state.activePlayerId === 'playerA' ? selectedCardId : null}
+            onCardClick={handleCardClick}
+          />
+        </main>
+      </LayoutGroup>
+    </MotionConfig>
   )
 }
 

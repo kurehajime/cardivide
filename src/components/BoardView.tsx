@@ -1,4 +1,5 @@
 import { Fragment } from 'react'
+import { motion } from 'motion/react'
 import type {
   Board,
   CardInstance,
@@ -88,7 +89,7 @@ const BoardView = ({
   return (
     <section className="board-panel" aria-label="battlefield">
       <div className="board-endpoint">{players.playerA.name}</div>
-      <div className="board-lane-scroll">
+      <motion.div className="board-lane-scroll" layoutScroll>
         {board.creatures.length === 0 ? (
           <div className="board-lane-grid" style={{ gridTemplateColumns }}>
             <button
@@ -114,7 +115,9 @@ const BoardView = ({
                 >
                   +
                 </button>
-                <div
+                <motion.div
+                  layout
+                  layoutId={`card-${creature.cardId}`}
                   data-card-id={creature.cardId}
                   className="board-slot"
                   style={{ gridColumn: index * 2 + 2, gridRow: 2 }}
@@ -129,7 +132,7 @@ const BoardView = ({
                       {damageByCardId.get(creature.cardId)}
                     </span>
                   )}
-                </div>
+                </motion.div>
               </Fragment>
             ))}
             <button
@@ -158,7 +161,7 @@ const BoardView = ({
             ))}
           </div>
         )}
-      </div>
+      </motion.div>
       <div className="board-endpoint">{players.playerB.name}</div>
     </section>
   )
