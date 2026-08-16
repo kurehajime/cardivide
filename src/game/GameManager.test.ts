@@ -143,6 +143,18 @@ describe('GameManager card instance tracking', () => {
     expectCardsConserved(manager)
   })
 
+  it('gives the second player one starting mana and three after their first keep-up', () => {
+    let manager = createTestManager()
+
+    expect(manager.state.players.playerA.mana).toBe(2)
+    expect(manager.state.players.playerB.mana).toBe(1)
+
+    manager = passTurnWithoutAttack(manager)
+
+    expect(manager.state.activePlayerId).toBe('playerB')
+    expect(manager.state.players.playerB.mana).toBe(3)
+  })
+
   it('never grows either hand beyond five while turns advance', () => {
     let manager = createTestManager()
 

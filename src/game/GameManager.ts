@@ -37,6 +37,7 @@ const PHASE_ORDER = ['main', 'battle', 'cleanup'] satisfies Phase[]
 
 const PLAYER_BARRIER = 2
 const MAX_HAND_SIZE = 5
+const SECOND_PLAYER_STARTING_MANA = 1
 const DEFAULT_DECK_LISTS: GameDeckLists = {
   playerA: STANDARD_DECK_LIST,
   playerB: STANDARD_DECK_LIST,
@@ -76,11 +77,12 @@ const createPlayer = (
   id: PlayerId,
   name: string,
   deck: CardInstanceId[],
+  startingMana = 0,
 ): PlayerState => ({
   id,
   name,
   hp: 20,
-  mana: 0,
+  mana: startingMana,
   deck,
   hand: [],
   discard: [],
@@ -153,6 +155,7 @@ const createInitialState = (
         'playerB',
         'Player B',
         playerBDeck,
+        SECOND_PLAYER_STARTING_MANA,
       ),
     },
     board: {
