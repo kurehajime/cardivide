@@ -8,10 +8,13 @@ import {
 } from './tournament'
 
 describe('AI tournament', () => {
-  it('creates five games for both player orders of every deck pairing', () => {
+  it('creates the configured number of games for both player orders of every deck pairing', () => {
     const schedule = createRoundRobinSchedule(THEME_DECKS)
+    const pairingCount = (THEME_DECKS.length * (THEME_DECKS.length - 1)) / 2
 
-    expect(schedule).toHaveLength(300)
+    expect(schedule).toHaveLength(
+      pairingCount * 2 * DEFAULT_TOURNAMENT_GAMES_PER_SIDE,
+    )
     for (let firstIndex = 0; firstIndex < THEME_DECKS.length; firstIndex += 1) {
       for (let secondIndex = firstIndex + 1; secondIndex < THEME_DECKS.length; secondIndex += 1) {
         const firstDeckId = THEME_DECKS[firstIndex].id

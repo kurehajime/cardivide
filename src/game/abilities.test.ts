@@ -271,6 +271,34 @@ describe('CreatureRules position modifiers', () => {
 })
 
 describe('summon modifiers', () => {
+  it('keeps march zero creatures at the starting edge when they have no ally anchor', () => {
+    const initial = createTestManager()
+    const [enemy] = findCardIds(
+      initial.state,
+      'playerB',
+      'red-cost2-attack3-defense2-march1',
+    )
+    const [rootedCreature] = findCardIds(
+      initial.state,
+      'playerA',
+      'green-cost2-attack2-defense4-march0',
+    )
+    const manager = configureManager(initial, {
+      board: [{ cardId: enemy }],
+      mana: { playerA: 2 },
+      handAdditions: [rootedCreature],
+    })
+
+    expect(GameManager.getSummonOptions(manager, rootedCreature)[0]).toMatchObject({
+      requiredMarch: 0,
+      canReach: true,
+    })
+    expect(GameManager.getSummonOptions(manager, rootedCreature)[1]).toMatchObject({
+      requiredMarch: 1,
+      canReach: false,
+    })
+  })
+
   it('does not use an advanced creature as an anchor for a backward interruption', () => {
     const initial = createTestManager()
     const enemies = findCardIds(
@@ -357,12 +385,12 @@ describe('summon modifiers', () => {
     })
   })
 
-  it('adds capture to crossed march distance for both player directions', () => {
+  it('adds each capture value to crossed march distance for both player directions', () => {
     const initial = createTestManager()
     const [captureB] = findCardIds(
       initial.state,
       'playerB',
-      'green-cost2-attack1-defense3-march1-capture1',
+      'green-cost4-attack4-defense5-march1-capture2',
     )
     const [summonA] = findCardIds(
       initial.state,
@@ -374,14 +402,14 @@ describe('summon modifiers', () => {
       mana: { playerA: 2 },
     })
     expect(GameManager.getSummonOptions(manager, summonA)[1]).toMatchObject({
-      requiredMarch: 2,
+      requiredMarch: 3,
       canReach: false,
     })
 
     const [captureA] = findCardIds(
       initial.state,
       'playerA',
-      'green-cost2-attack1-defense3-march1-capture1',
+      'green-cost2-attack2-defense3-march0-capture1',
     )
     const [summonB] = findCardIds(
       initial.state,
