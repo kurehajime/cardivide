@@ -18,6 +18,7 @@ import type {
   ActivatedAbilityType,
   CardInstance,
   CardInstanceId,
+  CombatPreview,
   CreatureCard,
   CreatureInstance,
   CreatureStatModifier,
@@ -35,6 +36,22 @@ const PHASE_ORDER = ['main', 'battle', 'cleanup'] satisfies Phase[]
 
 const PLAYER_BARRIER = 2
 const MAX_HAND_SIZE = 5
+
+const getWinnerFromState = (state: GameState): PlayerId | null => {
+  if (state.players.playerA.hp <= 0) {
+    return 'playerB'
+  }
+  if (state.players.playerB.hp <= 0) {
+    return 'playerA'
+  }
+  return null
+}
+
+const assertGameInProgress = (state: GameState): void => {
+  if (getWinnerFromState(state) !== null) {
+    throw new Error('The game is already over.')
+  }
+}
 
 const shuffleCardIds = (
   cardIds: CardInstanceId[],
@@ -184,12 +201,12 @@ const discardCard = (player: PlayerState, cardId: CardInstanceId): PlayerState =
   }
 }
 
-const getSummonOptionsForState = (
+const getRequiredMarchForInsert = (
   state: GameState,
   ownerId: PlayerId,
-  card: CreatureCard,
-  availableMana: number,
-): SummonOption[] => {
+  insertIndex: number,
+  ignoreCapture: boolean,
+): number => {
   const board = state.board.creatures
   const anchorIndexes: Array<number | null> = [
     null,
@@ -198,30 +215,48 @@ const getSummonOptionsForState = (
     ),
   ]
 
-  return Array.from({ length: board.length + 1 }, (_, insertIndex) => {
-    const requiredMarch = Math.min(
-      ...anchorIndexes
-        .filter(
-          (anchorIndex) =>
-            anchorIndex === null ||
-            isAdjacentInsertToAnchor(anchorIndex, insertIndex) ||
-            isForwardInsertFromAnchor(ownerId, anchorIndex, insertIndex),
+  return Math.min(
+    ...anchorIndexes
+      .filter(
+        (anchorIndex) =>
+          anchorIndex === null ||
+          isAdjacentInsertToAnchor(anchorIndex, insertIndex) ||
+          isForwardInsertFromAnchor(ownerId, anchorIndex, insertIndex),
+      )
+      .map((anchorIndex) => {
+        const crossedIndexes = getCrossedIndexes(
+          board.length,
+          ownerId,
+          anchorIndex,
+          insertIndex,
         )
-        .map((anchorIndex) => {
-          const crossedIndexes = getCrossedIndexes(
-            board.length,
-            ownerId,
-            anchorIndex,
-            insertIndex,
-          )
-          return crossedIndexes.reduce(
-            (distance, crossedIndex) =>
-              distance +
-              1 +
-              new CreatureRules(state, crossedIndex).getOpponentMarchCost(ownerId),
-            0,
-          )
-        }),
+        return crossedIndexes.reduce(
+          (distance, crossedIndex) =>
+            distance +
+            1 +
+            (ignoreCapture
+              ? 0
+              : new CreatureRules(state, crossedIndex).getOpponentMarchCost(ownerId)),
+          0,
+        )
+      }),
+  )
+}
+
+const getSummonOptionsForState = (
+  state: GameState,
+  ownerId: PlayerId,
+  card: CreatureCard,
+  availableMana: number,
+): SummonOption[] => {
+  const board = state.board.creatures
+
+  return Array.from({ length: board.length + 1 }, (_, insertIndex) => {
+    const requiredMarch = getRequiredMarchForInsert(
+      state,
+      ownerId,
+      insertIndex,
+      false,
     )
     const costModifier = board.reduce(
       (total, _, boardIndex) =>
@@ -295,16 +330,14 @@ const refundDestroyedCreatures = (
   return nextPlayers
 }
 
-const resolveKeepUpState = (state: GameState): GameState => {
-  if (state.phase !== 'keepUp') {
-    throw new Error('Keep up can only be resolved during the keep up phase.')
-  }
-
-  const activePlayer = state.players[state.activePlayerId]
+const getKeepUpManaBonusForState = (
+  state: GameState,
+  playerId: PlayerId,
+): number => {
   const manaByStackKey = new Map<string, number>()
   state.board.creatures.forEach((_, boardIndex) => {
     const rules = new CreatureRules(state, boardIndex)
-    if (rules.ownerId !== activePlayer.id) {
+    if (rules.ownerId !== playerId) {
       return
     }
     rules.getKeepUpManaModifier().forEach(({ amount, stackKey }) => {
@@ -315,15 +348,53 @@ const resolveKeepUpState = (state: GameState): GameState => {
     (total, amount) => total + amount,
     0,
   )
-  const formationMana = getGreenFormationKeepUpMana(state, activePlayer.id)
+  return abilityMana + getGreenFormationKeepUpMana(state, playerId)
+}
+
+const resolveKeepUpState = (state: GameState): GameState => {
+  if (state.phase !== 'keepUp') {
+    throw new Error('Keep up can only be resolved during the keep up phase.')
+  }
+
+  const activePlayer = state.players[state.activePlayerId]
+  const bonusMana = getKeepUpManaBonusForState(state, activePlayer.id)
   const nextPlayer = {
     ...drawUpTo(activePlayer, getKeepUpHandSize(state)),
-    mana: activePlayer.mana + 2 + abilityMana + formationMana,
+    mana: activePlayer.mana + 2 + bonusMana,
   }
 
   return {
     ...replacePlayer(state, nextPlayer),
     phase: 'main',
+  }
+}
+
+const resolvePendingCombatState = (state: GameState): GameState => {
+  const { pendingCombat } = state
+  if (!pendingCombat) {
+    throw new Error('There are no combat results to finish resolving.')
+  }
+
+  const destroyedCardIds = new Set(pendingCombat.destroyedCardIds)
+  const destroyedCreatures = state.board.creatures.filter(({ cardId }) =>
+    destroyedCardIds.has(cardId),
+  )
+  const nextPlayers = refundDestroyedCreatures(state, destroyedCreatures)
+  const defendingPlayer = nextPlayers[pendingCombat.defendingPlayerId]
+  nextPlayers[pendingCombat.defendingPlayerId] = {
+    ...defendingPlayer,
+    hp: defendingPlayer.hp - pendingCombat.playerDamage,
+  }
+
+  return {
+    ...state,
+    players: nextPlayers,
+    board: {
+      creatures: state.board.creatures.filter(
+        ({ cardId }) => !destroyedCardIds.has(cardId),
+      ),
+    },
+    pendingCombat: null,
   }
 }
 
@@ -438,8 +509,8 @@ export const assertValidGameState = (state: GameState): void => {
       }
       destroyedCardIds.add(cardId)
     })
-  } else if (state.hasAttackedThisTurn) {
-    throw new Error('A completed attack must have pending combat results.')
+  } else if (state.hasAttackedThisTurn && state.phase !== 'battle') {
+    throw new Error('A resolved attack must remain in the battle phase.')
   }
 
   Object.entries(state.cards).forEach(([registryId, instance]) => {
@@ -477,6 +548,34 @@ export class GameManager {
     const clonedState = cloneGameState(state)
     assertValidGameState(clonedState)
     return new GameManager(clonedState)
+  }
+
+  static getWinner(manager: GameManager): PlayerId | null {
+    return getWinnerFromState(manager.state)
+  }
+
+  static getKeepUpManaBonus(manager: GameManager, playerId: PlayerId): number {
+    return getKeepUpManaBonusForState(manager.state, playerId)
+  }
+
+  static countReachableSummonPositions(
+    manager: GameManager,
+    playerId: PlayerId,
+    march: number,
+    ignoreCapture = false,
+  ): number {
+    return Array.from(
+      { length: manager.state.board.creatures.length + 1 },
+      (_, insertIndex) => insertIndex,
+    ).filter(
+      (insertIndex) =>
+        getRequiredMarchForInsert(
+          manager.state,
+          playerId,
+          insertIndex,
+          ignoreCapture,
+        ) <= march,
+    ).length
   }
 
   static setPhase(manager: GameManager, phase: Phase): GameManager {
@@ -564,6 +663,85 @@ export class GameManager {
     )
   }
 
+  static getLegalMainActions(manager: GameManager): GameAction[] {
+    if (
+      manager.state.phase !== 'main' ||
+      manager.state.pendingCombat !== null ||
+      GameManager.getWinner(manager) !== null
+    ) {
+      return []
+    }
+
+    const activePlayer = GameManager.getCurrentPlayer(manager)
+    const handActions = activePlayer.hand.flatMap((cardId): GameAction[] => {
+      const card = getCardInstance(manager.state, cardId).card
+      if (card.kind === 'creature') {
+        return GameManager.getSummonOptions(manager, cardId)
+          .filter(({ canSummon }) => canSummon)
+          .map(({ insertIndex }) => ({ type: 'summonCreature', cardId, insertIndex }))
+      }
+      if (!GameManager.isCardPlayable(manager, cardId)) {
+        return []
+      }
+      return card.kind === 'formation'
+        ? [{ type: 'playFormation', cardId }]
+        : [{ type: 'playSpell', cardId }]
+    })
+    const abilityActions = GameManager.getActivatedAbilities(manager).flatMap(
+      (option): GameAction[] =>
+        option.enabled
+          ? [{
+              type: 'activateAbility',
+              sourceCardId: option.sourceCardId,
+              abilityType: option.abilityType,
+            }]
+          : [],
+    )
+
+    return [...handActions, ...abilityActions]
+  }
+
+  static getLegalBattleActions(manager: GameManager): GameAction[] {
+    if (
+      manager.state.phase !== 'battle' ||
+      manager.state.hasAttackedThisTurn ||
+      manager.state.pendingCombat !== null ||
+      GameManager.getWinner(manager) !== null
+    ) {
+      return []
+    }
+
+    return collectBoardGroups(manager.state).flatMap((group): GameAction[] =>
+      group.ownerId === manager.state.activePlayerId
+        ? [{
+            type: 'attackGroup',
+            startIndex: group.startIndex,
+            endIndex: group.endIndex,
+          }]
+        : [],
+    )
+  }
+
+  static getLegalActions(manager: GameManager): GameAction[] {
+    if (GameManager.getWinner(manager) !== null) {
+      return []
+    }
+    if (manager.state.pendingCombat !== null) {
+      return [{ type: 'finishCombat' }]
+    }
+
+    switch (manager.state.phase) {
+      case 'keepUp':
+        return [{ type: 'resolveKeepUp' }]
+      case 'main':
+        return [...GameManager.getLegalMainActions(manager), { type: 'passPhase' }]
+      case 'battle':
+        return [...GameManager.getLegalBattleActions(manager), { type: 'passPhase' }]
+      case 'cleanup':
+        return [{ type: 'passPhase' }]
+    }
+  }
+
   static applyAction(manager: GameManager, action: GameAction): GameManager {
     switch (action.type) {
       case 'resolveKeepUp':
@@ -592,10 +770,12 @@ export class GameManager {
   }
 
   static resolveKeepUp(manager: GameManager): GameManager {
+    assertGameInProgress(manager.state)
     return GameManager.from(resolveKeepUpState(manager.state))
   }
 
   static passPhase(manager: GameManager): GameManager {
+    assertGameInProgress(manager.state)
     if (manager.state.pendingCombat) {
       throw new Error('Combat results must finish resolving before the phase can advance.')
     }
@@ -624,6 +804,7 @@ export class GameManager {
     cardId: CardInstanceId,
     insertIndex: number,
   ): GameManager {
+    assertGameInProgress(manager.state)
     if (manager.state.phase !== 'main') {
       throw new Error('Creatures can only be summoned during the main phase.')
     }
@@ -671,6 +852,7 @@ export class GameManager {
   }
 
   static playFormation(manager: GameManager, cardId: CardInstanceId): GameManager {
+    assertGameInProgress(manager.state)
     if (manager.state.phase !== 'main') {
       throw new Error('Formations can only be played during the main phase.')
     }
@@ -703,6 +885,7 @@ export class GameManager {
   }
 
   static playSpell(manager: GameManager, cardId: CardInstanceId): GameManager {
+    assertGameInProgress(manager.state)
     if (manager.state.phase !== 'main') {
       throw new Error('Spells can only be played during the main phase.')
     }
@@ -730,6 +913,7 @@ export class GameManager {
   }
 
   static attackGroup(manager: GameManager, startIndex: number, endIndex: number): GameManager {
+    assertGameInProgress(manager.state)
     if (manager.state.phase !== 'main' && manager.state.phase !== 'battle') {
       throw new Error('Groups can only attack during the main or battle phase.')
     }
@@ -846,34 +1030,42 @@ export class GameManager {
     })
   }
 
-  static finishCombat(manager: GameManager): GameManager {
-    const { pendingCombat } = manager.state
+  static previewCombat(
+    manager: GameManager,
+    startIndex: number,
+    endIndex: number,
+  ): CombatPreview {
+    const attackerId = manager.state.activePlayerId
+    const pendingManager = GameManager.attackGroup(manager, startIndex, endIndex)
+    const pendingCombat = pendingManager.state.pendingCombat
     if (!pendingCombat) {
-      throw new Error('There are no combat results to finish resolving.')
+      throw new Error('Combat preview did not produce combat results.')
     }
 
-    const destroyedCardIds = new Set(pendingCombat.destroyedCardIds)
-    const destroyedCreatures = manager.state.board.creatures.filter(({ cardId }) =>
-      destroyedCardIds.has(cardId),
-    )
-    const nextPlayers = refundDestroyedCreatures(manager.state, destroyedCreatures)
-    const defendingPlayer = nextPlayers[pendingCombat.defendingPlayerId]
-    nextPlayers[pendingCombat.defendingPlayerId] = {
-      ...defendingPlayer,
-      hp: defendingPlayer.hp - pendingCombat.playerDamage,
-    }
-
-    return GameManager.from(
-      endTurnState({
-        ...manager.state,
-        players: nextPlayers,
-        board: {
-          creatures: manager.state.board.creatures.filter(
-            ({ cardId }) => !destroyedCardIds.has(cardId),
-          ),
-        },
-        pendingCombat: null,
+    const resolvedState = resolvePendingCombatState(pendingManager.state)
+    const refundedMana = Object.fromEntries(
+      PLAYER_IDS.flatMap((playerId) => {
+        const refund = resolvedState.players[playerId].mana - manager.state.players[playerId].mana
+        return refund > 0 ? [[playerId, refund]] : []
       }),
+    ) as Partial<Record<PlayerId, number>>
+
+    return {
+      attackerId,
+      attackingGroup: { startIndex, endIndex },
+      destroyedCardIds: [...pendingCombat.destroyedCardIds],
+      refundedMana,
+      playerDamage: pendingCombat.playerDamage,
+      nextState: GameManager.from(resolvedState).state,
+    }
+  }
+
+  static finishCombat(manager: GameManager): GameManager {
+    const resolvedState = resolvePendingCombatState(manager.state)
+    return GameManager.from(
+      getWinnerFromState(resolvedState) === null
+        ? endTurnState(resolvedState)
+        : resolvedState,
     )
   }
 
@@ -882,6 +1074,7 @@ export class GameManager {
     sourceCardId: CardInstanceId,
     abilityType: ActivatedAbilityType,
   ): GameManager {
+    assertGameInProgress(manager.state)
     const rules = CreatureRules.fromCardId(manager.state, sourceCardId)
     const option = rules
       .getActivatedActions()
@@ -912,6 +1105,7 @@ export class GameManager {
   }
 
   static discardFromHand(manager: GameManager, cardId: CardInstanceId): GameManager {
+    assertGameInProgress(manager.state)
     if (manager.state.pendingCombat) {
       throw new Error('Cards cannot be discarded while combat is resolving.')
     }

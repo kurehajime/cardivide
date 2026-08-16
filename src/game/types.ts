@@ -129,6 +129,15 @@ export type PendingCombat = {
   playerDamage: number
 }
 
+export type CombatPreview = {
+  attackerId: PlayerId
+  attackingGroup: { startIndex: number; endIndex: number }
+  destroyedCardIds: CardInstanceId[]
+  refundedMana: Partial<Record<PlayerId, number>>
+  playerDamage: number
+  nextState: GameState
+}
+
 export type Board = {
   creatures: CreatureInstance[]
 }

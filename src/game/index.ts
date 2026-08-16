@@ -1,4 +1,11 @@
-export { GameAI } from './GameAI'
+export {
+  AI_EVALUATION_PARAMETERS,
+  GameAI,
+  evaluateBase,
+  evaluateBattleEntry,
+  evaluateMainContinuation,
+  getDeployableHandValue,
+} from './ai'
 export { GameManager, assertValidGameState } from './GameManager'
 export { CreatureRules, formatAbility } from './CreatureRules'
 export {
@@ -25,6 +32,7 @@ export type {
   CardInstance,
   CardInstanceId,
   CardKind,
+  CombatPreview,
   CreatureCard,
   CreatureInstance,
   CreatureStatModifier,
@@ -45,3 +53,4 @@ export type {
   SummonOption,
 } from './types'
 export type { DeckSummary } from './decks'
+export type { EvaluationBreakdown, HandPlayCandidate } from './ai'
