@@ -31,6 +31,46 @@ type BoardGroup = {
   defense: number
 }
 
+type BoardPlayerProps = {
+  player: PlayerState
+  cards: Record<CardInstanceId, CardInstance>
+  damage: number | null
+}
+
+const BoardPlayer = ({ player, cards, damage }: BoardPlayerProps) => (
+  <section className="board-player" aria-label={`${player.name} field`}>
+    <dl className="board-player-stats">
+      <div>
+        <dt>HP</dt>
+        <dd>{player.hp}</dd>
+      </div>
+      <div>
+        <dt>Mana</dt>
+        <dd>{player.mana}</dd>
+      </div>
+    </dl>
+    <div className="board-endpoint" data-player-id={player.id}>
+      {player.name}
+      {damage !== null && (
+        <span
+          className="damage-marker player-damage-marker"
+          role="status"
+          aria-label={`プレイヤーに${damage}ダメージ`}
+        >
+          {damage}
+        </span>
+      )}
+    </div>
+    <div className="board-formation" aria-label={`${player.name} formation`}>
+      <CardView
+        card={player.formation === null ? null : cards[player.formation].card}
+        compact
+        label="布陣"
+      />
+    </div>
+  </section>
+)
+
 const collectGroups = (
   board: Board,
   cards: Record<CardInstanceId, CardInstance>,
@@ -90,18 +130,11 @@ const BoardView = ({
 
   return (
     <section className="board-panel" aria-label="battlefield">
-      <div className="board-endpoint" data-player-id="playerA">
-        {players.playerA.name}
-        {playerDamageMarker?.playerId === 'playerA' && (
-          <span
-            className="damage-marker player-damage-marker"
-            role="status"
-            aria-label={`プレイヤーに${playerDamageMarker.damage}ダメージ`}
-          >
-            {playerDamageMarker.damage}
-          </span>
-        )}
-      </div>
+      <BoardPlayer
+        player={players.playerA}
+        cards={cards}
+        damage={playerDamageMarker?.playerId === 'playerA' ? playerDamageMarker.damage : null}
+      />
       <motion.div className="board-lane-scroll" layoutScroll>
         {board.creatures.length === 0 ? (
           <div className="board-lane-grid" style={{ gridTemplateColumns }}>
@@ -175,18 +208,11 @@ const BoardView = ({
           </div>
         )}
       </motion.div>
-      <div className="board-endpoint" data-player-id="playerB">
-        {players.playerB.name}
-        {playerDamageMarker?.playerId === 'playerB' && (
-          <span
-            className="damage-marker player-damage-marker"
-            role="status"
-            aria-label={`プレイヤーに${playerDamageMarker.damage}ダメージ`}
-          >
-            {playerDamageMarker.damage}
-          </span>
-        )}
-      </div>
+      <BoardPlayer
+        player={players.playerB}
+        cards={cards}
+        damage={playerDamageMarker?.playerId === 'playerB' ? playerDamageMarker.damage : null}
+      />
     </section>
   )
 }

@@ -4,7 +4,6 @@ import { GameManager, type CardInstanceId } from '../game'
 import BoardView from './BoardView'
 import HandView from './HandView'
 import PhaseBar from './PhaseBar'
-import PlayerPanel from './PlayerPanel'
 
 const COMBAT_EFFECT_DURATION_MS = 500
 
@@ -155,35 +154,33 @@ const GameApp = () => {
             cards={playerBHand}
             playerName={playerB.name}
             position="top"
+            availableMana={playerB.mana}
             active={state.activePlayerId === 'playerB'}
             disabled={state.activePlayerId !== 'playerB' || state.phase !== 'main'}
             selectedCardId={state.activePlayerId === 'playerB' ? selectedCardId : null}
             onCardClick={handleCardClick}
           />
-          <section className="tabletop" aria-label="game table">
-            <PlayerPanel player={playerA} cards={state.cards} align="left" />
-            <BoardView
-              board={state.board}
-              cards={state.cards}
-              damageMarkers={state.pendingCombat?.damageMarkers ?? []}
-              playerDamageMarker={playerDamageMarker}
-              players={state.players}
-              activePlayerId={state.activePlayerId}
-              canInsert={state.phase === 'main' && selectedCard?.card.kind === 'creature'}
-              canAttack={
-                ['main', 'battle'].includes(state.phase) &&
-                !state.hasAttackedThisTurn &&
-                state.pendingCombat === null
-              }
-              onInsertClick={handleInsertClick}
-              onGroupAttack={handleGroupAttack}
-            />
-            <PlayerPanel player={playerB} cards={state.cards} align="right" />
-          </section>
+          <BoardView
+            board={state.board}
+            cards={state.cards}
+            damageMarkers={state.pendingCombat?.damageMarkers ?? []}
+            playerDamageMarker={playerDamageMarker}
+            players={state.players}
+            activePlayerId={state.activePlayerId}
+            canInsert={state.phase === 'main' && selectedCard?.card.kind === 'creature'}
+            canAttack={
+              ['main', 'battle'].includes(state.phase) &&
+              !state.hasAttackedThisTurn &&
+              state.pendingCombat === null
+            }
+            onInsertClick={handleInsertClick}
+            onGroupAttack={handleGroupAttack}
+          />
           <HandView
             cards={playerAHand}
             playerName={playerA.name}
             position="bottom"
+            availableMana={playerA.mana}
             active={state.activePlayerId === 'playerA'}
             disabled={state.activePlayerId !== 'playerA' || state.phase !== 'main'}
             selectedCardId={state.activePlayerId === 'playerA' ? selectedCardId : null}

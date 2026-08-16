@@ -6,6 +6,7 @@ type HandViewProps = {
   cards: CardInstance[]
   playerName: string
   position: 'top' | 'bottom'
+  availableMana: number
   active?: boolean
   disabled?: boolean
   selectedCardId?: CardInstanceId | null
@@ -18,6 +19,7 @@ const HandView = ({
   cards,
   playerName,
   position,
+  availableMana,
   active = false,
   disabled = false,
   selectedCardId = null,
@@ -30,20 +32,32 @@ const HandView = ({
       className={`hand-panel hand-panel-${position} ${active ? 'hand-panel-active' : ''}`}
       aria-label={`${playerName} hand`}
     >
-      {visibleCards.map((card, index) => (
-        <motion.button
-          key={card?.id ?? `empty-${index}`}
-          layout="position"
-          layoutId={card ? `card-${card.id}` : undefined}
-          data-card-id={card?.id}
-          className={`hand-card-button ${selectedCardId === card?.id ? 'hand-card-selected' : ''}`}
-          type="button"
-          disabled={!card || disabled}
-          onClick={() => card && onCardClick?.(card.id)}
-        >
-          <CardView card={card?.card ?? null} compact />
-        </motion.button>
-      ))}
+      {visibleCards.map((card, index) => {
+        const unaffordable = card !== null && card.card.cost > availableMana
+        const cardClassName = [
+          'hand-card-button',
+          unaffordable ? 'hand-card-unaffordable' : '',
+          selectedCardId === card?.id ? 'hand-card-selected' : '',
+        ]
+          .filter(Boolean)
+          .join(' ')
+
+        return (
+          <motion.button
+            key={card?.id ?? `empty-${index}`}
+            layout="position"
+            layoutId={card ? `card-${card.id}` : undefined}
+            data-card-id={card?.id}
+            className={cardClassName}
+            type="button"
+            title={unaffordable ? 'マナ不足' : undefined}
+            disabled={!card || disabled || unaffordable}
+            onClick={() => card && onCardClick?.(card.id)}
+          >
+            <CardView card={card?.card ?? null} compact />
+          </motion.button>
+        )
+      })}
     </section>
   )
 }
