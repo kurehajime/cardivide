@@ -484,7 +484,7 @@ describe('keep-up mana abilities', () => {
     const [formation] = findCardIds(
       initial.state,
       'playerA',
-      'green-cost4-formation',
+      'green-cost3-formation',
     )
     let manager = configureManager(initial, {
       board: [
@@ -523,7 +523,7 @@ describe('formation creature effects', () => {
     const [redFormation] = findCardIds(
       initial.state,
       'playerA',
-      'red-cost4-formation',
+      'red-cost3-formation',
     )
     let manager = configureManager(initial, {
       board: [
@@ -552,7 +552,7 @@ describe('formation creature effects', () => {
     const [blueFormation] = findCardIds(
       initial.state,
       'playerA',
-      'blue-cost4-formation',
+      'blue-cost3-formation',
     )
     manager = configureManager(initial, {
       board: [
@@ -575,7 +575,7 @@ describe('formation creature effects', () => {
     const [greenFormation] = findCardIds(
       initial.state,
       'playerA',
-      'green-cost4-formation',
+      'green-cost3-formation',
     )
     manager = configureManager(initial, {
       board: [
@@ -634,12 +634,12 @@ describe('combat abilities', () => {
     const [attacker] = findCardIds(
       initial.state,
       'playerA',
-      'red-cost5-attack7-defense6-march3-vanish',
+      'red-cost5-attack7-defense5-march2-vanish',
     )
     const [vanishingDefender] = findCardIds(
       initial.state,
       'playerB',
-      'blue-cost5-attack4-defense6-march4-vanish',
+      'blue-cost5-attack5-defense6-march4-vanish',
     )
     let manager = configureManager(initial, {
       board: [{ cardId: attacker }, { cardId: vanishingDefender }],

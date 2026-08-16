@@ -26,9 +26,9 @@ import type {
   PlayerId,
 } from './types'
 
-const RED_FORMATION_ID = 'red-cost4-formation'
-const BLUE_FORMATION_ID = 'blue-cost4-formation'
-const GREEN_FORMATION_ID = 'green-cost4-formation'
+const RED_FORMATION_ID = 'red-cost3-formation'
+const BLUE_FORMATION_ID = 'blue-cost3-formation'
+const GREEN_FORMATION_ID = 'green-cost3-formation'
 const NO_STAT_MODIFIER: CreatureStatModifier = { attack: 0, defense: 0 }
 
 type AbilityByType<T extends KeywordAbilityType> = Extract<KeywordAbility, { type: T }>
