@@ -1,15 +1,31 @@
 import { createStandardDeck, STANDARD_DECK_LIST } from './decks'
+import {
+  CreatureRules,
+  getGreenFormationKeepUpMana,
+} from './CreatureRules'
+import {
+  collectBoardGroups,
+  getCrossedIndexes,
+  getCreatureOwnerAt,
+  getOpponentId,
+  isWholeGroup,
+} from './boardQueries'
 import { PLAYER_IDS } from './types'
 import type {
+  ActivatedAbilityOption,
+  ActivatedAbilityType,
   CardInstance,
   CardInstanceId,
   CreatureCard,
   CreatureInstance,
+  EffectiveBoardGroup,
+  EffectiveCreatureStats,
   GameAction,
   GameState,
   Phase,
   PlayerId,
   PlayerState,
+  SummonOption,
 } from './types'
 
 const PHASE_ORDER = ['main', 'battle', 'cleanup'] satisfies Phase[]
@@ -30,9 +46,6 @@ const shuffleCardIds = (
 
   return shuffled
 }
-
-const getOpponentId = (playerId: PlayerId): PlayerId =>
-  playerId === 'playerA' ? 'playerB' : 'playerA'
 
 const createPlayer = (
   id: PlayerId,
@@ -135,14 +148,6 @@ const getCardInstance = (state: GameState, cardId: CardInstanceId): CardInstance
   return instance
 }
 
-const getCreatureCard = (state: GameState, creature: CreatureInstance): CreatureCard => {
-  const card = getCardInstance(state, creature.cardId).card
-  if (card.kind !== 'creature') {
-    throw new Error(`Card instance ${creature.cardId} on the board is not a creature.`)
-  }
-  return card
-}
-
 const getCreatureOwner = (state: GameState, creature: CreatureInstance): PlayerId =>
   getCardInstance(state, creature.cardId).ownerId
 
@@ -176,56 +181,60 @@ const discardCard = (player: PlayerState, cardId: CardInstanceId): PlayerState =
   }
 }
 
-const canInsertCreature = (
+const getSummonOptionsForState = (
   state: GameState,
   ownerId: PlayerId,
   card: CreatureCard,
-  insertIndex: number,
-): boolean => {
+  availableMana: number,
+): SummonOption[] => {
   const board = state.board.creatures
-  if (insertIndex < 0 || insertIndex > board.length) {
-    return false
-  }
+  const anchorIndexes: Array<number | null> = [
+    null,
+    ...board.flatMap((_, index) =>
+      getCreatureOwnerAt(state, index) === ownerId ? [index] : [],
+    ),
+  ]
 
-  if (ownerId === 'playerA' && insertIndex <= card.march) {
-    return true
-  }
-  if (ownerId === 'playerB' && board.length - insertIndex <= card.march) {
-    return true
-  }
+  return Array.from({ length: board.length + 1 }, (_, insertIndex) => {
+    const requiredMarch = Math.min(
+      ...anchorIndexes.map((anchorIndex) => {
+        const crossedIndexes = getCrossedIndexes(
+          board.length,
+          ownerId,
+          anchorIndex,
+          insertIndex,
+        )
+        return crossedIndexes.reduce(
+          (distance, crossedIndex) =>
+            distance +
+            1 +
+            new CreatureRules(state, crossedIndex).getOpponentMarchCost(ownerId),
+          0,
+        )
+      }),
+    )
+    const costModifier = board.reduce(
+      (total, _, boardIndex) =>
+        total +
+        new CreatureRules(state, boardIndex).getSummonCostModifier(
+          ownerId,
+          insertIndex,
+        ),
+      0,
+    )
+    const effectiveCost = Math.max(0, card.cost + costModifier)
+    const canReach = requiredMarch <= card.march
+    const affordable = effectiveCost <= availableMana
 
-  return board.some((creature, index) => {
-    if (getCreatureOwner(state, creature) !== ownerId) {
-      return false
+    return {
+      insertIndex,
+      requiredMarch,
+      effectiveCost,
+      canReach,
+      affordable,
+      canSummon: canReach && affordable,
     }
-    return Math.max(0, Math.abs(insertIndex - index) - 1) <= card.march
   })
-}
-
-const isWholeGroup = (
-  state: GameState,
-  ownerId: PlayerId,
-  startIndex: number,
-  endIndex: number,
-): boolean => {
-  const board = state.board.creatures
-  if (
-    startIndex < 0 ||
-    endIndex >= board.length ||
-    startIndex > endIndex ||
-    board
-      .slice(startIndex, endIndex + 1)
-      .some((creature) => getCreatureOwner(state, creature) !== ownerId)
-  ) {
-    return false
-  }
-
-  return (
-    (board[startIndex - 1] === undefined ||
-      getCreatureOwner(state, board[startIndex - 1]) !== ownerId) &&
-    (board[endIndex + 1] === undefined ||
-      getCreatureOwner(state, board[endIndex + 1]) !== ownerId)
-  )
 }
 
 const collectDefendingGroup = (
@@ -260,9 +269,15 @@ const refundDestroyedCreatures = (
   destroyedCreatures.forEach((creature) => {
     const instance = getCardInstance(state, creature.cardId)
     const owner = nextPlayers[instance.ownerId]
+    const refund = CreatureRules.fromCardId(
+      state,
+      creature.cardId,
+    ).preventsDestructionRefund()
+      ? 0
+      : Math.floor(instance.card.cost / 2)
     nextPlayers[instance.ownerId] = {
       ...owner,
-      mana: owner.mana + Math.floor(instance.card.cost / 2),
+      mana: owner.mana + refund,
       discard: [...owner.discard, instance.id],
     }
   })
@@ -276,9 +291,24 @@ const resolveKeepUpState = (state: GameState): GameState => {
   }
 
   const activePlayer = state.players[state.activePlayerId]
+  const manaByStackKey = new Map<string, number>()
+  state.board.creatures.forEach((_, boardIndex) => {
+    const rules = new CreatureRules(state, boardIndex)
+    if (rules.ownerId !== activePlayer.id) {
+      return
+    }
+    rules.getKeepUpManaModifier().forEach(({ amount, stackKey }) => {
+      manaByStackKey.set(stackKey, Math.max(manaByStackKey.get(stackKey) ?? 0, amount))
+    })
+  })
+  const abilityMana = [...manaByStackKey.values()].reduce(
+    (total, amount) => total + amount,
+    0,
+  )
+  const formationMana = getGreenFormationKeepUpMana(state, activePlayer.id)
   const nextPlayer = {
     ...drawUpTo(activePlayer, getKeepUpHandSize(state)),
-    mana: activePlayer.mana + 2,
+    mana: activePlayer.mana + 2 + abilityMana + formationMana,
   }
 
   return {
@@ -379,9 +409,6 @@ export const assertValidGameState = (state: GameState): void => {
       if (!boardCardIds.has(cardId)) {
         throw new Error(`Damage marker references card ${cardId} outside the board.`)
       }
-      if (state.cards[cardId].ownerId !== state.pendingCombat?.defendingPlayerId) {
-        throw new Error(`Damage marker references non-defending card ${cardId}.`)
-      }
       if (!Number.isInteger(damage) || damage <= 0) {
         throw new Error(`Damage marker for card ${cardId} must have positive integer damage.`)
       }
@@ -462,6 +489,64 @@ export class GameManager {
     return getCardInstance(manager.state, cardId)
   }
 
+  static getCreatureStats(
+    manager: GameManager,
+    cardId: CardInstanceId,
+  ): EffectiveCreatureStats {
+    return CreatureRules.fromCardId(manager.state, cardId).getEffectiveStats()
+  }
+
+  static getBoardGroups(manager: GameManager): EffectiveBoardGroup[] {
+    return collectBoardGroups(manager.state).map((group) => {
+      const stats = manager.state.board.creatures
+        .slice(group.startIndex, group.endIndex + 1)
+        .map((creature) => GameManager.getCreatureStats(manager, creature.cardId))
+      return {
+        ...group,
+        attack: stats.reduce((total, creatureStats) => total + creatureStats.attack, 0),
+        defense: stats.reduce((total, creatureStats) => total + creatureStats.defense, 0),
+      }
+    })
+  }
+
+  static getSummonOptions(
+    manager: GameManager,
+    cardId: CardInstanceId,
+  ): SummonOption[] {
+    const activePlayer = GameManager.getCurrentPlayer(manager)
+    if (!activePlayer.hand.includes(cardId)) {
+      return []
+    }
+    const card = getCardInstance(manager.state, cardId).card
+    if (card.kind !== 'creature' || manager.state.phase !== 'main') {
+      return []
+    }
+    return getSummonOptionsForState(
+      manager.state,
+      activePlayer.id,
+      card,
+      activePlayer.mana,
+    )
+  }
+
+  static isCardPlayable(manager: GameManager, cardId: CardInstanceId): boolean {
+    const activePlayer = GameManager.getCurrentPlayer(manager)
+    if (manager.state.phase !== 'main' || !activePlayer.hand.includes(cardId)) {
+      return false
+    }
+    const card = getCardInstance(manager.state, cardId).card
+    if (card.kind === 'creature') {
+      return GameManager.getSummonOptions(manager, cardId).some(({ canSummon }) => canSummon)
+    }
+    return activePlayer.mana >= card.cost
+  }
+
+  static getActivatedAbilities(manager: GameManager): ActivatedAbilityOption[] {
+    return manager.state.board.creatures.flatMap((_, boardIndex) =>
+      new CreatureRules(manager.state, boardIndex).getActivatedActions(),
+    )
+  }
+
   static applyAction(manager: GameManager, action: GameAction): GameManager {
     switch (action.type) {
       case 'resolveKeepUp':
@@ -478,6 +563,12 @@ export class GameManager {
         return GameManager.attackGroup(manager, action.startIndex, action.endIndex)
       case 'finishCombat':
         return GameManager.finishCombat(manager)
+      case 'activateAbility':
+        return GameManager.activateAbility(
+          manager,
+          action.sourceCardId,
+          action.abilityType,
+        )
       case 'discardFromHand':
         return GameManager.discardFromHand(manager, action.cardId)
     }
@@ -529,11 +620,14 @@ export class GameManager {
     if (card.kind !== 'creature') {
       throw new Error('Selected card is not a creature.')
     }
-    if (activePlayer.mana < card.cost) {
-      throw new Error('Not enough mana to summon this creature.')
-    }
-    if (!canInsertCreature(manager.state, activePlayer.id, card, insertIndex)) {
+    const summonOption = GameManager.getSummonOptions(manager, cardId).find(
+      (option) => option.insertIndex === insertIndex,
+    )
+    if (!summonOption?.canReach) {
       throw new Error('The creature cannot be summoned at this position.')
+    }
+    if (!summonOption.affordable) {
+      throw new Error('Not enough mana to summon this creature.')
     }
 
     const creature: CreatureInstance = {
@@ -543,7 +637,7 @@ export class GameManager {
     const playerWithoutCard = removeHandCard(activePlayer, cardId)
     const nextPlayer = {
       ...playerWithoutCard,
-      mana: playerWithoutCard.mana - card.cost,
+      mana: playerWithoutCard.mana - summonOption.effectiveCost,
     }
     const nextCreatures = [
       ...manager.state.board.creatures.slice(0, insertIndex),
@@ -640,7 +734,12 @@ export class GameManager {
     const targetIndex = direction === 1 ? endIndex + 1 : startIndex - 1
     const attackPower = board
       .slice(startIndex, endIndex + 1)
-      .reduce((total, creature) => total + getCreatureCard(manager.state, creature).attack, 0)
+      .reduce(
+        (total, creature) =>
+          total +
+          CreatureRules.fromCardId(manager.state, creature.cardId).getEffectiveStats().attack,
+        0,
+      )
 
     if (targetIndex < 0 || targetIndex >= board.length) {
       return GameManager.from({
@@ -680,7 +779,10 @@ export class GameManager {
         damage: remainingAttack,
       })
 
-      const defense = getCreatureCard(manager.state, defender).defense
+      const defense = CreatureRules.fromCardId(
+        manager.state,
+        defender.cardId,
+      ).getEffectiveStats().defense
       if (remainingAttack < defense) {
         break
       }
@@ -695,6 +797,23 @@ export class GameManager {
     const playerWasHit =
       destroyedIndexes.length === defendingGroupIndexes.length && groupTouchedDefenderPlayer
     const playerDamage = playerWasHit ? Math.max(0, remainingAttack - PLAYER_BARRIER) : 0
+    const defendingFront = board[targetIndex]
+    const counterDamage = CreatureRules.fromCardId(
+      manager.state,
+      defendingFront.cardId,
+    ).getCounterAttack()
+    if (counterDamage > 0) {
+      const attackingFrontIndex = attackerId === 'playerA' ? endIndex : startIndex
+      const attackingFront = board[attackingFrontIndex]
+      damageMarkers.push({ cardId: attackingFront.cardId, damage: counterDamage })
+      const attackingFrontDefense = CreatureRules.fromCardId(
+        manager.state,
+        attackingFront.cardId,
+      ).getEffectiveStats().defense
+      if (counterDamage >= attackingFrontDefense) {
+        destroyedIndexes.push(attackingFrontIndex)
+      }
+    }
 
     return GameManager.from({
       ...manager.state,
@@ -702,7 +821,7 @@ export class GameManager {
       hasAttackedThisTurn: true,
       pendingCombat: {
         damageMarkers,
-        destroyedCardIds: destroyedIndexes.map((index) => board[index].cardId),
+        destroyedCardIds: [...new Set(destroyedIndexes.map((index) => board[index].cardId))],
         defendingPlayerId: defenderId,
         playerWasHit,
         playerDamage,
@@ -739,6 +858,40 @@ export class GameManager {
         pendingCombat: null,
       }),
     )
+  }
+
+  static activateAbility(
+    manager: GameManager,
+    sourceCardId: CardInstanceId,
+    abilityType: ActivatedAbilityType,
+  ): GameManager {
+    const rules = CreatureRules.fromCardId(manager.state, sourceCardId)
+    const option = rules
+      .getActivatedActions()
+      .find((candidate) => candidate.abilityType === abilityType)
+    if (!option) {
+      throw new Error(`Creature card ${sourceCardId} does not have ${abilityType}.`)
+    }
+    if (!option.enabled) {
+      throw new Error(option.reason ?? 'This ability cannot be activated now.')
+    }
+
+    const resolution = rules.getActivatedAbilityResolution(abilityType)
+    const owner = manager.state.players[rules.ownerId]
+    const nextOwner = {
+      ...owner,
+      mana: owner.mana + resolution.mana,
+      [resolution.destination]: [...owner[resolution.destination], sourceCardId],
+    }
+
+    return GameManager.from({
+      ...replacePlayer(manager.state, nextOwner),
+      board: {
+        creatures: manager.state.board.creatures.filter(
+          ({ cardId }) => cardId !== sourceCardId,
+        ),
+      },
+    })
   }
 
   static discardFromHand(manager: GameManager, cardId: CardInstanceId): GameManager {

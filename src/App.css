@@ -38,6 +38,7 @@
   background: #fbfcf8;
   color: #4e594f;
   font-size: 14px;
+  white-space: nowrap;
 }
 
 .phase-bar strong {
@@ -173,6 +174,42 @@
   position: relative;
   width: 116px;
   min-width: 0;
+}
+
+.board-ability-actions {
+  position: absolute;
+  z-index: 1;
+  right: 5px;
+  bottom: 5px;
+  left: 5px;
+  display: grid;
+  gap: 4px;
+}
+
+.board-ability-actions button {
+  min-height: 24px;
+  padding: 2px 6px;
+  border: 1px solid #26342f;
+  border-radius: 5px;
+  background: #26342f;
+  color: #f8fbf5;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.board-ability-actions button:not(:disabled) {
+  cursor: pointer;
+}
+
+.board-ability-actions button:disabled {
+  border-color: #aab3a6;
+  background: #d9dfd4;
+  color: #778174;
+}
+
+.board-ability-actions button:focus-visible {
+  outline: 2px solid #276fbf;
+  outline-offset: 2px;
 }
 
 .damage-marker {
@@ -334,11 +371,11 @@
   cursor: default;
 }
 
-.hand-card-unaffordable:disabled {
+.hand-card-unavailable:disabled {
   cursor: not-allowed;
 }
 
-.hand-card-unaffordable > .card-view {
+.hand-card-unavailable > .card-view {
   filter: grayscale(0.85);
   opacity: 0.42;
 }
@@ -516,19 +553,22 @@
 
   .game-header {
     display: grid;
+    justify-content: stretch;
   }
 
   .game-header-controls {
+    width: 100%;
     display: grid;
   }
 
   .phase-bar {
+    grid-template-columns: auto auto minmax(0, 1fr);
     align-items: stretch;
   }
 
-  .hand-panel,
   .hand-panel {
-    grid-template-columns: repeat(5, minmax(48px, 1fr));
+    grid-template-columns: repeat(5, minmax(96px, 1fr));
+    overflow-x: auto;
   }
 
   .card-view {

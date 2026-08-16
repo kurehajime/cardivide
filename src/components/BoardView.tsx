@@ -1,12 +1,16 @@
 import { Fragment } from 'react'
 import { motion } from 'motion/react'
 import type {
+  ActivatedAbilityOption,
   Board,
   CardInstance,
   CardInstanceId,
   DamageMarker,
+  EffectiveBoardGroup,
+  EffectiveCreatureStats,
   PlayerId,
   PlayerState,
+  SummonOption,
 } from '../game'
 import CardView from './CardView'
 
@@ -17,18 +21,14 @@ type BoardViewProps = {
   playerDamageMarker?: { playerId: PlayerId; damage: number } | null
   players: Record<PlayerState['id'], PlayerState>
   activePlayerId: PlayerId
-  canInsert?: boolean
+  groups: EffectiveBoardGroup[]
+  creatureStats: Record<CardInstanceId, EffectiveCreatureStats>
+  summonOptions?: SummonOption[]
+  activatedAbilities?: ActivatedAbilityOption[]
   canAttack?: boolean
   onInsertClick?: (insertIndex: number) => void
   onGroupAttack?: (startIndex: number, endIndex: number) => void
-}
-
-type BoardGroup = {
-  ownerId: PlayerId
-  startIndex: number
-  endIndex: number
-  attack: number
-  defense: number
+  onActivateAbility?: (ability: ActivatedAbilityOption) => void
 }
 
 type BoardPlayerProps = {
@@ -71,42 +71,6 @@ const BoardPlayer = ({ player, cards, damage }: BoardPlayerProps) => (
   </section>
 )
 
-const collectGroups = (
-  board: Board,
-  cards: Record<CardInstanceId, CardInstance>,
-): BoardGroup[] => {
-  const groups: BoardGroup[] = []
-  let index = 0
-
-  while (index < board.creatures.length) {
-    const ownerId = cards[board.creatures[index].cardId].ownerId
-    const startIndex = index
-    while (
-      index + 1 < board.creatures.length &&
-      cards[board.creatures[index + 1].cardId].ownerId === ownerId
-    ) {
-      index += 1
-    }
-    const groupCreatures = board.creatures.slice(startIndex, index + 1)
-    groups.push({
-      ownerId,
-      startIndex,
-      endIndex: index,
-      attack: groupCreatures.reduce((total, creature) => {
-        const card = cards[creature.cardId].card
-        return total + (card.kind === 'creature' ? card.attack : 0)
-      }, 0),
-      defense: groupCreatures.reduce((total, creature) => {
-        const card = cards[creature.cardId].card
-        return total + (card.kind === 'creature' ? card.defense : 0)
-      }, 0),
-    })
-    index += 1
-  }
-
-  return groups
-}
-
 const BoardView = ({
   board,
   cards,
@@ -114,15 +78,28 @@ const BoardView = ({
   playerDamageMarker = null,
   players,
   activePlayerId,
-  canInsert = false,
+  groups,
+  creatureStats,
+  summonOptions = [],
+  activatedAbilities = [],
   canAttack = false,
   onInsertClick,
   onGroupAttack,
+  onActivateAbility,
 }: BoardViewProps) => {
-  const groups = collectGroups(board, cards)
   const damageByCardId = new Map(
     damageMarkers.map(({ cardId, damage }) => [cardId, damage]),
   )
+  const summonOptionByIndex = new Map(
+    summonOptions.map((option) => [option.insertIndex, option]),
+  )
+  const abilitiesByCardId = new Map<CardInstanceId, ActivatedAbilityOption[]>()
+  activatedAbilities.forEach((ability) => {
+    abilitiesByCardId.set(ability.sourceCardId, [
+      ...(abilitiesByCardId.get(ability.sourceCardId) ?? []),
+      ability,
+    ])
+  })
   const gridTemplateColumns =
     board.creatures.length === 0
       ? 'minmax(140px, 1fr)'
@@ -141,7 +118,8 @@ const BoardView = ({
             <button
               className="board-insert-slot board-insert-slot-empty"
               type="button"
-              disabled={!canInsert}
+              disabled={!summonOptionByIndex.get(0)?.canSummon}
+              title={summonOptionByIndex.has(0) ? `コスト ${summonOptionByIndex.get(0)?.effectiveCost}` : undefined}
               onClick={() => onInsertClick?.(0)}
             >
               配置
@@ -156,7 +134,12 @@ const BoardView = ({
                   className="board-insert-slot"
                   style={{ gridColumn: index * 2 + 1, gridRow: 2 }}
                   type="button"
-                  disabled={!canInsert}
+                  disabled={!summonOptionByIndex.get(index)?.canSummon}
+                  title={
+                    summonOptionByIndex.has(index)
+                      ? `コスト ${summonOptionByIndex.get(index)?.effectiveCost}`
+                      : undefined
+                  }
                   onClick={() => onInsertClick?.(index)}
                 >
                   +
@@ -168,7 +151,26 @@ const BoardView = ({
                   className="board-slot"
                   style={{ gridColumn: index * 2 + 2, gridRow: 2 }}
                 >
-                  <CardView card={cards[creature.cardId].card} compact />
+                  <CardView
+                    card={cards[creature.cardId].card}
+                    compact
+                    stats={creatureStats[creature.cardId]}
+                  />
+                  {(abilitiesByCardId.get(creature.cardId) ?? []).length > 0 && (
+                    <div className="board-ability-actions">
+                      {(abilitiesByCardId.get(creature.cardId) ?? []).map((ability) => (
+                        <button
+                          key={ability.abilityType}
+                          type="button"
+                          disabled={!ability.enabled}
+                          title={ability.reason}
+                          onClick={() => onActivateAbility?.(ability)}
+                        >
+                          {ability.label}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   {damageByCardId.has(creature.cardId) && (
                     <span
                       className="damage-marker card-damage-marker"
@@ -185,7 +187,12 @@ const BoardView = ({
               className="board-insert-slot"
               style={{ gridColumn: board.creatures.length * 2 + 1, gridRow: 2 }}
               type="button"
-              disabled={!canInsert}
+              disabled={!summonOptionByIndex.get(board.creatures.length)?.canSummon}
+              title={
+                summonOptionByIndex.has(board.creatures.length)
+                  ? `コスト ${summonOptionByIndex.get(board.creatures.length)?.effectiveCost}`
+                  : undefined
+              }
               onClick={() => onInsertClick?.(board.creatures.length)}
             >
               +

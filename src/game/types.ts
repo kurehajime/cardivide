@@ -8,9 +8,27 @@ export type CardKind = 'creature' | 'formation' | 'spell'
 
 export type Phase = 'keepUp' | 'main' | 'battle' | 'cleanup'
 
-export type AbilityText = string
-
 export type CardInstanceId = number
+
+export type KeywordAbility =
+  | { type: 'summoningSickness' }
+  | { type: 'vanish' }
+  | { type: 'loneWarrior'; attack: number; defense: number }
+  | { type: 'withdraw' }
+  | { type: 'assassin'; attack: number }
+  | { type: 'counter' }
+  | { type: 'return' }
+  | { type: 'beachhead'; costReduction: number }
+  | { type: 'capture'; marchTax: number }
+  | { type: 'mining'; mana: number }
+  | { type: 'rearguard'; attack: number; defense: number }
+
+export type KeywordAbilityType = KeywordAbility['type']
+
+export type ActivatedAbilityType = Extract<
+  KeywordAbilityType,
+  'withdraw' | 'return'
+>
 
 export type CardBase = {
   definitionId: string
@@ -25,7 +43,7 @@ export type CreatureCard = CardBase & {
   attack: number
   defense: number
   march: number
-  abilities: AbilityText[]
+  abilities: KeywordAbility[]
 }
 
 export type FormationCard = CardBase & {
@@ -55,6 +73,52 @@ export type CreatureInstance = {
 export type DamageMarker = {
   cardId: CardInstanceId
   damage: number
+}
+
+export type CreatureStatModifier = {
+  attack: number
+  defense: number
+}
+
+export type EffectiveCreatureStats = {
+  attack: number
+  defense: number
+  march: number
+}
+
+export type KeepUpManaContribution = {
+  amount: number
+  stackKey: string
+}
+
+export type SummonOption = {
+  insertIndex: number
+  requiredMarch: number
+  effectiveCost: number
+  canReach: boolean
+  affordable: boolean
+  canSummon: boolean
+}
+
+export type ActivatedAbilityOption = {
+  sourceCardId: CardInstanceId
+  abilityType: ActivatedAbilityType
+  label: string
+  enabled: boolean
+  reason?: string
+}
+
+export type ActivatedAbilityResolution = {
+  destination: 'discard' | 'hand'
+  mana: number
+}
+
+export type EffectiveBoardGroup = {
+  ownerId: PlayerId
+  startIndex: number
+  endIndex: number
+  attack: number
+  defense: number
 }
 
 export type PendingCombat = {
@@ -99,4 +163,9 @@ export type GameAction =
   | { type: 'playSpell'; cardId: CardInstanceId }
   | { type: 'attackGroup'; startIndex: number; endIndex: number }
   | { type: 'finishCombat' }
+  | {
+      type: 'activateAbility'
+      sourceCardId: CardInstanceId
+      abilityType: ActivatedAbilityType
+    }
   | { type: 'discardFromHand'; cardId: CardInstanceId }

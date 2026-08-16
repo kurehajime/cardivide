@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
-    "test": "vitest run src/game/GameManager.test.ts",
+    "test": "vitest run --dir src/game",
     "preview": "vite preview"
   },
   "dependencies": {

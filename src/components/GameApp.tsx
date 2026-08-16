@@ -1,6 +1,10 @@
 import { useEffect, useReducer } from 'react'
 import { LayoutGroup, MotionConfig } from 'motion/react'
-import { GameManager, type CardInstanceId } from '../game'
+import {
+  GameManager,
+  type ActivatedAbilityOption,
+  type CardInstanceId,
+} from '../game'
 import BoardView from './BoardView'
 import HandView from './HandView'
 import PhaseBar from './PhaseBar'
@@ -59,6 +63,21 @@ const GameApp = () => {
   const selectedCard = selectedCardId === null ? null : state.cards[selectedCardId] ?? null
   const playerAHand = playerA.hand.map((cardId) => state.cards[cardId])
   const playerBHand = playerB.hand.map((cardId) => state.cards[cardId])
+  const boardGroups = GameManager.getBoardGroups(manager)
+  const creatureStats = Object.fromEntries(
+    state.board.creatures.map(({ cardId }) => [
+      cardId,
+      GameManager.getCreatureStats(manager, cardId),
+    ]),
+  )
+  const selectedSummonOptions =
+    selectedCard?.card.kind === 'creature'
+      ? GameManager.getSummonOptions(manager, selectedCard.id)
+      : []
+  const playableCardIds = new Set(
+    currentPlayer.hand.filter((cardId) => GameManager.isCardPlayable(manager, cardId)),
+  )
+  const activatedAbilities = GameManager.getActivatedAbilities(manager)
   const playerDamageMarker =
     state.pendingCombat?.playerWasHit === true
       ? {
@@ -120,6 +139,16 @@ const GameApp = () => {
     )
   }
 
+  const handleActivateAbility = (ability: ActivatedAbilityOption) => {
+    applyGameUpdate((currentManager) =>
+      GameManager.activateAbility(
+        currentManager,
+        ability.sourceCardId,
+        ability.abilityType,
+      ),
+    )
+  }
+
   return (
     <MotionConfig
       reducedMotion="user"
@@ -154,7 +183,7 @@ const GameApp = () => {
             cards={playerBHand}
             playerName={playerB.name}
             position="top"
-            availableMana={playerB.mana}
+            playableCardIds={state.activePlayerId === 'playerB' ? playableCardIds : undefined}
             active={state.activePlayerId === 'playerB'}
             disabled={state.activePlayerId !== 'playerB' || state.phase !== 'main'}
             selectedCardId={state.activePlayerId === 'playerB' ? selectedCardId : null}
@@ -167,7 +196,10 @@ const GameApp = () => {
             playerDamageMarker={playerDamageMarker}
             players={state.players}
             activePlayerId={state.activePlayerId}
-            canInsert={state.phase === 'main' && selectedCard?.card.kind === 'creature'}
+            groups={boardGroups}
+            creatureStats={creatureStats}
+            summonOptions={selectedSummonOptions}
+            activatedAbilities={activatedAbilities}
             canAttack={
               ['main', 'battle'].includes(state.phase) &&
               !state.hasAttackedThisTurn &&
@@ -175,12 +207,13 @@ const GameApp = () => {
             }
             onInsertClick={handleInsertClick}
             onGroupAttack={handleGroupAttack}
+            onActivateAbility={handleActivateAbility}
           />
           <HandView
             cards={playerAHand}
             playerName={playerA.name}
             position="bottom"
-            availableMana={playerA.mana}
+            playableCardIds={state.activePlayerId === 'playerA' ? playableCardIds : undefined}
             active={state.activePlayerId === 'playerA'}
             disabled={state.activePlayerId !== 'playerA' || state.phase !== 'main'}
             selectedCardId={state.activePlayerId === 'playerA' ? selectedCardId : null}

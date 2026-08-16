@@ -1,10 +1,11 @@
-import type { Card } from '../game'
+import { formatAbility, type Card, type EffectiveCreatureStats } from '../game'
 
 type CardViewProps = {
   card: Card | null
   compact?: boolean
   faceDown?: boolean
   label?: string
+  stats?: EffectiveCreatureStats
 }
 
 const COLOR_LABELS = {
@@ -21,12 +22,18 @@ const KIND_LABELS = {
 
 const getRulesText = (card: Card): string => {
   if (card.kind === 'creature') {
-    return card.abilities.length > 0 ? card.abilities.join(' / ') : '能力なし'
+    return card.abilities.length > 0 ? card.abilities.map(formatAbility).join(' / ') : '能力なし'
   }
   return card.text
 }
 
-const CardView = ({ card, compact = false, faceDown = false, label }: CardViewProps) => {
+const CardView = ({
+  card,
+  compact = false,
+  faceDown = false,
+  label,
+  stats,
+}: CardViewProps) => {
   if (!card || faceDown) {
     return (
       <article className={`card-view card-empty ${compact ? 'card-compact' : ''}`}>
@@ -55,15 +62,15 @@ const CardView = ({ card, compact = false, faceDown = false, label }: CardViewPr
         <dl className="card-stats">
           <div>
             <dt>攻</dt>
-            <dd>{card.attack}</dd>
+            <dd>{stats?.attack ?? card.attack}</dd>
           </div>
           <div>
             <dt>防</dt>
-            <dd>{card.defense}</dd>
+            <dd>{stats?.defense ?? card.defense}</dd>
           </div>
           <div>
             <dt>進</dt>
-            <dd>{card.march}</dd>
+            <dd>{stats?.march ?? card.march}</dd>
           </div>
         </dl>
       )}

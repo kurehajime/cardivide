@@ -6,7 +6,7 @@ type HandViewProps = {
   cards: CardInstance[]
   playerName: string
   position: 'top' | 'bottom'
-  availableMana: number
+  playableCardIds?: ReadonlySet<CardInstanceId>
   active?: boolean
   disabled?: boolean
   selectedCardId?: CardInstanceId | null
@@ -19,7 +19,7 @@ const HandView = ({
   cards,
   playerName,
   position,
-  availableMana,
+  playableCardIds,
   active = false,
   disabled = false,
   selectedCardId = null,
@@ -33,10 +33,11 @@ const HandView = ({
       aria-label={`${playerName} hand`}
     >
       {visibleCards.map((card, index) => {
-        const unaffordable = card !== null && card.card.cost > availableMana
+        const unavailable =
+          card !== null && playableCardIds !== undefined && !playableCardIds.has(card.id)
         const cardClassName = [
           'hand-card-button',
-          unaffordable ? 'hand-card-unaffordable' : '',
+          unavailable ? 'hand-card-unavailable' : '',
           selectedCardId === card?.id ? 'hand-card-selected' : '',
         ]
           .filter(Boolean)
@@ -50,8 +51,8 @@ const HandView = ({
             data-card-id={card?.id}
             className={cardClassName}
             type="button"
-            title={unaffordable ? 'マナ不足' : undefined}
-            disabled={!card || disabled || unaffordable}
+            title={unavailable ? '現在は使用できません' : undefined}
+            disabled={!card || disabled || unavailable}
             onClick={() => card && onCardClick?.(card.id)}
           >
             <CardView card={card?.card ?? null} compact />

@@ -1,5 +1,6 @@
 export { GameAI } from './GameAI'
 export { GameManager, assertValidGameState } from './GameManager'
+export { CreatureRules, formatAbility } from './CreatureRules'
 export {
   CARD_BY_DEFINITION_ID,
   CARD_LIST,
@@ -14,7 +15,9 @@ export {
   createStandardDeck,
 } from './decks'
 export type {
-  AbilityText,
+  ActivatedAbilityOption,
+  ActivatedAbilityResolution,
+  ActivatedAbilityType,
   Board,
   Card,
   CardBase,
@@ -24,14 +27,21 @@ export type {
   CardKind,
   CreatureCard,
   CreatureInstance,
+  CreatureStatModifier,
   DamageMarker,
+  EffectiveBoardGroup,
+  EffectiveCreatureStats,
   FormationCard,
   GameAction,
   GameState,
+  KeepUpManaContribution,
+  KeywordAbility,
+  KeywordAbilityType,
   Phase,
   PendingCombat,
   PlayerId,
   PlayerState,
   SpellCard,
+  SummonOption,
 } from './types'
 export type { DeckSummary } from './decks'

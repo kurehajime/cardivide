@@ -109,7 +109,7 @@ export const CREATURE_CARDS = [
     attack: 7,
     defense: 6,
     march: 3,
-    abilities: ['消滅'],
+    abilities: [{ type: 'vanish' }],
   },
   {
     definitionId: 'blue-cost5-attack4-defense6-march4-vanish',
@@ -120,7 +120,7 @@ export const CREATURE_CARDS = [
     attack: 4,
     defense: 6,
     march: 4,
-    abilities: ['消滅'],
+    abilities: [{ type: 'vanish' }],
   },
   {
     definitionId: 'green-cost5-attack6-defense8-march3-vanish',
@@ -131,7 +131,7 @@ export const CREATURE_CARDS = [
     attack: 6,
     defense: 8,
     march: 3,
-    abilities: ['消滅'],
+    abilities: [{ type: 'vanish' }],
   },
   {
     definitionId: 'red-cost2-attack2-defense2-march1-lone-warrior-2-0',
@@ -142,7 +142,7 @@ export const CREATURE_CARDS = [
     attack: 2,
     defense: 2,
     march: 1,
-    abilities: ['一騎当千(+2/+0)'],
+    abilities: [{ type: 'loneWarrior', attack: 2, defense: 0 }],
   },
   {
     definitionId: 'red-cost2-attack3-defense1-march1-withdraw',
@@ -153,7 +153,7 @@ export const CREATURE_CARDS = [
     attack: 3,
     defense: 1,
     march: 1,
-    abilities: ['撤去'],
+    abilities: [{ type: 'withdraw' }],
   },
   {
     definitionId: 'red-cost2-attack2-defense2-march1-assassin2',
@@ -164,7 +164,7 @@ export const CREATURE_CARDS = [
     attack: 2,
     defense: 2,
     march: 1,
-    abilities: ['刺客2'],
+    abilities: [{ type: 'assassin', attack: 2 }],
   },
   {
     definitionId: 'blue-cost2-attack3-defense1-march1-counter',
@@ -175,7 +175,7 @@ export const CREATURE_CARDS = [
     attack: 3,
     defense: 1,
     march: 1,
-    abilities: ['反撃'],
+    abilities: [{ type: 'counter' }],
   },
   {
     definitionId: 'blue-cost2-attack1-defense1-march2-return',
@@ -186,7 +186,7 @@ export const CREATURE_CARDS = [
     attack: 1,
     defense: 1,
     march: 2,
-    abilities: ['帰還'],
+    abilities: [{ type: 'return' }],
   },
   {
     definitionId: 'blue-cost2-attack2-defense2-march1-beachhead1',
@@ -197,7 +197,7 @@ export const CREATURE_CARDS = [
     attack: 2,
     defense: 2,
     march: 1,
-    abilities: ['橋頭堡1'],
+    abilities: [{ type: 'beachhead', costReduction: 1 }],
   },
   {
     definitionId: 'green-cost2-attack1-defense3-march1-capture1',
@@ -208,7 +208,7 @@ export const CREATURE_CARDS = [
     attack: 1,
     defense: 3,
     march: 1,
-    abilities: ['捕獲1'],
+    abilities: [{ type: 'capture', marchTax: 1 }],
   },
   {
     definitionId: 'green-cost2-attack2-defense2-march1-mining1',
@@ -219,7 +219,7 @@ export const CREATURE_CARDS = [
     attack: 2,
     defense: 2,
     march: 1,
-    abilities: ['採掘1'],
+    abilities: [{ type: 'mining', mana: 1 }],
   },
   {
     definitionId: 'green-cost2-attack2-defense2-march1-rearguard-0-2',
@@ -230,7 +230,7 @@ export const CREATURE_CARDS = [
     attack: 2,
     defense: 2,
     march: 1,
-    abilities: ['しんがり(+0/+2)'],
+    abilities: [{ type: 'rearguard', attack: 0, defense: 2 }],
   },
   {
     definitionId: 'red-cost4-attack5-defense3-march2-lone-warrior-2-1',
@@ -241,7 +241,7 @@ export const CREATURE_CARDS = [
     attack: 5,
     defense: 3,
     march: 2,
-    abilities: ['一騎当千(+2/+1)'],
+    abilities: [{ type: 'loneWarrior', attack: 2, defense: 1 }],
   },
   {
     definitionId: 'red-cost4-attack5-defense3-march2-withdraw',
@@ -252,7 +252,7 @@ export const CREATURE_CARDS = [
     attack: 5,
     defense: 3,
     march: 2,
-    abilities: ['撤去'],
+    abilities: [{ type: 'withdraw' }],
   },
   {
     definitionId: 'blue-cost4-attack3-defense4-march2-counter',
@@ -263,7 +263,7 @@ export const CREATURE_CARDS = [
     attack: 3,
     defense: 4,
     march: 2,
-    abilities: ['反撃'],
+    abilities: [{ type: 'counter' }],
   },
   {
     definitionId: 'blue-cost4-attack4-defense2-march2-return',
@@ -274,7 +274,7 @@ export const CREATURE_CARDS = [
     attack: 4,
     defense: 2,
     march: 2,
-    abilities: ['帰還'],
+    abilities: [{ type: 'return' }],
   },
   {
     definitionId: 'green-cost4-attack2-defense5-march2-capture1',
@@ -285,7 +285,7 @@ export const CREATURE_CARDS = [
     attack: 2,
     defense: 5,
     march: 2,
-    abilities: ['捕獲1'],
+    abilities: [{ type: 'capture', marchTax: 1 }],
   },
   {
     definitionId: 'green-cost4-attack3-defense4-march2-mining1',
@@ -296,7 +296,7 @@ export const CREATURE_CARDS = [
     attack: 3,
     defense: 4,
     march: 2,
-    abilities: ['採掘1'],
+    abilities: [{ type: 'mining', mana: 1 }],
   },
 ] satisfies CreatureCard[]
 
