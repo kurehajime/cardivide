@@ -6,6 +6,7 @@ type HandViewProps = {
   cards: CardInstance[]
   playerName: string
   position: 'top' | 'bottom'
+  active?: boolean
   disabled?: boolean
   selectedCardId?: CardInstanceId | null
   onCardClick?: (cardId: CardInstanceId) => void
@@ -17,6 +18,7 @@ const HandView = ({
   cards,
   playerName,
   position,
+  active = false,
   disabled = false,
   selectedCardId = null,
   onCardClick,
@@ -24,7 +26,10 @@ const HandView = ({
   const visibleCards = cards.length > 0 ? cards : Array.from({ length: EMPTY_HAND_SLOTS }, () => null)
 
   return (
-    <section className={`hand-panel hand-panel-${position}`} aria-label={`${playerName} hand`}>
+    <section
+      className={`hand-panel hand-panel-${position} ${active ? 'hand-panel-active' : ''}`}
+      aria-label={`${playerName} hand`}
+    >
       {visibleCards.map((card, index) => (
         <motion.button
           key={card?.id ?? `empty-${index}`}

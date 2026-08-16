@@ -321,6 +321,12 @@
   gap: 10px;
   padding: 10px;
   align-items: stretch;
+  transition: background-color 180ms ease, border-color 180ms ease;
+}
+
+.hand-panel-active {
+  border-color: #050605;
+  background: #171a17;
 }
 
 .hand-card-button {

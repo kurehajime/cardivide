@@ -155,6 +155,7 @@ const GameApp = () => {
             cards={playerBHand}
             playerName={playerB.name}
             position="top"
+            active={state.activePlayerId === 'playerB'}
             disabled={state.activePlayerId !== 'playerB' || state.phase !== 'main'}
             selectedCardId={state.activePlayerId === 'playerB' ? selectedCardId : null}
             onCardClick={handleCardClick}
@@ -183,6 +184,7 @@ const GameApp = () => {
             cards={playerAHand}
             playerName={playerA.name}
             position="bottom"
+            active={state.activePlayerId === 'playerA'}
             disabled={state.activePlayerId !== 'playerA' || state.phase !== 'main'}
             selectedCardId={state.activePlayerId === 'playerA' ? selectedCardId : null}
             onCardClick={handleCardClick}
