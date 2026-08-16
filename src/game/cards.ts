@@ -3,7 +3,7 @@ import type { Card, CreatureCard, FormationCard, SpellCard } from './types'
 export const CREATURE_CARDS = [
   {
     definitionId: 'red-cost2-attack3-defense2-march1',
-    name: '赤 コスト2 攻3 防2 進1',
+    name: '火花の剣兵',
     kind: 'creature',
     color: 'red',
     cost: 2,
@@ -14,7 +14,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: 'blue-cost2-attack2-defense2-march2',
-    name: '青 コスト2 攻2 防2 進2',
+    name: '潮路の斥候',
     kind: 'creature',
     color: 'blue',
     cost: 2,
@@ -25,7 +25,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: 'green-cost2-attack2-defense3-march1',
-    name: '緑 コスト2 攻2 防3 進1',
+    name: '樫皮の番兵',
     kind: 'creature',
     color: 'green',
     cost: 2,
@@ -36,7 +36,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: 'red-cost2-attack4-defense1-march1',
-    name: '赤 コスト2 攻4 防1 進1',
+    name: '燃え立つ先陣',
     kind: 'creature',
     color: 'red',
     cost: 2,
@@ -47,7 +47,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: 'blue-cost2-attack1-defense2-march3',
-    name: '青 コスト2 攻1 防2 進3',
+    name: '飛沫の伝令',
     kind: 'creature',
     color: 'blue',
     cost: 2,
@@ -58,7 +58,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: 'green-cost2-attack1-defense4-march1',
-    name: '緑 コスト2 攻1 防4 進1',
+    name: '根張りの古木',
     kind: 'creature',
     color: 'green',
     cost: 2,
@@ -69,7 +69,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: 'red-cost4-attack5-defense4-march2',
-    name: '赤 コスト4 攻5 防4 進2',
+    name: '烽火の重騎兵',
     kind: 'creature',
     color: 'red',
     cost: 4,
@@ -80,7 +80,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: 'blue-cost4-attack2-defense4-march3',
-    name: '青 コスト4 攻2 防4 進3',
+    name: '蒼波の航海士',
     kind: 'creature',
     color: 'blue',
     cost: 4,
@@ -91,7 +91,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: 'green-cost4-attack4-defense6-march1',
-    name: '緑 コスト4 攻4 防6 進1',
+    name: '巨樹の守護者',
     kind: 'creature',
     color: 'green',
     cost: 4,
@@ -102,7 +102,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: 'red-cost5-attack7-defense6-march3-vanish',
-    name: '赤 コスト5 攻7 防6 進3 消滅',
+    name: '燃え尽きる火山竜',
     kind: 'creature',
     color: 'red',
     cost: 5,
@@ -113,7 +113,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: 'blue-cost5-attack4-defense6-march4-vanish',
-    name: '青 コスト5 攻4 防6 進4 消滅',
+    name: '泡沫の深海鯨',
     kind: 'creature',
     color: 'blue',
     cost: 5,
@@ -124,7 +124,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: 'green-cost5-attack6-defense8-march3-vanish',
-    name: '緑 コスト5 攻6 防8 進3 消滅',
+    name: '夢渡りの森巨人',
     kind: 'creature',
     color: 'green',
     cost: 5,
@@ -135,7 +135,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: 'red-cost2-attack2-defense2-march1-lone-warrior-2-0',
-    name: '赤 コスト2 一騎当千',
+    name: '孤峰の剣士',
     kind: 'creature',
     color: 'red',
     cost: 2,
@@ -146,7 +146,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: 'red-cost2-attack3-defense1-march1-withdraw',
-    name: '赤 コスト2 撤去',
+    name: '陣払いの傭兵',
     kind: 'creature',
     color: 'red',
     cost: 2,
@@ -157,7 +157,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: 'red-cost2-attack2-defense2-march1-assassin2',
-    name: '赤 コスト2 刺客2',
+    name: '朱刃の潜入者',
     kind: 'creature',
     color: 'red',
     cost: 2,
@@ -168,7 +168,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: 'blue-cost2-attack3-defense1-march1-counter',
-    name: '青 コスト2 反撃',
+    name: '逆巻く決闘士',
     kind: 'creature',
     color: 'blue',
     cost: 2,
@@ -179,7 +179,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: 'blue-cost2-attack1-defense1-march2-return',
-    name: '青 コスト2 帰還',
+    name: '霧渡りの使者',
     kind: 'creature',
     color: 'blue',
     cost: 2,
@@ -190,7 +190,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: 'blue-cost2-attack2-defense2-march1-beachhead1',
-    name: '青 コスト2 橋頭堡1',
+    name: '潮先の築城師',
     kind: 'creature',
     color: 'blue',
     cost: 2,
@@ -201,7 +201,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: 'green-cost2-attack1-defense3-march1-capture1',
-    name: '緑 コスト2 捕獲1',
+    name: '蔦罠の狩人',
     kind: 'creature',
     color: 'green',
     cost: 2,
@@ -212,7 +212,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: 'green-cost2-attack2-defense2-march1-mining1',
-    name: '緑 コスト2 採掘1',
+    name: '晶洞の坑夫',
     kind: 'creature',
     color: 'green',
     cost: 2,
@@ -223,7 +223,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: 'green-cost2-attack2-defense2-march1-rearguard-0-2',
-    name: '緑 コスト2 しんがり',
+    name: '根砦の殿軍',
     kind: 'creature',
     color: 'green',
     cost: 2,
@@ -234,7 +234,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: 'red-cost4-attack5-defense3-march2-lone-warrior-2-1',
-    name: '赤 コスト4 一騎当千',
+    name: '孤軍の猛将',
     kind: 'creature',
     color: 'red',
     cost: 4,
@@ -245,7 +245,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: 'red-cost4-attack5-defense3-march2-withdraw',
-    name: '赤 コスト4 撤去',
+    name: '灰燼の解体者',
     kind: 'creature',
     color: 'red',
     cost: 4,
@@ -256,7 +256,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: 'blue-cost4-attack3-defense4-march2-counter',
-    name: '青 コスト4 反撃',
+    name: '深潮の迎撃者',
     kind: 'creature',
     color: 'blue',
     cost: 4,
@@ -267,7 +267,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: 'blue-cost4-attack4-defense2-march2-return',
-    name: '青 コスト4 帰還',
+    name: '波間の帰還術師',
     kind: 'creature',
     color: 'blue',
     cost: 4,
@@ -278,7 +278,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: 'green-cost4-attack2-defense5-march2-capture1',
-    name: '緑 コスト4 捕獲1',
+    name: '森檻の獣使い',
     kind: 'creature',
     color: 'green',
     cost: 4,
@@ -289,7 +289,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: 'green-cost4-attack3-defense4-march2-mining1',
-    name: '緑 コスト4 採掘1',
+    name: '地脈掘りの巨人',
     kind: 'creature',
     color: 'green',
     cost: 4,
@@ -303,7 +303,7 @@ export const CREATURE_CARDS = [
 export const FORMATION_CARDS = [
   {
     definitionId: 'red-cost4-formation',
-    name: '赤の布陣',
+    name: '孤軍を照らす烽火',
     kind: 'formation',
     color: 'red',
     cost: 4,
@@ -311,7 +311,7 @@ export const FORMATION_CARDS = [
   },
   {
     definitionId: 'blue-cost4-formation',
-    name: '青の布陣',
+    name: '逆潮の戦列',
     kind: 'formation',
     color: 'blue',
     cost: 4,
@@ -319,7 +319,7 @@ export const FORMATION_CARDS = [
   },
   {
     definitionId: 'green-cost4-formation',
-    name: '緑の布陣',
+    name: '千樹の連環',
     kind: 'formation',
     color: 'green',
     cost: 4,
