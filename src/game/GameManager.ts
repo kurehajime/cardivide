@@ -17,6 +17,20 @@ const PHASE_ORDER = ['main', 'battle', 'cleanup'] satisfies Phase[]
 const PLAYER_BARRIER = 2
 const MAX_HAND_SIZE = 5
 
+const shuffleCardIds = (
+  cardIds: CardInstanceId[],
+  random: () => number,
+): CardInstanceId[] => {
+  const shuffled = [...cardIds]
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(random() * (index + 1))
+    ;[shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]]
+  }
+
+  return shuffled
+}
+
 const getOpponentId = (playerId: PlayerId): PlayerId =>
   playerId === 'playerA' ? 'playerB' : 'playerA'
 
@@ -63,11 +77,19 @@ const cloneGameState = (state: GameState): GameState => ({
     : null,
 })
 
-const createInitialState = (): GameState => {
+const createInitialState = (random: () => number): GameState => {
   const playerACards = createStandardDeck('playerA', 1)
   const playerBCards = createStandardDeck('playerB', playerACards.length + 1)
   const cardInstances = [...playerACards, ...playerBCards]
   const cards = Object.fromEntries(cardInstances.map((instance) => [instance.id, instance]))
+  const playerADeck = shuffleCardIds(
+    playerACards.map(({ id }) => id),
+    random,
+  )
+  const playerBDeck = shuffleCardIds(
+    playerBCards.map(({ id }) => id),
+    random,
+  )
 
   return {
     turn: 1,
@@ -80,12 +102,12 @@ const createInitialState = (): GameState => {
       playerA: createPlayer(
         'playerA',
         'Player A',
-        playerACards.map(({ id }) => id),
+        playerADeck,
       ),
       playerB: createPlayer(
         'playerB',
         'Player B',
-        playerBCards.map(({ id }) => id),
+        playerBDeck,
       ),
     },
     board: {
@@ -410,8 +432,8 @@ export class GameManager {
     this.state = state
   }
 
-  static create(): GameManager {
-    return GameManager.from(resolveKeepUpState(createInitialState()))
+  static create(random: () => number = Math.random): GameManager {
+    return GameManager.from(resolveKeepUpState(createInitialState(random)))
   }
 
   static from(state: GameState): GameManager {

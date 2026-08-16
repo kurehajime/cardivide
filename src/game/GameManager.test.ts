@@ -2,6 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { GameManager, assertValidGameState } from './GameManager'
 import type { CardInstanceId, GameState, PlayerId } from './types'
 
+const KEEP_ORDER_RANDOM = () => 1 - Number.EPSILON
+
+const createTestManager = (): GameManager => GameManager.create(KEEP_ORDER_RANDOM)
+
 const collectZoneIds = (state: GameState): CardInstanceId[] => {
   const ids: CardInstanceId[] = []
 
@@ -61,7 +65,7 @@ const moveDeckCardToHand = (
 
 describe('GameManager card instance tracking', () => {
   it('assigns one globally unique sequential id to every physical deck card', () => {
-    const manager = GameManager.create()
+    const manager = createTestManager()
     const instances = Object.values(manager.state.cards)
 
     expect(instances.map(({ id }) => id)).toEqual(
@@ -76,8 +80,27 @@ describe('GameManager card instance tracking', () => {
     expectCardsConserved(manager)
   })
 
+  it('shuffles both decks before the first hand is drawn', () => {
+    const manager = GameManager.create(() => 0)
+    const playerAOrder = [
+      ...manager.state.players.playerA.hand,
+      ...manager.state.players.playerA.deck,
+    ]
+    const playerBOrder = manager.state.players.playerB.deck
+
+    expect(playerAOrder).not.toEqual(Array.from({ length: 48 }, (_, index) => index + 1))
+    expect(playerBOrder).not.toEqual(Array.from({ length: 48 }, (_, index) => index + 49))
+    expect([...playerAOrder].sort((left, right) => left - right)).toEqual(
+      Array.from({ length: 48 }, (_, index) => index + 1),
+    )
+    expect([...playerBOrder].sort((left, right) => left - right)).toEqual(
+      Array.from({ length: 48 }, (_, index) => index + 49),
+    )
+    expectCardsConserved(manager)
+  })
+
   it('moves only the selected physical card from hand to board', () => {
-    const manager = GameManager.create()
+    const manager = createTestManager()
     const [firstCopy, selectedCopy, thirdCopy] = manager.state.players.playerA.hand
     const nextManager = GameManager.summonCreature(manager, selectedCopy, 0)
 
@@ -93,7 +116,7 @@ describe('GameManager card instance tracking', () => {
   })
 
   it('draws only enough cards to reach five on later keep-up phases', () => {
-    let manager = GameManager.create()
+    let manager = createTestManager()
     const summonedCardId = manager.state.players.playerA.hand[0]
     manager = GameManager.summonCreature(manager, summonedCardId, 0)
     manager = GameManager.attackGroup(manager, 0, 0)
@@ -121,7 +144,7 @@ describe('GameManager card instance tracking', () => {
   })
 
   it('never grows either hand beyond five while turns advance', () => {
-    let manager = GameManager.create()
+    let manager = createTestManager()
 
     for (let turn = 0; turn < 20; turn += 1) {
       manager = passTurnWithoutAttack(manager)
@@ -132,7 +155,7 @@ describe('GameManager card instance tracking', () => {
   })
 
   it('moves destroyed cards from the board to their owner discard pile', () => {
-    let manager = GameManager.create()
+    let manager = createTestManager()
     const playerACardId = manager.state.players.playerA.hand[0]
     manager = GameManager.summonCreature(manager, playerACardId, 0)
     manager = GameManager.attackGroup(manager, 0, 0)
@@ -162,7 +185,7 @@ describe('GameManager card instance tracking', () => {
   })
 
   it('tracks formation replacement with the same physical card ids', () => {
-    let manager = moveDeckCardToHand(GameManager.create(), 'playerA', 16, 4)
+    let manager = moveDeckCardToHand(createTestManager(), 'playerA', 16, 4)
     manager = GameManager.playFormation(manager, 16)
 
     expect(manager.state.players.playerA.formation).toBe(16)
@@ -177,7 +200,7 @@ describe('GameManager card instance tracking', () => {
   })
 
   it('rejects duplicate zones, orphaned cards, and a six-card hand', () => {
-    const manager = GameManager.create()
+    const manager = createTestManager()
     const playerA = manager.state.players.playerA
     const duplicateId = playerA.hand[0]
     const duplicatedState: GameState = {

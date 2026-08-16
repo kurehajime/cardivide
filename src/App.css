@@ -330,13 +330,17 @@
 }
 
 .hand-card-button {
-  display: block;
+  display: grid;
   min-width: 0;
   padding: 0;
   border: 0;
   border-radius: 8px;
   background: transparent;
   color: inherit;
+}
+
+.hand-card-button > .card-view {
+  height: 100%;
 }
 
 .hand-card-button:not(:disabled) {
@@ -360,7 +364,7 @@
 .card-view {
   min-height: 158px;
   display: grid;
-  grid-template-rows: auto auto auto auto 1fr;
+  grid-template-rows: auto auto auto 1fr;
   gap: 6px;
   padding: 9px;
   border: 2px solid #343a35;
@@ -421,8 +425,16 @@
 
 .card-title-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
+  gap: 6px;
+  min-width: 0;
+}
+
+.card-color-cost {
+  display: inline-flex;
+  align-items: center;
   gap: 6px;
   min-width: 0;
 }
@@ -448,6 +460,16 @@
   color: #4b554c;
 }
 
+.card-kind {
+  margin-left: auto;
+}
+
+.card-cost {
+  color: #171a17;
+  font-size: 15px;
+  font-weight: 800;
+}
+
 .card-view h3 {
   margin: 0;
   min-width: 0;
@@ -456,10 +478,6 @@
   line-height: 1.2;
   letter-spacing: 0;
   overflow-wrap: anywhere;
-}
-
-.card-cost {
-  justify-self: start;
 }
 
 .card-stats {

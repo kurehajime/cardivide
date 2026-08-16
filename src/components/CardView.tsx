@@ -42,11 +42,15 @@ const CardView = ({ card, compact = false, faceDown = false, label }: CardViewPr
   return (
     <article className={`card-view card-${colorClass} ${compact ? 'card-compact' : ''}`}>
       <header className="card-title-row">
-        <span className="card-color">{colorLabel}</span>
+        <span className="card-color-cost">
+          <span className="card-color">{colorLabel}</span>
+          <span className="card-cost" aria-label={`コスト ${card.cost}`}>
+            {card.cost}
+          </span>
+        </span>
         <span className="card-kind">{KIND_LABELS[card.kind]}</span>
       </header>
       <h3>{card.name}</h3>
-      <div className="card-cost">Cost {card.cost}</div>
       {card.kind === 'creature' && (
         <dl className="card-stats">
           <div>
