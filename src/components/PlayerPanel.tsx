@@ -5,25 +5,15 @@ type PlayerPanelProps = {
   player: PlayerState
   cards: Record<CardInstanceId, CardInstance>
   align: 'left' | 'right'
-  damage?: number | null
 }
 
-const PlayerPanel = ({ player, cards, align, damage = null }: PlayerPanelProps) => (
+const PlayerPanel = ({ player, cards, align }: PlayerPanelProps) => (
   <aside className={`player-panel player-panel-${align}`} aria-label={player.name}>
     <h2>{player.name}</h2>
     <dl>
-      <div className="player-hp-stat">
+      <div>
         <dt>HP</dt>
         <dd>{player.hp}</dd>
-        {damage !== null && (
-          <span
-            className="damage-marker player-damage-marker"
-            role="status"
-            aria-label={`プレイヤーに${damage}ダメージ`}
-          >
-            {damage}
-          </span>
-        )}
       </div>
       <div>
         <dt>Mana</dt>

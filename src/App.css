@@ -123,10 +123,6 @@
   background: #f2f5ee;
 }
 
-.player-hp-stat {
-  position: relative;
-}
-
 .player-panel dt {
   color: #536052;
   font-size: 12px;
@@ -174,6 +170,7 @@
 }
 
 .board-endpoint {
+  position: relative;
   height: 112px;
   display: grid;
   place-items: center;
@@ -281,9 +278,10 @@
 
 .board-group-button {
   min-height: 30px;
-  border: 1px solid #2d3f38;
-  border-radius: 999px;
+  border: 0;
+  border-radius: 0;
   background: #26342f;
+  filter: drop-shadow(0 0 1px #2d3f38);
   color: #f8fbf5;
   font-size: 12px;
   font-weight: 800;
@@ -292,10 +290,14 @@
 
 .board-group-playerB {
   align-self: end;
+  padding: 6px 12px 6px 22px;
+  clip-path: polygon(18px 0, 100% 0, 100% 100%, 18px 100%, 0 50%);
 }
 
 .board-group-playerA {
   align-self: start;
+  padding: 6px 22px 6px 12px;
+  clip-path: polygon(0 0, calc(100% - 18px) 0, 100% 50%, calc(100% - 18px) 100%, 0 100%);
 }
 
 .board-group-button:not(:disabled) {
@@ -303,14 +305,14 @@
 }
 
 .board-group-button:disabled {
-  border-color: #b9c2b5;
   background: #d9dfd4;
+  filter: drop-shadow(0 0 1px #b9c2b5);
   color: #778174;
 }
 
 .board-group-button:focus-visible {
-  outline: 3px solid #276fbf;
-  outline-offset: 3px;
+  outline: 0;
+  filter: drop-shadow(0 0 3px #276fbf) drop-shadow(0 0 1px #276fbf);
 }
 
 .hand-panel {

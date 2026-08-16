@@ -14,6 +14,7 @@ type BoardViewProps = {
   board: Board
   cards: Record<CardInstanceId, CardInstance>
   damageMarkers?: DamageMarker[]
+  playerDamageMarker?: { playerId: PlayerId; damage: number } | null
   players: Record<PlayerState['id'], PlayerState>
   activePlayerId: PlayerId
   canInsert?: boolean
@@ -70,6 +71,7 @@ const BoardView = ({
   board,
   cards,
   damageMarkers = [],
+  playerDamageMarker = null,
   players,
   activePlayerId,
   canInsert = false,
@@ -88,7 +90,18 @@ const BoardView = ({
 
   return (
     <section className="board-panel" aria-label="battlefield">
-      <div className="board-endpoint">{players.playerA.name}</div>
+      <div className="board-endpoint" data-player-id="playerA">
+        {players.playerA.name}
+        {playerDamageMarker?.playerId === 'playerA' && (
+          <span
+            className="damage-marker player-damage-marker"
+            role="status"
+            aria-label={`プレイヤーに${playerDamageMarker.damage}ダメージ`}
+          >
+            {playerDamageMarker.damage}
+          </span>
+        )}
+      </div>
       <motion.div className="board-lane-scroll" layoutScroll>
         {board.creatures.length === 0 ? (
           <div className="board-lane-grid" style={{ gridTemplateColumns }}>
@@ -162,7 +175,18 @@ const BoardView = ({
           </div>
         )}
       </motion.div>
-      <div className="board-endpoint">{players.playerB.name}</div>
+      <div className="board-endpoint" data-player-id="playerB">
+        {players.playerB.name}
+        {playerDamageMarker?.playerId === 'playerB' && (
+          <span
+            className="damage-marker player-damage-marker"
+            role="status"
+            aria-label={`プレイヤーに${playerDamageMarker.damage}ダメージ`}
+          >
+            {playerDamageMarker.damage}
+          </span>
+        )}
+      </div>
     </section>
   )
 }

@@ -60,13 +60,12 @@ const GameApp = () => {
   const selectedCard = selectedCardId === null ? null : state.cards[selectedCardId] ?? null
   const playerAHand = playerA.hand.map((cardId) => state.cards[cardId])
   const playerBHand = playerB.hand.map((cardId) => state.cards[cardId])
-  const playerADamage =
-    state.pendingCombat?.playerWasHit && state.pendingCombat.defendingPlayerId === 'playerA'
-      ? state.pendingCombat.playerDamage
-      : null
-  const playerBDamage =
-    state.pendingCombat?.playerWasHit && state.pendingCombat.defendingPlayerId === 'playerB'
-      ? state.pendingCombat.playerDamage
+  const playerDamageMarker =
+    state.pendingCombat?.playerWasHit === true
+      ? {
+          playerId: state.pendingCombat.defendingPlayerId,
+          damage: state.pendingCombat.playerDamage,
+        }
       : null
 
   useEffect(() => {
@@ -161,16 +160,12 @@ const GameApp = () => {
             onCardClick={handleCardClick}
           />
           <section className="tabletop" aria-label="game table">
-            <PlayerPanel
-              player={playerA}
-              cards={state.cards}
-              align="left"
-              damage={playerADamage}
-            />
+            <PlayerPanel player={playerA} cards={state.cards} align="left" />
             <BoardView
               board={state.board}
               cards={state.cards}
               damageMarkers={state.pendingCombat?.damageMarkers ?? []}
+              playerDamageMarker={playerDamageMarker}
               players={state.players}
               activePlayerId={state.activePlayerId}
               canInsert={state.phase === 'main' && selectedCard?.card.kind === 'creature'}
@@ -182,12 +177,7 @@ const GameApp = () => {
               onInsertClick={handleInsertClick}
               onGroupAttack={handleGroupAttack}
             />
-            <PlayerPanel
-              player={playerB}
-              cards={state.cards}
-              align="right"
-              damage={playerBDamage}
-            />
+            <PlayerPanel player={playerB} cards={state.cards} align="right" />
           </section>
           <HandView
             cards={playerAHand}
