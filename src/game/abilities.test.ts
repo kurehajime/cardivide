@@ -716,7 +716,7 @@ describe('activated abilities', () => {
     const [source] = findCardIds(
       initial.state,
       'playerA',
-      'blue-cost2-attack1-defense1-march2-return',
+      'blue-cost2-attack2-defense1-march2-return',
     )
     let manager = configureManager(initial, {
       board: [{ cardId: source }],
@@ -726,6 +726,10 @@ describe('activated abilities', () => {
     expect(manager.state.players.playerA.hand).toHaveLength(5)
     expect(manager.state.players.playerA.hand).toContain(source)
     expect(manager.state.players.playerA.mana).toBe(1)
+    expect(manager.state.cards[source].card).toMatchObject({
+      name: '霧渡りの使者',
+      attack: 2,
+    })
 
     const [fullHandSource] = findCardIds(
       initial.state,
@@ -752,7 +756,7 @@ describe('activated abilities', () => {
     const [source] = findCardIds(
       initial.state,
       'playerA',
-      'blue-cost2-attack1-defense1-march2-return',
+      'blue-cost2-attack2-defense1-march2-return',
     )
     let manager = configureManager(initial, {
       board: [{ cardId: source }],
