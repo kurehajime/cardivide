@@ -718,10 +718,14 @@ describe('activated abilities', () => {
       'playerA',
       'blue-cost2-attack1-defense1-march2-return',
     )
-    let manager = configureManager(initial, { board: [{ cardId: source }] })
+    let manager = configureManager(initial, {
+      board: [{ cardId: source }],
+      mana: { playerA: 0 },
+    })
     manager = GameManager.activateAbility(manager, source, 'return')
     expect(manager.state.players.playerA.hand).toHaveLength(5)
     expect(manager.state.players.playerA.hand).toContain(source)
+    expect(manager.state.players.playerA.mana).toBe(1)
 
     const [fullHandSource] = findCardIds(
       initial.state,
@@ -741,5 +745,31 @@ describe('activated abilities', () => {
     expect(() => GameManager.activateAbility(manager, fullHandSource, 'return')).toThrow(
       /手札が5枚/,
     )
+  })
+
+  it('allows a human player to return the same physical card repeatedly in one turn', () => {
+    const initial = createTestManager()
+    const [source] = findCardIds(
+      initial.state,
+      'playerA',
+      'blue-cost2-attack1-defense1-march2-return',
+    )
+    let manager = configureManager(initial, {
+      board: [{ cardId: source }],
+      mana: { playerA: 3 },
+    })
+
+    manager = GameManager.activateAbility(manager, source, 'return')
+    expect(manager.state.players.playerA.mana).toBe(4)
+
+    const summonOption = GameManager.getSummonOptions(manager, source).find(
+      ({ canSummon }) => canSummon,
+    )
+    expect(summonOption).toBeDefined()
+    manager = GameManager.summonCreature(manager, source, summonOption!.insertIndex)
+    manager = GameManager.activateAbility(manager, source, 'return')
+
+    expect(manager.state.players.playerA.hand).toContain(source)
+    expect(manager.state.players.playerA.mana).toBe(3)
   })
 })

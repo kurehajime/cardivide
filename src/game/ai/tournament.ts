@@ -146,6 +146,7 @@ export const playAiMatch = ({
     playerA: shuffleDeck(playerADeck, match.seed),
     playerB: shuffleDeck(playerBDeck, match.seed),
   })
+  const ai = new GameAI()
   let actionCount = 0
 
   const createResult = (
@@ -179,7 +180,7 @@ export const playAiMatch = ({
       return createResult('actionLimit', null)
     }
 
-    const action = GameAI.chooseAction(manager)
+    const action = ai.chooseAction(manager)
     if (action === null) {
       throw new Error('AI returned no action before the game ended.')
     }

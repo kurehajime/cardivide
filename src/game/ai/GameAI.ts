@@ -1,5 +1,5 @@
 import { GameManager } from '../GameManager'
-import type { GameAction, PlayerId } from '../types'
+import type { CardInstanceId, GameAction, PlayerId } from '../types'
 import {
   evaluateBattleEntry,
   evaluateMainContinuation,
@@ -23,12 +23,13 @@ const resolveBattleOption = (
 const chooseMainAction = (
   manager: GameManager,
   aiPlayerId: PlayerId,
+  actions: readonly GameAction[],
 ): GameAction => {
   const passScore = evaluateBattleEntry(manager, aiPlayerId).total
   let bestAction: GameAction | null = null
   let bestScore = passScore
 
-  for (const action of GameManager.getLegalMainActions(manager)) {
+  for (const action of actions) {
     const nextManager = GameManager.applyAction(manager, action)
     const score = evaluateMainContinuation(nextManager, aiPlayerId).total
     if (score > bestScore) {
@@ -38,6 +39,43 @@ const chooseMainAction = (
   }
 
   return bestAction ?? { type: 'passPhase' }
+}
+
+const isReturnAction = (
+  action: GameAction,
+): action is Extract<GameAction, { type: 'activateAbility' }> =>
+  action.type === 'activateAbility' && action.abilityType === 'return'
+
+export class AiTurnActionMemory {
+  private turn: number | null = null
+  private playerId: PlayerId | null = null
+  private readonly returnedCardIds = new Set<CardInstanceId>()
+
+  private syncTurn(manager: GameManager): void {
+    const { turn, activePlayerId } = manager.state
+    if (this.turn === turn && this.playerId === activePlayerId) {
+      return
+    }
+
+    this.turn = turn
+    this.playerId = activePlayerId
+    this.returnedCardIds.clear()
+  }
+
+  allows(manager: GameManager, action: GameAction): boolean {
+    this.syncTurn(manager)
+    return (
+      !isReturnAction(action) ||
+      !this.returnedCardIds.has(action.sourceCardId)
+    )
+  }
+
+  remember(manager: GameManager, action: GameAction): void {
+    this.syncTurn(manager)
+    if (isReturnAction(action)) {
+      this.returnedCardIds.add(action.sourceCardId)
+    }
+  }
 }
 
 const chooseBattleAction = (
@@ -67,6 +105,14 @@ const chooseBattleAction = (
 }
 
 export class GameAI {
+  private readonly turnMemory = new AiTurnActionMemory()
+
+  private getMainActions(manager: GameManager): GameAction[] {
+    return GameManager.getLegalMainActions(manager).filter(
+      (action) => this.turnMemory.allows(manager, action),
+    )
+  }
+
   static evaluate(
     manager: GameManager,
     aiPlayerId: PlayerId = manager.state.activePlayerId,
@@ -76,7 +122,7 @@ export class GameAI {
       : evaluateBattleEntry(manager, aiPlayerId)
   }
 
-  static chooseAction(manager: GameManager): GameAction | null {
+  chooseAction(manager: GameManager): GameAction | null {
     if (GameManager.getWinner(manager) !== null) {
       return null
     }
@@ -88,8 +134,15 @@ export class GameAI {
     switch (manager.state.phase) {
       case 'keepUp':
         return { type: 'resolveKeepUp' }
-      case 'main':
-        return chooseMainAction(manager, aiPlayerId)
+      case 'main': {
+        const action = chooseMainAction(
+          manager,
+          aiPlayerId,
+          this.getMainActions(manager),
+        )
+        this.turnMemory.remember(manager, action)
+        return action
+      }
       case 'battle':
         return chooseBattleAction(manager, aiPlayerId)
       case 'cleanup':

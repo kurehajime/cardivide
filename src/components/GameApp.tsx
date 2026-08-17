@@ -1,4 +1,4 @@
-import { useEffect, useReducer, useState } from 'react'
+import { useEffect, useReducer, useRef, useState } from 'react'
 import { LayoutGroup, MotionConfig } from 'motion/react'
 import {
   GameAI,
@@ -76,6 +76,11 @@ const GameSession = ({
   comDeckId,
   onChangeDecks,
 }: GameSessionProps) => {
+  const aiRef = useRef<GameAI | null>(null)
+  if (aiRef.current === null) {
+    aiRef.current = new GameAI()
+  }
+  const ai = aiRef.current
   const [{ manager, selectedCardId, message }, dispatch] = useReducer(
     gameUiReducer,
     { playerDeckId, comDeckId },
@@ -148,7 +153,7 @@ const GameSession = ({
           ) {
             return currentManager
           }
-          const action = GameAI.chooseAction(currentManager)
+          const action = ai.chooseAction(currentManager)
           return action === null
             ? currentManager
             : GameManager.applyAction(currentManager, action)
@@ -157,7 +162,7 @@ const GameSession = ({
     }, AI_ACTION_DELAY_MS)
 
     return () => window.clearTimeout(timeoutId)
-  }, [manager, state.activePlayerId, state.pendingCombat, winnerId])
+  }, [ai, manager, state.activePlayerId, state.pendingCombat, winnerId])
 
   const applyGameUpdate = (update: (currentManager: GameManager) => GameManager) => {
     dispatch({ type: 'applyGameUpdate', update })

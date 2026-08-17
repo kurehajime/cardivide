@@ -147,7 +147,10 @@ const ABILITY_HANDLERS = {
         '手札が5枚あるため帰還できません。',
       )
     },
-    getActivatedResolution: () => ({ destination: 'hand', mana: 0 }),
+    getActivatedResolution: (_ability, context) => ({
+      destination: 'hand',
+      mana: Math.floor(context.card.cost / 2),
+    }),
   },
   beachhead: {
     getSummonCostModifier: (ability, context, summoningPlayerId, insertIndex) => {

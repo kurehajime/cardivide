@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { GameManager } from '../GameManager'
 import type { GameState } from '../types'
-import { GameAI } from './GameAI'
+import { AiTurnActionMemory, GameAI } from './GameAI'
 import { AI_EVALUATION_PARAMETERS, evaluateBase } from './evaluation'
 
 const KEEP_ORDER_RANDOM = () => 1 - Number.EPSILON
@@ -139,12 +139,40 @@ describe('AI evaluation', () => {
 })
 
 describe('GameAI action selection', () => {
+  it('considers each physical card for return only once per turn', () => {
+    const manager = createTestManager()
+    const [sourceCardId, otherCardId] = manager.state.players.playerA.hand
+    const returnAction = {
+      type: 'activateAbility',
+      sourceCardId,
+      abilityType: 'return',
+    } as const
+    const otherReturnAction = {
+      ...returnAction,
+      sourceCardId: otherCardId,
+    }
+    const memory = new AiTurnActionMemory()
+
+    expect(memory.allows(manager, returnAction)).toBe(true)
+    memory.remember(manager, returnAction)
+    expect(memory.allows(manager, returnAction)).toBe(false)
+    expect(memory.allows(manager, otherReturnAction)).toBe(true)
+
+    const nextTurn = withState(manager, (state) => ({
+      ...state,
+      turn: state.turn + 1,
+      activePlayerId: 'playerB',
+    }))
+    expect(memory.allows(nextTurn, returnAction)).toBe(true)
+  })
+
   it('completes a turn using only enumerated legal actions', () => {
+    const ai = new GameAI()
     let manager = createTestManager()
     const startingPlayerId = manager.state.activePlayerId
 
     for (let actionCount = 0; actionCount < 10; actionCount += 1) {
-      const action = GameAI.chooseAction(manager)
+      const action = ai.chooseAction(manager)
       expect(action).not.toBeNull()
       expect(GameManager.getLegalActions(manager)).toContainEqual(action)
       manager = GameManager.applyAction(manager, action!)
@@ -159,7 +187,7 @@ describe('GameAI action selection', () => {
   })
 
   it('chooses a useful summon during the main phase', () => {
-    const action = GameAI.chooseAction(createTestManager())
+    const action = new GameAI().chooseAction(createTestManager())
 
     expect(action?.type).toBe('summonCreature')
   })
@@ -177,7 +205,7 @@ describe('GameAI action selection', () => {
       },
     }))
 
-    expect(GameAI.chooseAction(battle)).toEqual({
+    expect(new GameAI().chooseAction(battle)).toEqual({
       type: 'attackGroup',
       startIndex: 0,
       endIndex: 0,
@@ -187,6 +215,6 @@ describe('GameAI action selection', () => {
   it('passes when no battle attack is available', () => {
     const battle = GameManager.setPhase(createTestManager(), 'battle')
 
-    expect(GameAI.chooseAction(battle)).toEqual({ type: 'passPhase' })
+    expect(new GameAI().chooseAction(battle)).toEqual({ type: 'passPhase' })
   })
 })
