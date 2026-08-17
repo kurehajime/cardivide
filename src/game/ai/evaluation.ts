@@ -10,7 +10,7 @@ export const AI_EVALUATION_PARAMETERS = {
   mana: 1,
   boardMaterial: 1,
   handReserve: 0.3,
-  upkeepManaDiscount: 1,
+  upkeepManaMultiplier: 1.2,
   captureMarch: 1,
   capturePosition: 0.5,
 } as const
@@ -72,7 +72,7 @@ const evaluateBaseForView = (
   const upkeepMana =
     (GameManager.getKeepUpManaBonus(manager, aiPlayerId) -
       GameManager.getKeepUpManaBonus(manager, opponentId)) *
-    AI_EVALUATION_PARAMETERS.upkeepManaDiscount
+    AI_EVALUATION_PARAMETERS.upkeepManaMultiplier
   const aiRestrictedPositions =
     GameManager.countReachableSummonPositions(
       manager,

@@ -216,7 +216,7 @@ describe('AI evaluation', () => {
     const afterPlayerAttack = GameManager.from(playerAttack.nextState)
     const afterMiningAttack = GameManager.from(miningAttack.nextState)
 
-    expect(evaluateBase(manager, 'playerA').upkeepMana).toBe(1)
+    expect(evaluateBase(manager, 'playerA').upkeepMana).toBe(1.2)
     expect(playerAttack.playerDamage).toBe(3)
     expect(miningAttack.destroyedCardIds).toHaveLength(1)
     expect(GameManager.getKeepUpManaBonus(afterPlayerAttack, 'playerA')).toBe(1)
