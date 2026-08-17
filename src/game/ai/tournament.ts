@@ -3,7 +3,7 @@ import type { PlayerId } from '../types'
 import type { ThemeDeck, ThemeDeckId } from '../themeDecks'
 import { GameAI } from './GameAI'
 
-export const DEFAULT_TOURNAMENT_GAMES_PER_SIDE = 10
+export const DEFAULT_TOURNAMENT_GAMES_PER_SIDE = 30
 export const DEFAULT_TOURNAMENT_SEED = 20260816
 export const DEFAULT_MATCH_TURN_LIMIT = 200
 

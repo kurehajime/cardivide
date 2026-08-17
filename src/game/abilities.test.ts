@@ -438,7 +438,7 @@ describe('summon modifiers', () => {
     const [beachhead] = findCardIds(
       initial.state,
       'playerA',
-      'blue-cost2-attack2-defense2-march1-beachhead1',
+      'blue-cost2-attack2-defense1-march2-beachhead1',
     )
     const [summonCard] = findCardIds(
       initial.state,
@@ -448,6 +448,12 @@ describe('summon modifiers', () => {
     let manager = configureManager(initial, {
       board: [{ cardId: enemy }, { cardId: beachhead }],
       mana: { playerA: 1 },
+    })
+    expect(manager.state.cards[beachhead].card).toMatchObject({
+      name: '潮先の築城師',
+      attack: 2,
+      defense: 1,
+      march: 2,
     })
 
     expect(GameManager.getSummonOptions(manager, summonCard)[2]).toMatchObject({

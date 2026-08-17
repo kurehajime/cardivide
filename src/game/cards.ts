@@ -189,14 +189,14 @@ export const CREATURE_CARDS = [
     abilities: [{ type: 'return' }],
   },
   {
-    definitionId: 'blue-cost2-attack2-defense2-march1-beachhead1',
+    definitionId: 'blue-cost2-attack2-defense1-march2-beachhead1',
     name: '潮先の築城師',
     kind: 'creature',
     color: 'blue',
     cost: 2,
     attack: 2,
-    defense: 2,
-    march: 1,
+    defense: 1,
+    march: 2,
     abilities: [{ type: 'beachhead', costReduction: 1 }],
   },
   {
