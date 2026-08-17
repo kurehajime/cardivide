@@ -38,10 +38,9 @@ const terminalBreakdown = (terminal: number): EvaluationBreakdown => ({
 const sumBreakdown = (breakdown: Omit<EvaluationBreakdown, 'total'>): number =>
   Object.values(breakdown).reduce((total, value) => total + value, 0)
 
-const evaluateBaseForView = (
+export const evaluateBase = (
   manager: GameManager,
   aiPlayerId: PlayerId,
-  includeOwnHand: boolean,
 ): EvaluationBreakdown => {
   const winner = GameManager.getWinner(manager)
   if (winner === aiPlayerId) {
@@ -61,14 +60,12 @@ const evaluateBaseForView = (
     const direction = instance.ownerId === aiPlayerId ? 1 : -1
     return total + direction * instance.card.cost * AI_EVALUATION_PARAMETERS.boardMaterial
   }, 0)
-  const handReserve = includeOwnHand
-    ? aiPlayer.hand.reduce(
-        (total, cardId) =>
-          total +
-          manager.state.cards[cardId].card.cost * AI_EVALUATION_PARAMETERS.handReserve,
-        0,
-      )
-    : 0
+  const handReserve = aiPlayer.hand.reduce(
+    (total, cardId) =>
+      total +
+      manager.state.cards[cardId].card.cost * AI_EVALUATION_PARAMETERS.handReserve,
+    0,
+  )
   const upkeepMana =
     (GameManager.getKeepUpManaBonus(manager, aiPlayerId) -
       GameManager.getKeepUpManaBonus(manager, opponentId)) *
@@ -119,15 +116,17 @@ const evaluateBaseForView = (
   }
 }
 
-export const evaluateBase = (
-  manager: GameManager,
-  aiPlayerId: PlayerId,
-): EvaluationBreakdown => evaluateBaseForView(manager, aiPlayerId, true)
+const getOpponentPublicScore = (evaluation: EvaluationBreakdown): number => {
+  if (evaluation.terminal === AI_EVALUATION_PARAMETERS.victory) {
+    return AI_EVALUATION_PARAMETERS.defeat
+  }
+  if (evaluation.terminal === AI_EVALUATION_PARAMETERS.defeat) {
+    return AI_EVALUATION_PARAMETERS.victory
+  }
 
-const evaluatePublicBase = (
-  manager: GameManager,
-  playerId: PlayerId,
-): EvaluationBreakdown => evaluateBaseForView(manager, playerId, false)
+  // Every non-hand base component is symmetric between the two players.
+  return -(evaluation.total - evaluation.handReserve)
+}
 
 const createBattleView = (
   manager: GameManager,
@@ -162,13 +161,14 @@ const getCombatOutcomeScores = (
       action.endIndex,
     )
     const nextManager = GameManager.from(preview.nextState)
-    const aiScore = evaluateBase(nextManager, aiPlayerId).total
+    const aiEvaluation = evaluateBase(nextManager, aiPlayerId)
+    const aiScore = aiEvaluation.total
     return {
       aiScore,
       attackerScore:
         attackerId === aiPlayerId
           ? aiScore
-          : evaluatePublicBase(nextManager, attackerId).total,
+          : getOpponentPublicScore(aiEvaluation),
     }
   })
 }
@@ -206,7 +206,7 @@ export const evaluateBattleEntry = (
   const opponentBestOutcome = selectBestAttackerOutcome(
     {
       aiScore: base.total,
-      attackerScore: evaluatePublicBase(manager, opponentId).total,
+      attackerScore: getOpponentPublicScore(base),
     },
     opponentOutcomes,
   )
@@ -256,20 +256,24 @@ const getHandPlayCandidates = (
   return [...bestByCost.values()]
 }
 
-export const getDeployableHandValue = (
+const canEvaluateDeployableHand = (
   manager: GameManager,
   aiPlayerId: PlayerId,
+): boolean =>
+  manager.state.phase === 'main' &&
+  manager.state.activePlayerId === aiPlayerId &&
+  GameManager.getWinner(manager) === null
+
+const getDeployableHandValueFromBattleScore = (
+  manager: GameManager,
+  aiPlayerId: PlayerId,
+  currentBattleScore: number,
 ): number => {
-  if (
-    manager.state.phase !== 'main' ||
-    manager.state.activePlayerId !== aiPlayerId ||
-    GameManager.getWinner(manager) !== null
-  ) {
+  if (!canEvaluateDeployableHand(manager, aiPlayerId)) {
     return 0
   }
 
   const mana = manager.state.players[aiPlayerId].mana
-  const currentBattleScore = evaluateBattleEntry(manager, aiPlayerId).total
   const candidatesByCard = manager.state.players[aiPlayerId].hand.map((cardId) =>
     getHandPlayCandidates(manager, aiPlayerId, cardId, currentBattleScore),
   )
@@ -292,6 +296,21 @@ export const getDeployableHandValue = (
   return Math.max(...bestValueByMana)
 }
 
+export const getDeployableHandValue = (
+  manager: GameManager,
+  aiPlayerId: PlayerId,
+): number => {
+  if (!canEvaluateDeployableHand(manager, aiPlayerId)) {
+    return 0
+  }
+
+  return getDeployableHandValueFromBattleScore(
+    manager,
+    aiPlayerId,
+    evaluateBattleEntry(manager, aiPlayerId).total,
+  )
+}
+
 export const evaluateMainContinuation = (
   manager: GameManager,
   aiPlayerId: PlayerId,
@@ -301,7 +320,11 @@ export const evaluateMainContinuation = (
     return battleEntry
   }
 
-  const deployableHand = getDeployableHandValue(manager, aiPlayerId)
+  const deployableHand = getDeployableHandValueFromBattleScore(
+    manager,
+    aiPlayerId,
+    battleEntry.total,
+  )
   return {
     ...battleEntry,
     deployableHand,
