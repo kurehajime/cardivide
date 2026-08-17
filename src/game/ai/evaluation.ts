@@ -10,7 +10,7 @@ export const AI_EVALUATION_PARAMETERS = {
   mana: 1,
   boardMaterial: 1,
   handReserve: 0.3,
-  upkeepManaDiscount: 0.7,
+  upkeepManaDiscount: 1,
   captureMarch: 1,
   capturePosition: 0.5,
 } as const
@@ -38,9 +38,10 @@ const terminalBreakdown = (terminal: number): EvaluationBreakdown => ({
 const sumBreakdown = (breakdown: Omit<EvaluationBreakdown, 'total'>): number =>
   Object.values(breakdown).reduce((total, value) => total + value, 0)
 
-export const evaluateBase = (
+const evaluateBaseForView = (
   manager: GameManager,
   aiPlayerId: PlayerId,
+  includeOwnHand: boolean,
 ): EvaluationBreakdown => {
   const winner = GameManager.getWinner(manager)
   if (winner === aiPlayerId) {
@@ -60,12 +61,14 @@ export const evaluateBase = (
     const direction = instance.ownerId === aiPlayerId ? 1 : -1
     return total + direction * instance.card.cost * AI_EVALUATION_PARAMETERS.boardMaterial
   }, 0)
-  const handReserve = aiPlayer.hand.reduce(
-    (total, cardId) =>
-      total +
-      manager.state.cards[cardId].card.cost * AI_EVALUATION_PARAMETERS.handReserve,
-    0,
-  )
+  const handReserve = includeOwnHand
+    ? aiPlayer.hand.reduce(
+        (total, cardId) =>
+          total +
+          manager.state.cards[cardId].card.cost * AI_EVALUATION_PARAMETERS.handReserve,
+        0,
+      )
+    : 0
   const upkeepMana =
     (GameManager.getKeepUpManaBonus(manager, aiPlayerId) -
       GameManager.getKeepUpManaBonus(manager, opponentId)) *
@@ -116,6 +119,16 @@ export const evaluateBase = (
   }
 }
 
+export const evaluateBase = (
+  manager: GameManager,
+  aiPlayerId: PlayerId,
+): EvaluationBreakdown => evaluateBaseForView(manager, aiPlayerId, true)
+
+const evaluatePublicBase = (
+  manager: GameManager,
+  playerId: PlayerId,
+): EvaluationBreakdown => evaluateBaseForView(manager, playerId, false)
+
 const createBattleView = (
   manager: GameManager,
   attackerId: PlayerId,
@@ -128,11 +141,16 @@ const createBattleView = (
     pendingCombat: null,
   })
 
+type CombatOutcomeScores = {
+  aiScore: number
+  attackerScore: number
+}
+
 const getCombatOutcomeScores = (
   manager: GameManager,
   attackerId: PlayerId,
   aiPlayerId: PlayerId,
-): number[] => {
+): CombatOutcomeScores[] => {
   const battleManager = createBattleView(manager, attackerId)
   return GameManager.getLegalBattleActions(battleManager).map((action) => {
     if (action.type !== 'attackGroup') {
@@ -143,9 +161,31 @@ const getCombatOutcomeScores = (
       action.startIndex,
       action.endIndex,
     )
-    return evaluateBase(GameManager.from(preview.nextState), aiPlayerId).total
+    const nextManager = GameManager.from(preview.nextState)
+    const aiScore = evaluateBase(nextManager, aiPlayerId).total
+    return {
+      aiScore,
+      attackerScore:
+        attackerId === aiPlayerId
+          ? aiScore
+          : evaluatePublicBase(nextManager, attackerId).total,
+    }
   })
 }
+
+const selectBestAttackerOutcome = (
+  noAttack: CombatOutcomeScores,
+  outcomes: readonly CombatOutcomeScores[],
+): CombatOutcomeScores =>
+  outcomes.reduce(
+    (best, candidate) =>
+      candidate.attackerScore > best.attackerScore ||
+      (candidate.attackerScore === best.attackerScore &&
+        candidate.aiScore < best.aiScore)
+        ? candidate
+        : best,
+    noAttack,
+  )
 
 export const evaluateBattleEntry = (
   manager: GameManager,
@@ -159,10 +199,22 @@ export const evaluateBattleEntry = (
   const opponentId = getOpponentId(aiPlayerId)
   const myOutcomes = getCombatOutcomeScores(manager, aiPlayerId, aiPlayerId)
   const opponentOutcomes = getCombatOutcomeScores(manager, opponentId, aiPlayerId)
-  const myBestOutcome = Math.max(base.total, ...myOutcomes)
-  const opponentWorstOutcome = Math.min(base.total, ...opponentOutcomes)
+  const myBestOutcome = Math.max(
+    base.total,
+    ...myOutcomes.map(({ aiScore }) => aiScore),
+  )
+  const opponentBestOutcome = selectBestAttackerOutcome(
+    {
+      aiScore: base.total,
+      attackerScore: evaluatePublicBase(manager, opponentId).total,
+    },
+    opponentOutcomes,
+  )
   const myAttackPotential = Math.max(myBestOutcome - base.total, 0)
-  const opponentAttackThreat = Math.max(base.total - opponentWorstOutcome, 0)
+  const opponentAttackThreat = Math.max(
+    base.total - opponentBestOutcome.aiScore,
+    0,
+  )
 
   return {
     ...base,

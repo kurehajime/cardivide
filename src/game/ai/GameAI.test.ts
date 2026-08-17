@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { GameManager } from '../GameManager'
-import type { GameState } from '../types'
+import type { CardInstanceId, GameState, PlayerId } from '../types'
 import { AiTurnActionMemory, GameAI } from './GameAI'
-import { AI_EVALUATION_PARAMETERS, evaluateBase } from './evaluation'
+import {
+  AI_EVALUATION_PARAMETERS,
+  evaluateBase,
+  evaluateBattleEntry,
+} from './evaluation'
 
 const KEEP_ORDER_RANDOM = () => 1 - Number.EPSILON
 
@@ -12,6 +16,70 @@ const withState = (
   manager: GameManager,
   update: (state: GameState) => GameState,
 ): GameManager => GameManager.from(update(manager.state))
+
+const findCardId = (
+  state: GameState,
+  ownerId: PlayerId,
+  definitionId: string,
+): CardInstanceId => {
+  const instance = Object.values(state.cards).find(
+    (candidate) =>
+      candidate.ownerId === ownerId &&
+      candidate.card.definitionId === definitionId,
+  )
+  if (!instance) {
+    throw new Error(`Expected ${definitionId} for ${ownerId}.`)
+  }
+  return instance.id
+}
+
+const createMiningDilemmaManager = (): GameManager => {
+  const manager = createTestManager()
+  const playerAttacker = findCardId(
+    manager.state,
+    'playerB',
+    'red-cost4-attack5-defense2-march2',
+  )
+  const miner = findCardId(
+    manager.state,
+    'playerA',
+    'green-cost2-attack2-defense2-march1-mining1',
+  )
+  const minerAttacker = findCardId(
+    manager.state,
+    'playerB',
+    'red-cost2-attack3-defense2-march1',
+  )
+  const boardCardIds = new Set([playerAttacker, miner, minerAttacker])
+  const preparePlayer = (playerId: PlayerId) => {
+    const player = manager.state.players[playerId]
+    return {
+      ...player,
+      deck: player.deck.filter((cardId) => !boardCardIds.has(cardId)),
+      hand: player.hand.filter((cardId) => !boardCardIds.has(cardId)),
+      discard: player.discard.filter((cardId) => !boardCardIds.has(cardId)),
+    }
+  }
+
+  return GameManager.from({
+    ...manager.state,
+    turn: 10,
+    phase: 'battle',
+    activePlayerId: 'playerA',
+    hasAttackedThisTurn: false,
+    pendingCombat: null,
+    players: {
+      playerA: preparePlayer('playerA'),
+      playerB: preparePlayer('playerB'),
+    },
+    board: {
+      creatures: [playerAttacker, miner, minerAttacker].map((cardId) => ({
+        cardId,
+        summonedTurn: 9,
+      })),
+    },
+  })
+}
 
 describe('GameManager AI rule APIs', () => {
   it('only enumerates main actions that can be applied', () => {
@@ -134,6 +202,37 @@ describe('AI evaluation', () => {
 
     expect(total).toBeCloseTo(
       Object.values(components).reduce((sum, value) => sum + value, 0),
+    )
+  })
+
+  it('predicts the attack that benefits the opponent most even when mining survives', () => {
+    const manager = createMiningDilemmaManager()
+    const opponentBattle = withState(manager, (state) => ({
+      ...state,
+      activePlayerId: 'playerB',
+    }))
+    const playerAttack = GameManager.previewCombat(opponentBattle, 0, 0)
+    const miningAttack = GameManager.previewCombat(opponentBattle, 2, 2)
+    const afterPlayerAttack = GameManager.from(playerAttack.nextState)
+    const afterMiningAttack = GameManager.from(miningAttack.nextState)
+
+    expect(evaluateBase(manager, 'playerA').upkeepMana).toBe(1)
+    expect(playerAttack.playerDamage).toBe(3)
+    expect(miningAttack.destroyedCardIds).toHaveLength(1)
+    expect(GameManager.getKeepUpManaBonus(afterPlayerAttack, 'playerA')).toBe(1)
+    expect(GameManager.getKeepUpManaBonus(afterMiningAttack, 'playerA')).toBe(0)
+    expect(evaluateBase(afterPlayerAttack, 'playerB').total).toBeGreaterThan(
+      evaluateBase(afterMiningAttack, 'playerB').total,
+    )
+
+    const baseScore = evaluateBase(manager, 'playerA').total
+    const expectedThreat = Math.max(
+      baseScore - evaluateBase(afterPlayerAttack, 'playerA').total,
+      0,
+    )
+
+    expect(evaluateBattleEntry(manager, 'playerA').opponentAttackThreat).toBeCloseTo(
+      expectedThreat,
     )
   })
 })
