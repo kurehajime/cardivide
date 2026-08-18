@@ -253,4 +253,30 @@ describe('GameManager card instance tracking', () => {
     }
     expect(() => GameManager.from(orphanedState)).toThrow(/is not in any game zone/)
   })
+
+  it('shares the immutable card registry between internal state transitions', () => {
+    const manager = createTestManager()
+    const nextManager = GameManager.passPhase(manager)
+
+    expect(nextManager.state.cards).toBe(manager.state.cards)
+    expect(Object.isFrozen(manager.state.cards)).toBe(true)
+    expect(Object.isFrozen(manager.state.cards[1])).toBe(true)
+  })
+
+  it('requires card instance ids to be consecutive from one', () => {
+    const manager = createTestManager()
+    const cardCount = Object.keys(manager.state.cards).length
+    const cards = {
+      ...manager.state.cards,
+      [cardCount + 1]: {
+        ...manager.state.cards[cardCount],
+        id: cardCount + 1,
+      },
+    }
+    delete cards[cardCount]
+
+    expect(() => GameManager.from({ ...manager.state, cards })).toThrow(
+      /consecutive ids starting at 1/,
+    )
+  })
 })

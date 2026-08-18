@@ -59,11 +59,11 @@ export type SpellCard = CardBase & {
 
 export type Card = CreatureCard | FormationCard | SpellCard
 
-export type CardInstance = {
+export type CardInstance = Readonly<{
   id: CardInstanceId
   ownerId: PlayerId
   card: Card
-}
+}>
 
 export type CreatureInstance = {
   cardId: CardInstanceId
@@ -161,7 +161,7 @@ export type GameState = {
   phase: Phase
   hasAttackedThisTurn: boolean
   pendingCombat: PendingCombat | null
-  cards: Record<CardInstanceId, CardInstance>
+  cards: Readonly<Record<CardInstanceId, CardInstance>>
   players: Record<PlayerId, PlayerState>
   board: Board
 }

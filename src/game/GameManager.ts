@@ -96,11 +96,29 @@ const clonePlayer = (player: PlayerState): PlayerState => ({
   discard: [...player.discard],
 })
 
+const immutableCardRegistries = new WeakSet<GameState['cards']>()
+
+const getImmutableCardRegistry = (
+  cards: GameState['cards'],
+): GameState['cards'] => {
+  if (immutableCardRegistries.has(cards)) {
+    return cards
+  }
+
+  const clonedCards = Object.fromEntries(
+    Object.entries(cards).map(([id, instance]) => [
+      id,
+      Object.freeze({ ...instance }),
+    ]),
+  ) as GameState['cards']
+  Object.freeze(clonedCards)
+  immutableCardRegistries.add(clonedCards)
+  return clonedCards
+}
+
 const cloneGameState = (state: GameState): GameState => ({
   ...state,
-  cards: Object.fromEntries(
-    Object.entries(state.cards).map(([id, instance]) => [id, { ...instance }]),
-  ) as GameState['cards'],
+  cards: getImmutableCardRegistry(state.cards),
   players: {
     playerA: clonePlayer(state.players.playerA),
     playerB: clonePlayer(state.players.playerB),
@@ -426,36 +444,79 @@ const endTurnState = (state: GameState): GameState => {
   return resolveKeepUpState(nextTurnState)
 }
 
-export const assertValidGameState = (state: GameState): void => {
-  const locations = new Map<CardInstanceId, string>()
+const CARD_LOCATION_NONE = 0
+const CARD_LOCATION_DECK = 1
+const CARD_LOCATION_HAND = 2
+const CARD_LOCATION_DISCARD = 3
+const CARD_LOCATION_FORMATION = 4
+const CARD_LOCATION_BOARD = 5
+const COMBAT_FLAG_DAMAGE_MARKED = 1
+const COMBAT_FLAG_DESTROYED = 2
+const CARD_LOCATION_LABELS = [
+  'unknown',
+  'deck',
+  'hand',
+  'discard',
+  'formation',
+  'board',
+] as const
 
-  const locate = (
-    cardId: CardInstanceId,
-    ownerId: PlayerId,
-    location: string,
-    expectedKind?: CardInstance['card']['kind'],
-  ) => {
+type CardLocation =
+  | typeof CARD_LOCATION_DECK
+  | typeof CARD_LOCATION_HAND
+  | typeof CARD_LOCATION_DISCARD
+  | typeof CARD_LOCATION_FORMATION
+  | typeof CARD_LOCATION_BOARD
+
+export const assertValidGameState = (state: GameState): void => {
+  const registeredCardCount = Object.keys(state.cards).length
+  const locations = new Uint8Array(registeredCardCount + 1)
+
+  for (let cardId = 1; cardId <= registeredCardCount; cardId += 1) {
     const instance = state.cards[cardId]
     if (!instance) {
-      throw new Error(`Game state references unknown card instance ${cardId} at ${location}.`)
+      throw new Error(`Card registry must use consecutive ids starting at 1. Missing ${cardId}.`)
     }
     if (instance.id !== cardId) {
       throw new Error(`Card registry key ${cardId} does not match instance id ${instance.id}.`)
     }
-    if (instance.ownerId !== ownerId) {
-      throw new Error(`Card instance ${cardId} is in ${ownerId}'s ${location} but belongs to ${instance.ownerId}.`)
-    }
-    if (expectedKind && instance.card.kind !== expectedKind) {
-      throw new Error(`Card instance ${cardId} at ${location} must be a ${expectedKind}.`)
-    }
+  }
 
-    const previousLocation = locations.get(cardId)
-    if (previousLocation) {
+  const locate = (
+    cardId: CardInstanceId,
+    ownerId: PlayerId,
+    location: CardLocation,
+    expectedKind?: CardInstance['card']['kind'],
+  ) => {
+    if (
+      !Number.isInteger(cardId) ||
+      cardId <= 0 ||
+      cardId > registeredCardCount
+    ) {
+      throw new Error(`Game state references unknown card instance ${cardId}.`)
+    }
+    const instance = state.cards[cardId]
+    if (!instance) {
+      throw new Error(`Game state references unknown card instance ${cardId}.`)
+    }
+    if (instance.ownerId !== ownerId) {
       throw new Error(
-        `Card instance ${cardId} exists in both ${previousLocation} and ${location}.`,
+        `Card instance ${cardId} is in ${ownerId}'s ${CARD_LOCATION_LABELS[location]} but belongs to ${instance.ownerId}.`,
       )
     }
-    locations.set(cardId, location)
+    if (expectedKind && instance.card.kind !== expectedKind) {
+      throw new Error(
+        `Card instance ${cardId} at ${CARD_LOCATION_LABELS[location]} must be a ${expectedKind}.`,
+      )
+    }
+
+    const previousLocation = locations[cardId]
+    if (previousLocation !== CARD_LOCATION_NONE) {
+      throw new Error(
+        `Card instance ${cardId} exists in both ${CARD_LOCATION_LABELS[previousLocation]} and ${CARD_LOCATION_LABELS[location]}.`,
+      )
+    }
+    locations[cardId] = location
   }
 
   PLAYER_IDS.forEach((playerId) => {
@@ -466,20 +527,22 @@ export const assertValidGameState = (state: GameState): void => {
     if (player.hand.length > MAX_HAND_SIZE) {
       throw new Error(`${player.name}'s hand cannot contain more than ${MAX_HAND_SIZE} cards.`)
     }
-    player.deck.forEach((cardId) => locate(cardId, playerId, 'deck'))
-    player.hand.forEach((cardId) => locate(cardId, playerId, 'hand'))
-    player.discard.forEach((cardId) => locate(cardId, playerId, 'discard'))
+    player.deck.forEach((cardId) => locate(cardId, playerId, CARD_LOCATION_DECK))
+    player.hand.forEach((cardId) => locate(cardId, playerId, CARD_LOCATION_HAND))
+    player.discard.forEach((cardId) =>
+      locate(cardId, playerId, CARD_LOCATION_DISCARD),
+    )
     if (player.formation !== null) {
-      locate(player.formation, playerId, 'formation', 'formation')
+      locate(player.formation, playerId, CARD_LOCATION_FORMATION, 'formation')
     }
   })
 
-  state.board.creatures.forEach((creature, index) => {
+  state.board.creatures.forEach((creature) => {
     const instance = state.cards[creature.cardId]
     if (!instance) {
       throw new Error(`Board references unknown card instance ${creature.cardId}.`)
     }
-    locate(creature.cardId, instance.ownerId, `board position ${index}`, 'creature')
+    locate(creature.cardId, instance.ownerId, CARD_LOCATION_BOARD, 'creature')
   })
 
   if (state.pendingCombat) {
@@ -499,52 +562,37 @@ export const assertValidGameState = (state: GameState): void => {
       throw new Error('Combat cannot damage a player it did not reach.')
     }
 
-    const boardCardIds = new Set(state.board.creatures.map(({ cardId }) => cardId))
-    const markedCardIds = new Set<CardInstanceId>()
+    const combatFlags = new Uint8Array(registeredCardCount + 1)
     state.pendingCombat.damageMarkers.forEach(({ cardId, damage }) => {
-      if (!boardCardIds.has(cardId)) {
+      if (locations[cardId] !== CARD_LOCATION_BOARD) {
         throw new Error(`Damage marker references card ${cardId} outside the board.`)
       }
       if (!Number.isInteger(damage) || damage <= 0) {
         throw new Error(`Damage marker for card ${cardId} must have positive integer damage.`)
       }
-      if (markedCardIds.has(cardId)) {
+      if ((combatFlags[cardId] & COMBAT_FLAG_DAMAGE_MARKED) !== 0) {
         throw new Error(`Card ${cardId} has more than one damage marker.`)
       }
-      markedCardIds.add(cardId)
+      combatFlags[cardId] |= COMBAT_FLAG_DAMAGE_MARKED
     })
 
-    const destroyedCardIds = new Set<CardInstanceId>()
     state.pendingCombat.destroyedCardIds.forEach((cardId) => {
-      if (!markedCardIds.has(cardId)) {
+      if ((combatFlags[cardId] & COMBAT_FLAG_DAMAGE_MARKED) === 0) {
         throw new Error(`Destroyed card ${cardId} does not have a damage marker.`)
       }
-      if (destroyedCardIds.has(cardId)) {
+      if ((combatFlags[cardId] & COMBAT_FLAG_DESTROYED) !== 0) {
         throw new Error(`Destroyed card ${cardId} is listed more than once.`)
       }
-      destroyedCardIds.add(cardId)
+      combatFlags[cardId] |= COMBAT_FLAG_DESTROYED
     })
   } else if (state.hasAttackedThisTurn && state.phase !== 'battle') {
     throw new Error('A resolved attack must remain in the battle phase.')
   }
 
-  Object.entries(state.cards).forEach(([registryId, instance]) => {
-    if (Number(registryId) !== instance.id) {
-      throw new Error(`Card registry key ${registryId} does not match instance id ${instance.id}.`)
+  for (let cardId = 1; cardId <= registeredCardCount; cardId += 1) {
+    if (locations[cardId] === CARD_LOCATION_NONE) {
+      throw new Error(`Card instance ${cardId} is not in any game zone.`)
     }
-    if (!Number.isInteger(instance.id) || instance.id <= 0) {
-      throw new Error(`Card instance id must be a positive integer: ${instance.id}.`)
-    }
-    if (!locations.has(instance.id)) {
-      throw new Error(`Card instance ${instance.id} is not in any game zone.`)
-    }
-  })
-
-  const registeredCardCount = Object.keys(state.cards).length
-  if (locations.size !== registeredCardCount) {
-    throw new Error(
-      `Game state contains ${registeredCardCount} registered cards but ${locations.size} cards in zones.`,
-    )
   }
 }
 
