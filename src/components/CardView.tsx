@@ -44,6 +44,100 @@ const getRulesText = (card: Card): string => {
 const clamp = (value: number, minimum: number, maximum: number): number =>
   Math.min(Math.max(value, minimum), Math.max(minimum, maximum))
 
+const formatModifier = (value: number): string => `${value > 0 ? '+' : ''}${value}`
+
+type CardFaceProps = {
+  card: Card
+  colorLabel: string
+  statModifier?: CreatureStatModifier
+}
+
+const CardFace = ({ card, colorLabel, statModifier }: CardFaceProps) => {
+  const hasAttackModifier = statModifier !== undefined && statModifier.attack !== 0
+  const hasDefenseModifier = statModifier !== undefined && statModifier.defense !== 0
+  const modifiers: Array<{ label: string; type: 'attack' | 'defense' }> = []
+  if (hasAttackModifier) {
+    modifiers.push({ label: `攻${formatModifier(statModifier.attack)}`, type: 'attack' })
+  }
+  if (hasDefenseModifier) {
+    modifiers.push({ label: `防${formatModifier(statModifier.defense)}`, type: 'defense' })
+  }
+
+  return (
+    <svg
+      className="card-face"
+      viewBox="0 0 500 700"
+      preserveAspectRatio="xMidYMid meet"
+      aria-hidden="true"
+    >
+      <rect className="card-face-base" x="2" y="2" width="496" height="696" rx="18" />
+      <rect className="card-face-outline" x="6" y="6" width="488" height="688" rx="16" />
+
+      <circle className="card-face-cost-circle" cx="55" cy="54" r="40" />
+      <text className="card-face-cost-text" x="55" y="57">
+        {card.cost}
+      </text>
+      <foreignObject x="110" y="17" width="365" height="75">
+        <div className="card-face-name">{card.name}</div>
+      </foreignObject>
+
+      <rect className="card-face-art-frame" x="25" y="105" width="450" height="265" rx="12" />
+      <circle className="card-face-art-seal" cx="250" cy="237" r="72" />
+      <text className="card-face-art-letter" x="250" y="245">
+        {card.name.slice(0, 1)}
+      </text>
+
+      {modifiers.map((modifier, index) => (
+        <g
+          key={modifier.type}
+          className={`card-face-modifier card-face-modifier-${modifier.type}`}
+          transform={`translate(${modifiers.length === 1 ? 430 : 382 + index * 82} 150)`}
+        >
+          <circle r="34" />
+          <text y="3">{modifier.label}</text>
+        </g>
+      ))}
+
+      <rect className="card-face-type-band" x="25" y="385" width="450" height="48" rx="8" />
+      <text className="card-face-type-text" x="45" y="410">
+        {KIND_LABELS[card.kind]}・{colorLabel}
+      </text>
+
+      <rect className="card-face-rules-frame" x="25" y="447" width="450" height="175" rx="10" />
+      <foreignObject x="43" y="463" width="414" height="143">
+        <div className="card-face-rules">{getRulesText(card)}</div>
+      </foreignObject>
+
+      {card.kind === 'creature' ? (
+        <g className="card-face-stats">
+          {[
+            { label: '攻', value: card.attack, x: 25 },
+            { label: '防', value: card.defense, x: 180 },
+            { label: '進', value: card.march, x: 335 },
+          ].map(({ label, value, x }) => (
+            <g key={label} transform={`translate(${x} 637)`}>
+              <rect width="140" height="45" rx="8" />
+              <text className="card-face-stat-label" x="25" y="24">
+                {label}
+              </text>
+              <text className="card-face-stat-value" x="108" y="24">
+                {value}
+              </text>
+            </g>
+          ))}
+        </g>
+      ) : (
+        <g className="card-face-kind-mark">
+          <rect x="25" y="637" width="450" height="45" rx="8" />
+          <text x="250" y="661">
+            {KIND_LABELS[card.kind]}
+          </text>
+        </g>
+      )}
+    </svg>
+  )
+}
+
 const CardView = ({
   card,
   compact = false,
@@ -152,73 +246,26 @@ const CardView = ({
   const hasAttackModifier = statModifier !== undefined && statModifier.attack !== 0
   const hasDefenseModifier = statModifier !== undefined && statModifier.defense !== 0
   const hasStatModifier = hasAttackModifier || hasDefenseModifier
-  const formatModifier = (value: number) => `${value > 0 ? '+' : ''}${value}`
+  const modifierLabel = [
+    hasAttackModifier ? `攻撃力補正${formatModifier(statModifier.attack)}` : null,
+    hasDefenseModifier ? `防御力補正${formatModifier(statModifier.defense)}` : null,
+  ]
+    .filter((modifier): modifier is string => modifier !== null)
+    .join('、')
 
   return (
     <article
       ref={cardRef}
-      className={`card-view card-${colorClass} ${compact ? 'card-compact' : ''} ${hasStatModifier ? 'card-with-stat-modifiers' : ''}`}
+      className={`card-view card-${colorClass} ${compact ? 'card-compact' : ''}`}
       aria-describedby={showDetail ? detailId : undefined}
-      aria-label={card.name}
+      aria-label={`${card.name}${hasStatModifier ? `、${modifierLabel}` : ''}`}
       tabIndex={nestedInButton ? undefined : 0}
       onBlur={closeDetail}
       onFocus={openDetail}
       onPointerEnter={openDetail}
       onPointerLeave={closeDetail}
     >
-      <div className="card-face">
-        <header className="card-face-header">
-          <span className="card-face-cost" aria-label={`コスト ${card.cost}`}>
-            {card.cost}
-          </span>
-          <h3>{card.name}</h3>
-        </header>
-        <div className="card-artwork" aria-hidden="true">
-          <span>{card.name.slice(0, 1)}</span>
-        </div>
-        <div className="card-type-line">
-          {KIND_LABELS[card.kind]}・{colorLabel}
-        </div>
-        <p className="card-face-rules">{getRulesText(card)}</p>
-        {card.kind === 'creature' ? (
-          <dl className="card-face-stats">
-            <div>
-              <dt>攻</dt>
-              <dd>{card.attack}</dd>
-            </div>
-            <div>
-              <dt>防</dt>
-              <dd>{card.defense}</dd>
-            </div>
-            <div>
-              <dt>進</dt>
-              <dd>{card.march}</dd>
-            </div>
-          </dl>
-        ) : (
-          <div className="card-face-kind-mark">{KIND_LABELS[card.kind]}</div>
-        )}
-      </div>
-      {hasStatModifier && (
-        <div className="card-stat-modifiers" aria-label="ステータス補正">
-          {hasAttackModifier && (
-            <span
-              className="card-stat-modifier card-stat-modifier-attack"
-              aria-label={`攻撃力補正 ${formatModifier(statModifier.attack)}`}
-            >
-              攻{formatModifier(statModifier.attack)}
-            </span>
-          )}
-          {hasDefenseModifier && (
-            <span
-              className="card-stat-modifier card-stat-modifier-defense"
-              aria-label={`防御力補正 ${formatModifier(statModifier.defense)}`}
-            >
-              防{formatModifier(statModifier.defense)}
-            </span>
-          )}
-        </div>
-      )}
+      <CardFace card={card} colorLabel={colorLabel} statModifier={statModifier} />
       {showDetail &&
         createPortal(
           <div

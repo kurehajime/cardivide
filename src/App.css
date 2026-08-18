@@ -603,12 +603,12 @@
   aspect-ratio: 5 / 7;
   display: block;
   padding: 0;
-  border: 2px solid var(--card-accent-dark);
+  border: 0;
   border-radius: 8px;
   background: #f7f5ee;
   color: #171a17;
   text-align: left;
-  overflow: hidden;
+  overflow: visible;
   isolation: isolate;
 }
 
@@ -645,177 +645,148 @@
   position: absolute;
   inset: 0;
   z-index: 1;
-  display: grid;
-  grid-template-rows: 27px minmax(42px, 1.25fr) 17px minmax(28px, 0.75fr) 22px;
-  gap: 3px;
-  padding: 5px;
-  background: #f7f5ee;
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
-.card-face-header {
-  min-width: 0;
-  display: grid;
-  grid-template-columns: 27px minmax(0, 1fr);
-  gap: 5px;
-  align-items: center;
+.card-face-base {
+  fill: #f7f5ee;
 }
 
-.card-face-cost {
-  width: 27px;
-  height: 27px;
-  display: grid;
-  place-items: center;
-  border: 2px solid var(--card-accent-dark);
-  border-radius: 50%;
-  background: var(--card-accent);
-  color: #fff;
-  font-size: 15px;
+.card-face-outline {
+  fill: none;
+  stroke: var(--card-accent-dark);
+  stroke-width: 8;
+}
+
+.card-face-cost-circle {
+  fill: var(--card-accent);
+  stroke: var(--card-accent-dark);
+  stroke-width: 8;
+}
+
+.card-face-cost-text,
+.card-face-art-letter,
+.card-face-type-text,
+.card-face-stat-label,
+.card-face-stat-value,
+.card-face-kind-mark text,
+.card-face-modifier text {
+  font-family: inherit;
   font-weight: 900;
-  line-height: 1;
-}
-
-.card-face-header h3 {
-  min-width: 0;
-  margin: 0;
-  color: #171a17;
-  font-size: 11px;
-  line-height: 1.12;
   letter-spacing: 0;
-  overflow-wrap: anywhere;
+  text-anchor: middle;
+  dominant-baseline: middle;
 }
 
-.card-artwork {
-  min-height: 0;
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  border: 1px solid var(--card-accent-dark);
-  border-radius: 4px;
-  background:
-    linear-gradient(145deg, rgb(255 255 255 / 58%), transparent 55%),
-    var(--card-tint);
+.card-face-cost-text {
+  fill: #fff;
+  font-size: 42px;
 }
 
-.card-artwork span {
-  display: grid;
-  width: min(52%, 54px);
-  aspect-ratio: 1;
-  place-items: center;
-  border: 2px solid color-mix(in srgb, var(--card-accent-dark) 70%, transparent);
-  border-radius: 50%;
-  background: rgb(255 255 255 / 42%);
-  color: var(--card-accent-dark);
-  font-size: 27px;
-  font-weight: 900;
-  line-height: 1;
-}
-
-.card-type-line {
-  min-width: 0;
+.card-face-name {
+  width: 100%;
+  height: 100%;
   display: flex;
   align-items: center;
-  padding: 0 6px;
-  border-radius: 3px;
-  background: var(--card-accent-dark);
-  color: #fff;
-  font-size: 9px;
-  font-weight: 800;
+  color: #171a17;
+  font-size: 38px;
+  font-weight: 900;
   line-height: 1;
+  letter-spacing: 0;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
+.card-face-art-frame {
+  fill: var(--card-tint);
+  stroke: var(--card-accent-dark);
+  stroke-width: 6;
+}
+
+.card-face-art-seal {
+  fill: rgb(255 255 255 / 42%);
+  stroke: var(--card-accent-dark);
+  stroke-width: 7;
+}
+
+.card-face-art-letter {
+  fill: var(--card-accent-dark);
+  font-size: 82px;
+}
+
+.card-face-type-band {
+  fill: var(--card-accent-dark);
+}
+
+.card-face-type-text {
+  fill: #fff;
+  font-size: 27px;
+  text-anchor: start;
+}
+
+.card-face-rules-frame {
+  fill: rgb(255 255 255 / 68%);
+  stroke: var(--card-accent-dark);
+  stroke-opacity: 0.62;
+  stroke-width: 5;
+}
+
 .card-face-rules {
-  min-height: 0;
-  margin: 0;
-  padding: 5px;
-  border: 1px solid color-mix(in srgb, var(--card-accent-dark) 62%, transparent);
-  border-radius: 4px;
-  background: rgb(255 255 255 / 68%);
+  width: 100%;
+  height: 100%;
   color: #252a26;
-  font-size: 8px;
-  line-height: 1.25;
+  font-size: 28px;
+  font-weight: 600;
+  line-height: 1.35;
   letter-spacing: 0;
   overflow: hidden;
   overflow-wrap: anywhere;
 }
 
-.card-face-stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 3px;
-  margin: 0;
+.card-face-stats rect,
+.card-face-kind-mark rect {
+  fill: var(--card-tint);
+  stroke: var(--card-accent-dark);
+  stroke-opacity: 0.58;
+  stroke-width: 5;
 }
 
-.card-face-stats div {
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  border: 1px solid color-mix(in srgb, var(--card-accent-dark) 58%, transparent);
-  border-radius: 3px;
-  background: var(--card-tint);
+.card-face-stat-label {
+  fill: var(--card-accent-dark);
+  font-size: 25px;
+  text-anchor: start;
 }
 
-.card-face-stats dt {
-  color: var(--card-accent-dark);
-  font-size: 8px;
-  font-weight: 800;
+.card-face-stat-value {
+  fill: #171a17;
+  font-size: 37px;
 }
 
-.card-face-stats dd {
-  margin: 0;
-  color: #171a17;
-  font-size: 13px;
-  font-weight: 900;
+.card-face-kind-mark text {
+  fill: var(--card-accent-dark);
+  font-size: 27px;
 }
 
-.card-face-kind-mark {
-  display: grid;
-  place-items: center;
-  border: 1px solid color-mix(in srgb, var(--card-accent-dark) 58%, transparent);
-  border-radius: 3px;
-  background: var(--card-tint);
-  color: var(--card-accent-dark);
-  font-size: 9px;
-  font-weight: 900;
+.card-face-modifier circle {
+  stroke: #fff;
+  stroke-width: 6;
+  filter: drop-shadow(0 6px 8px rgb(20 24 21 / 28%));
 }
 
-.card-stat-modifiers {
-  position: absolute;
-  z-index: 3;
-  top: 38px;
-  right: 7px;
-  left: auto;
-  display: flex;
-  justify-content: center;
-  gap: 5px;
-  pointer-events: none;
+.card-face-modifier-attack circle {
+  fill: rgb(165 66 53 / 78%);
 }
 
-.card-stat-modifier {
-  display: grid;
-  width: 29px;
-  height: 29px;
-  place-items: center;
-  border: 2px solid #fff;
-  border-radius: 50%;
-  box-shadow: 0 2px 5px rgb(20 24 21 / 28%);
-  color: #fff;
-  font-size: 10px;
-  font-weight: 900;
-  line-height: 1;
-  white-space: nowrap;
+.card-face-modifier-defense circle {
+  fill: rgb(55 105 168 / 78%);
 }
 
-.card-stat-modifier-attack {
-  background: rgb(165 66 53 / 72%);
-}
-
-.card-stat-modifier-defense {
-  background: rgb(55 105 168 / 72%);
+.card-face-modifier text {
+  fill: #fff;
+  font-size: 20px;
 }
 
 .card-compact {
@@ -878,6 +849,7 @@
   border: 1px dashed #9aa596;
   background: #f0f1ec;
   color: #6b756a;
+  overflow: hidden;
 }
 
 .card-empty-label {
@@ -1047,53 +1019,6 @@
     grid-template-columns: repeat(5, minmax(96px, 1fr));
     justify-content: start;
     overflow-x: auto;
-  }
-
-  .hand-panel .card-face {
-    grid-template-rows: 23px minmax(30px, 1.3fr) 15px minmax(20px, 0.7fr) 19px;
-    gap: 2px;
-    padding: 4px;
-  }
-
-  .hand-panel .card-face-header {
-    grid-template-columns: 22px minmax(0, 1fr);
-    gap: 3px;
-  }
-
-  .hand-panel .card-face-cost {
-    width: 22px;
-    height: 22px;
-    font-size: 12px;
-  }
-
-  .hand-panel .card-face-header h3 {
-    font-size: 9px;
-  }
-
-  .hand-panel .card-artwork span {
-    font-size: 22px;
-  }
-
-  .hand-panel .card-type-line,
-  .hand-panel .card-face-kind-mark {
-    font-size: 7px;
-  }
-
-  .hand-panel .card-face-rules {
-    padding: 3px;
-    font-size: 7px;
-  }
-
-  .hand-panel .card-face-stats {
-    gap: 2px;
-  }
-
-  .hand-panel .card-face-stats dt {
-    font-size: 7px;
-  }
-
-  .hand-panel .card-face-stats dd {
-    font-size: 10px;
   }
 
   .card-detail-popover {
