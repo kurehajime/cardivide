@@ -53,6 +53,7 @@ type CardFaceProps = {
 }
 
 const CardFace = ({ card, colorLabel, statModifier }: CardFaceProps) => {
+  const isFormation = card.kind === 'formation'
   const hasAttackModifier = statModifier !== undefined && statModifier.attack !== 0
   const hasDefenseModifier = statModifier !== undefined && statModifier.defense !== 0
   const modifiers: Array<{ label: string; type: 'attack' | 'defense' }> = []
@@ -73,19 +74,19 @@ const CardFace = ({ card, colorLabel, statModifier }: CardFaceProps) => {
       <rect className="card-face-base" x="2" y="2" width="496" height="696" rx="18" />
       <rect className="card-face-outline" x="6" y="6" width="488" height="688" rx="16" />
 
+      <rect className="card-face-art-frame" x="25" y="83" width="450" height="265" rx="12" />
+      <circle className="card-face-art-seal" cx="250" cy="215" r="72" />
+      <text className="card-face-art-letter" x="250" y="223">
+        {card.name.slice(0, 1)}
+      </text>
+
       <circle className="card-face-cost-circle" cx="55" cy="54" r="40" />
       <text className="card-face-cost-text" x="55" y="57">
         {card.cost}
       </text>
-      <foreignObject x="110" y="17" width="365" height="75">
+      <foreignObject x="110" y="28" width="365" height="52">
         <div className="card-face-name">{card.name}</div>
       </foreignObject>
-
-      <rect className="card-face-art-frame" x="25" y="105" width="450" height="265" rx="12" />
-      <circle className="card-face-art-seal" cx="250" cy="237" r="72" />
-      <text className="card-face-art-letter" x="250" y="245">
-        {card.name.slice(0, 1)}
-      </text>
 
       {modifiers.map((modifier, index) => (
         <g
@@ -98,42 +99,49 @@ const CardFace = ({ card, colorLabel, statModifier }: CardFaceProps) => {
         </g>
       ))}
 
-      <rect className="card-face-type-band" x="25" y="385" width="450" height="48" rx="8" />
-      <text className="card-face-type-text" x="45" y="410">
+      <rect className="card-face-type-band" x="25" y="362" width="450" height="48" rx="8" />
+      <text className="card-face-type-text" x="45" y="387">
         {KIND_LABELS[card.kind]}・{colorLabel}
       </text>
 
-      <rect className="card-face-rules-frame" x="25" y="447" width="450" height="175" rx="10" />
-      <foreignObject x="43" y="463" width="414" height="143">
+      <rect
+        className="card-face-rules-frame"
+        x="25"
+        y="424"
+        width="450"
+        height={isFormation ? 255 : 163}
+        rx="10"
+      />
+      <foreignObject x="43" y="440" width="414" height={isFormation ? 223 : 131}>
         <div className="card-face-rules">{getRulesText(card)}</div>
       </foreignObject>
 
       {card.kind === 'creature' ? (
         <g className="card-face-stats">
           {[
-            { label: '攻', value: card.attack, x: 25 },
-            { label: '防', value: card.defense, x: 180 },
-            { label: '進', value: card.march, x: 335 },
+            { label: '攻撃', value: card.attack, x: 25 },
+            { label: '守備', value: card.defense, x: 180 },
+            { label: '進軍', value: card.march, x: 335 },
           ].map(({ label, value, x }) => (
-            <g key={label} transform={`translate(${x} 637)`}>
-              <rect width="140" height="45" rx="8" />
-              <text className="card-face-stat-label" x="25" y="24">
+            <g key={label} transform={`translate(${x} 601)`}>
+              <rect width="140" height="78" rx="8" />
+              <text className="card-face-stat-label" x="10" y="40">
                 {label}
               </text>
-              <text className="card-face-stat-value" x="108" y="24">
+              <text className="card-face-stat-value" x="120" y="40">
                 {value}
               </text>
             </g>
           ))}
         </g>
-      ) : (
+      ) : card.kind === 'spell' ? (
         <g className="card-face-kind-mark">
-          <rect x="25" y="637" width="450" height="45" rx="8" />
-          <text x="250" y="661">
+          <rect x="25" y="601" width="450" height="78" rx="8" />
+          <text x="250" y="641">
             {KIND_LABELS[card.kind]}
           </text>
         </g>
-      )}
+      ) : null}
     </svg>
   )
 }

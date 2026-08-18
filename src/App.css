@@ -368,7 +368,7 @@
   position: absolute;
   z-index: 1;
   right: 5px;
-  bottom: 5px;
+  bottom: 29px;
   left: 5px;
   display: grid;
   gap: 4px;
@@ -756,18 +756,18 @@
 
 .card-face-stat-label {
   fill: var(--card-accent-dark);
-  font-size: 25px;
+  font-size: 42px;
   text-anchor: start;
 }
 
 .card-face-stat-value {
   fill: #171a17;
-  font-size: 37px;
+  font-size: 50px;
 }
 
 .card-face-kind-mark text {
   fill: var(--card-accent-dark);
-  font-size: 27px;
+  font-size: 34px;
 }
 
 .card-face-modifier circle {
