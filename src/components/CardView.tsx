@@ -166,7 +166,39 @@ const CardView = ({
       onPointerEnter={openDetail}
       onPointerLeave={closeDetail}
     >
-      <div className="card-blank-surface" aria-hidden="true" />
+      <div className="card-face">
+        <header className="card-face-header">
+          <span className="card-face-cost" aria-label={`コスト ${card.cost}`}>
+            {card.cost}
+          </span>
+          <h3>{card.name}</h3>
+        </header>
+        <div className="card-artwork" aria-hidden="true">
+          <span>{card.name.slice(0, 1)}</span>
+        </div>
+        <div className="card-type-line">
+          {KIND_LABELS[card.kind]}・{colorLabel}
+        </div>
+        <p className="card-face-rules">{getRulesText(card)}</p>
+        {card.kind === 'creature' ? (
+          <dl className="card-face-stats">
+            <div>
+              <dt>攻</dt>
+              <dd>{card.attack}</dd>
+            </div>
+            <div>
+              <dt>防</dt>
+              <dd>{card.defense}</dd>
+            </div>
+            <div>
+              <dt>進</dt>
+              <dd>{card.march}</dd>
+            </div>
+          </dl>
+        ) : (
+          <div className="card-face-kind-mark">{KIND_LABELS[card.kind]}</div>
+        )}
+      </div>
       {hasStatModifier && (
         <div className="card-stat-modifiers" aria-label="ステータス補正">
           {hasAttackModifier && (
