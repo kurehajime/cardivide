@@ -51,11 +51,12 @@ const HandView = ({
             data-card-id={card?.id}
             className={cardClassName}
             type="button"
+            aria-label={card?.card.name}
             title={unavailable ? '現在は使用できません' : undefined}
             disabled={!card || disabled || unavailable}
             onClick={() => card && onCardClick?.(card.id)}
           >
-            <CardView card={card?.card ?? null} compact />
+            <CardView card={card?.card ?? null} compact nestedInButton />
           </motion.button>
         )
       })}
