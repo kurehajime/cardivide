@@ -72,7 +72,6 @@ const CardFace = ({ card, colorLabel, statModifier }: CardFaceProps) => {
       aria-hidden="true"
     >
       <rect className="card-face-base" x="2" y="2" width="496" height="696" rx="18" />
-      <rect className="card-face-outline" x="6" y="6" width="488" height="688" rx="16" />
 
       <rect className="card-face-art-frame" x="25" y="83" width="450" height="265" rx="12" />
       <circle className="card-face-art-seal" cx="250" cy="215" r="72" />

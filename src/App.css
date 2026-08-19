@@ -676,12 +676,6 @@
   fill: #f7f5ee;
 }
 
-.card-face-outline {
-  fill: none;
-  stroke: var(--card-accent-dark);
-  stroke-width: 8;
-}
-
 .card-face-cost-circle {
   fill: var(--card-accent);
   stroke: var(--card-accent-dark);
