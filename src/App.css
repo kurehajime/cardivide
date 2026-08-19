@@ -549,7 +549,17 @@
   background: #171a17;
 }
 
+.hand-panel-top {
+  padding-bottom: 42px;
+}
+
+.hand-panel-bottom {
+  padding-top: 42px;
+}
+
 .hand-card-button {
+  position: relative;
+  top: 0;
   aspect-ratio: 5 / 7;
   display: grid;
   min-width: 0;
@@ -558,6 +568,7 @@
   border-radius: 8px;
   background: transparent;
   color: inherit;
+  transition: top 140ms ease;
 }
 
 .hand-card-button > .card-view {
@@ -575,8 +586,19 @@
 }
 
 .hand-card-selected {
-  outline: 3px solid #276fbf;
-  outline-offset: 3px;
+  z-index: 2;
+}
+
+.hand-card-selected:focus-visible {
+  outline: 0;
+}
+
+.hand-panel-bottom .hand-card-selected {
+  top: -32px;
+}
+
+.hand-panel-top .hand-card-selected {
+  top: 32px;
 }
 
 .hand-card-button:disabled {

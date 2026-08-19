@@ -232,14 +232,41 @@ const CardView = ({
     }
 
     const button = cardRef.current?.closest('button')
+    let animationFrameId: number | null = null
+    const stopTrackingPosition = () => {
+      if (animationFrameId !== null) {
+        window.cancelAnimationFrame(animationFrameId)
+        animationFrameId = null
+      }
+      updateDetailPosition()
+    }
+    const trackPosition = () => {
+      updateDetailPosition()
+      animationFrameId = window.requestAnimationFrame(trackPosition)
+    }
+    const startTrackingPosition = () => {
+      if (animationFrameId === null) {
+        animationFrameId = window.requestAnimationFrame(trackPosition)
+      }
+    }
+
     button?.addEventListener('focus', openDetail)
     button?.addEventListener('blur', closeDetail)
+    button?.addEventListener('transitionrun', startTrackingPosition)
+    button?.addEventListener('transitionend', stopTrackingPosition)
+    button?.addEventListener('transitioncancel', stopTrackingPosition)
 
     return () => {
+      if (animationFrameId !== null) {
+        window.cancelAnimationFrame(animationFrameId)
+      }
       button?.removeEventListener('focus', openDetail)
       button?.removeEventListener('blur', closeDetail)
+      button?.removeEventListener('transitionrun', startTrackingPosition)
+      button?.removeEventListener('transitionend', stopTrackingPosition)
+      button?.removeEventListener('transitioncancel', stopTrackingPosition)
     }
-  }, [closeDetail, nestedInButton, openDetail])
+  }, [closeDetail, nestedInButton, openDetail, updateDetailPosition])
 
   if (!card || faceDown) {
     return (
