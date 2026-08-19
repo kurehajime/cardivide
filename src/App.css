@@ -338,6 +338,7 @@
 
 .board-formation > .card-view {
   width: min(116px, 100%);
+  box-shadow: 0 9px 20px rgb(18 22 19 / 48%);
 }
 
 .board-lane-scroll {
@@ -362,6 +363,7 @@
 
 .board-slot > .card-view {
   width: 100%;
+  box-shadow: 0 9px 20px rgb(18 22 19 / 48%);
 }
 
 .board-ability-actions {
@@ -457,6 +459,7 @@
 .board-insert-slot-empty {
   width: 140px;
   min-width: 140px;
+  justify-self: center;
 }
 
 .board-insert-slot:not(:disabled) {
@@ -632,6 +635,19 @@
   text-align: left;
   overflow: visible;
   isolation: isolate;
+}
+
+.card-view:not(.card-empty)::after {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  border-radius: inherit;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.58' numOctaves='4' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='linear' slope='2.4' intercept='-.7'/%3E%3CfeFuncG type='linear' slope='2.4' intercept='-.7'/%3E%3CfeFuncB type='linear' slope='2.4' intercept='-.7'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-size: 80px 80px;
+  mix-blend-mode: multiply;
+  opacity: 0.22;
+  pointer-events: none;
 }
 
 .card-red {
