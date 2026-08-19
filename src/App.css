@@ -694,8 +694,6 @@
 
 .card-face-cost-circle {
   fill: var(--card-accent);
-  stroke: var(--card-accent-dark);
-  stroke-width: 8;
 }
 
 .card-face-cost-text,
@@ -778,7 +776,10 @@
   overflow-wrap: anywhere;
 }
 
-.card-face-stats rect,
+.card-face-stats rect {
+  fill: var(--card-accent);
+}
+
 .card-face-kind-mark rect {
   fill: var(--card-tint);
   stroke: var(--card-accent-dark);
@@ -787,13 +788,13 @@
 }
 
 .card-face-stat-label {
-  fill: var(--card-accent-dark);
+  fill: #fff;
   font-size: 42px;
   text-anchor: start;
 }
 
 .card-face-stat-value {
-  fill: #171a17;
+  fill: #fff;
   font-size: 50px;
 }
 
