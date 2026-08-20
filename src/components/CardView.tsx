@@ -23,6 +23,12 @@ const KIND_LABELS = {
   spell: '呪文',
 } as const
 
+const STAT_ICON_URLS = {
+  attack: `${import.meta.env.BASE_URL}step.svg`,
+  defense: `${import.meta.env.BASE_URL}guard.svg`,
+  march: `${import.meta.env.BASE_URL}attack.svg`,
+} as const
+
 type DetailPlacement = 'top' | 'right' | 'bottom' | 'left'
 
 type DetailPosition = {
@@ -36,7 +42,7 @@ const VIEWPORT_PADDING = 12
 
 const getRulesText = (card: Card): string => {
   if (card.kind === 'creature') {
-    return card.abilities.length > 0 ? card.abilities.map(formatAbility).join(' / ') : '能力なし'
+    return card.abilities.map(formatAbility).join(' / ')
   }
   return card.text
 }
@@ -56,12 +62,24 @@ const CardFace = ({ card, colorLabel, statModifier }: CardFaceProps) => {
   const isFormation = card.kind === 'formation'
   const hasAttackModifier = statModifier !== undefined && statModifier.attack !== 0
   const hasDefenseModifier = statModifier !== undefined && statModifier.defense !== 0
-  const modifiers: Array<{ label: string; type: 'attack' | 'defense' }> = []
+  const modifiers: Array<{
+    iconUrl: string
+    label: string
+    type: 'attack' | 'defense'
+  }> = []
   if (hasAttackModifier) {
-    modifiers.push({ label: `攻${formatModifier(statModifier.attack)}`, type: 'attack' })
+    modifiers.push({
+      iconUrl: STAT_ICON_URLS.attack,
+      label: formatModifier(statModifier.attack),
+      type: 'attack',
+    })
   }
   if (hasDefenseModifier) {
-    modifiers.push({ label: `防${formatModifier(statModifier.defense)}`, type: 'defense' })
+    modifiers.push({
+      iconUrl: STAT_ICON_URLS.defense,
+      label: formatModifier(statModifier.defense),
+      type: 'defense',
+    })
   }
 
   return (
@@ -91,10 +109,20 @@ const CardFace = ({ card, colorLabel, statModifier }: CardFaceProps) => {
         <g
           key={modifier.type}
           className={`card-face-modifier card-face-modifier-${modifier.type}`}
-          transform={`translate(${modifiers.length === 1 ? 430 : 382 + index * 82} 150)`}
+          transform={`translate(${modifiers.length === 1 ? 426 : 354 + index * 96} 150)`}
         >
-          <circle r="34" />
-          <text y="3">{modifier.label}</text>
+          <circle r="46" />
+          <image
+            href={modifier.iconUrl}
+            x="-39"
+            y="-24"
+            width="48"
+            height="48"
+            preserveAspectRatio="xMidYMid meet"
+          />
+          <text x="24" y="3">
+            {modifier.label}
+          </text>
         </g>
       ))}
 
@@ -112,22 +140,32 @@ const CardFace = ({ card, colorLabel, statModifier }: CardFaceProps) => {
         rx="10"
       />
       <foreignObject x="43" y="440" width="414" height={isFormation ? 223 : 131}>
-        <div className="card-face-rules">{getRulesText(card)}</div>
+        <div
+          className={`card-face-rules ${card.kind === 'creature' ? 'card-face-rules-creature' : ''}`}
+        >
+          {getRulesText(card)}
+        </div>
       </foreignObject>
 
       {card.kind === 'creature' ? (
         <g className="card-face-stats">
           {[
-            { label: '攻撃', value: card.attack, x: 25 },
-            { label: '守備', value: card.defense, x: 180 },
-            { label: '進軍', value: card.march, x: 335 },
-          ].map(({ label, value, x }) => (
+            { label: '攻撃', iconUrl: STAT_ICON_URLS.attack, value: card.attack, x: 25 },
+            { label: '守備', iconUrl: STAT_ICON_URLS.defense, value: card.defense, x: 180 },
+            { label: '進軍', iconUrl: STAT_ICON_URLS.march, value: card.march, x: 335 },
+          ].map(({ label, iconUrl, value, x }) => (
             <g key={label} transform={`translate(${x} 601)`}>
               <rect width="140" height="78" rx="8" />
-              <text className="card-face-stat-label" x="10" y="40">
-                {label}
-              </text>
-              <text className="card-face-stat-value" x="120" y="40">
+              <image
+                className="card-face-stat-icon"
+                href={iconUrl}
+                x="10"
+                y="10"
+                width="58"
+                height="58"
+                preserveAspectRatio="xMidYMid meet"
+              />
+              <text className="card-face-stat-value" x="108" y="40">
                 {value}
               </text>
             </g>
