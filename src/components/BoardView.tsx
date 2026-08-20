@@ -146,7 +146,7 @@ const BoardView = ({
   const gridTemplateColumns =
     board.creatures.length === 0
       ? 'minmax(140px, 1fr)'
-      : `34px ${board.creatures.map(() => '116px 34px').join(' ')}`
+      : `34px ${board.creatures.map(() => '140px 34px').join(' ')}`
 
   return (
     <section className="board-panel" aria-label="battlefield">
