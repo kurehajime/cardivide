@@ -1,3 +1,7 @@
+:root {
+  --surface-noise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.58' numOctaves='4' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='linear' slope='2.4' intercept='-.7'/%3E%3CfeFuncG type='linear' slope='2.4' intercept='-.7'/%3E%3CfeFuncB type='linear' slope='2.4' intercept='-.7'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+}
+
 .setup-shell {
   min-height: 100svh;
   padding: 24px;
@@ -172,6 +176,8 @@
 }
 
 .game-shell {
+  position: relative;
+  isolation: isolate;
   min-height: 100svh;
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) auto;
@@ -179,6 +185,23 @@
   padding: 18px;
   background: var(--table-background);
   color: #f8f3ec;
+}
+
+.game-shell::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  background-image: var(--surface-noise);
+  background-size: 80px 80px;
+  mix-blend-mode: soft-light;
+  opacity: 0.42;
+  pointer-events: none;
+}
+
+.game-shell > * {
+  position: relative;
+  z-index: 1;
 }
 
 .board-panel,
@@ -736,10 +759,10 @@
   z-index: 2;
   inset: 0;
   border-radius: inherit;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.58' numOctaves='4' seed='11' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='linear' slope='2.4' intercept='-.7'/%3E%3CfeFuncG type='linear' slope='2.4' intercept='-.7'/%3E%3CfeFuncB type='linear' slope='2.4' intercept='-.7'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-image: var(--surface-noise);
   background-size: 80px 80px;
   mix-blend-mode: multiply;
-  opacity: 0.22;
+  opacity: 0.08;
   pointer-events: none;
 }
 

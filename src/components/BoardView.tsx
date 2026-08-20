@@ -1,5 +1,5 @@
-import { Fragment, type CSSProperties } from 'react'
-import { motion } from 'motion/react'
+import { Fragment, useEffect, type CSSProperties } from 'react'
+import { motion, useAnimationControls } from 'motion/react'
 import type {
   ActivatedAbilityOption,
   Board,
@@ -14,6 +14,13 @@ import type {
 } from '../game'
 import CardView from './CardView'
 
+export type BoardAttackAnimation = {
+  id: number
+  ownerId: PlayerId
+  startIndex: number
+  endIndex: number
+}
+
 type BoardViewProps = {
   board: Board
   cards: Record<CardInstanceId, CardInstance>
@@ -25,6 +32,7 @@ type BoardViewProps = {
   creatureStatModifiers: Record<CardInstanceId, CreatureStatModifier>
   summonOptions?: SummonOption[]
   activatedAbilities?: ActivatedAbilityOption[]
+  attackAnimation?: BoardAttackAnimation | null
   canAttack?: boolean
   onInsertClick?: (insertIndex: number) => void
   onGroupAttack?: (startIndex: number, endIndex: number) => void
@@ -112,6 +120,52 @@ const BoardPlayer = ({ player, cards, damage }: BoardPlayerProps) => (
   </section>
 )
 
+type BoardGroupButtonProps = {
+  group: EffectiveBoardGroup
+  activePlayerId: PlayerId
+  animationId: number | null
+  canAttack: boolean
+  onAttack?: (startIndex: number, endIndex: number) => void
+}
+
+const BoardGroupButton = ({
+  group,
+  activePlayerId,
+  animationId,
+  canAttack,
+  onAttack,
+}: BoardGroupButtonProps) => {
+  const animationControls = useAnimationControls()
+  const pokeDistance = group.ownerId === 'playerA' ? 10 : -10
+
+  useEffect(() => {
+    if (animationId === null) {
+      return
+    }
+
+    void animationControls.start({
+      x: [0, pokeDistance, 0],
+      transition: { duration: 0.2, times: [0, 0.4, 1], ease: 'easeOut' },
+    })
+  }, [animationControls, animationId, pokeDistance])
+
+  return (
+    <motion.button
+      className={`board-group-button board-group-${group.ownerId}`}
+      style={{
+        gridColumn: `${group.startIndex * 2 + 2} / ${group.endIndex * 2 + 3}`,
+        gridRow: group.ownerId === 'playerB' ? 1 : 3,
+      }}
+      animate={animationControls}
+      type="button"
+      disabled={!canAttack || activePlayerId !== group.ownerId}
+      onClick={() => onAttack?.(group.startIndex, group.endIndex)}
+    >
+      攻{group.attack} / 防{group.defense}
+    </motion.button>
+  )
+}
+
 const BoardView = ({
   board,
   cards,
@@ -123,6 +177,7 @@ const BoardView = ({
   creatureStatModifiers,
   summonOptions = [],
   activatedAbilities = [],
+  attackAnimation = null,
   canAttack = false,
   onInsertClick,
   onGroupAttack,
@@ -240,19 +295,20 @@ const BoardView = ({
               +
             </button>
             {groups.map((group) => (
-              <button
+              <BoardGroupButton
                 key={`group-${group.startIndex}-${group.endIndex}`}
-                className={`board-group-button board-group-${group.ownerId}`}
-                style={{
-                  gridColumn: `${group.startIndex * 2 + 2} / ${group.endIndex * 2 + 3}`,
-                  gridRow: group.ownerId === 'playerB' ? 1 : 3,
-                }}
-                type="button"
-                disabled={!canAttack || activePlayerId !== group.ownerId}
-                onClick={() => onGroupAttack?.(group.startIndex, group.endIndex)}
-              >
-                攻{group.attack} / 防{group.defense}
-              </button>
+                group={group}
+                activePlayerId={activePlayerId}
+                animationId={
+                  attackAnimation?.ownerId === group.ownerId &&
+                  attackAnimation.startIndex === group.startIndex &&
+                  attackAnimation.endIndex === group.endIndex
+                    ? attackAnimation.id
+                    : null
+                }
+                canAttack={canAttack}
+                onAttack={onGroupAttack}
+              />
             ))}
           </div>
         )}

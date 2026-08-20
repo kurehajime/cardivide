@@ -8,7 +8,7 @@ import {
   type CardInstanceId,
   type ThemeDeckId,
 } from '../game'
-import BoardView from './BoardView'
+import BoardView, { type BoardAttackAnimation } from './BoardView'
 import GameSetup from './GameSetup'
 import HandView from './HandView'
 import PhaseBar from './PhaseBar'
@@ -77,6 +77,8 @@ const GameSession = ({
   onChangeDecks,
 }: GameSessionProps) => {
   const aiRef = useRef<GameAI | null>(null)
+  const attackAnimationIdRef = useRef(0)
+  const [attackAnimation, setAttackAnimation] = useState<BoardAttackAnimation | null>(null)
   if (aiRef.current === null) {
     aiRef.current = new GameAI()
   }
@@ -143,6 +145,17 @@ const GameSession = ({
     }
 
     const timeoutId = window.setTimeout(() => {
+      const action = ai.chooseAction(manager)
+      if (action?.type === 'attackGroup') {
+        attackAnimationIdRef.current += 1
+        setAttackAnimation({
+          id: attackAnimationIdRef.current,
+          ownerId: AI_PLAYER_ID,
+          startIndex: action.startIndex,
+          endIndex: action.endIndex,
+        })
+      }
+
       dispatch({
         type: 'applyGameUpdate',
         update: (currentManager) => {
@@ -153,7 +166,6 @@ const GameSession = ({
           ) {
             return currentManager
           }
-          const action = ai.chooseAction(currentManager)
           return action === null
             ? currentManager
             : GameManager.applyAction(currentManager, action)
@@ -197,6 +209,13 @@ const GameSession = ({
   }
 
   const handleGroupAttack = (startIndex: number, endIndex: number) => {
+    attackAnimationIdRef.current += 1
+    setAttackAnimation({
+      id: attackAnimationIdRef.current,
+      ownerId: 'playerA',
+      startIndex,
+      endIndex,
+    })
     applyGameUpdate((currentManager) =>
       GameManager.attackGroup(currentManager, startIndex, endIndex),
     )
@@ -289,6 +308,7 @@ const GameSession = ({
                 ? activatedAbilities
                 : []
             }
+            attackAnimation={attackAnimation}
             canAttack={
               state.activePlayerId === 'playerA' &&
               ['main', 'battle'].includes(state.phase) &&
