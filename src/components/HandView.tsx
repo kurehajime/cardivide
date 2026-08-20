@@ -4,6 +4,7 @@ import CardView from './CardView'
 
 type HandViewProps = {
   cards: CardInstance[]
+  faceDown?: boolean
   playerName: string
   position: 'top' | 'bottom'
   playableCardIds?: ReadonlySet<CardInstanceId>
@@ -17,6 +18,7 @@ const EMPTY_HAND_SLOTS = 5
 
 const HandView = ({
   cards,
+  faceDown = false,
   playerName,
   position,
   playableCardIds,
@@ -51,12 +53,17 @@ const HandView = ({
             data-card-id={card?.id}
             className={cardClassName}
             type="button"
-            aria-label={card?.card.name}
+            aria-label={faceDown ? '裏向きのカード' : card?.card.name}
             title={unavailable ? '現在は使用できません' : undefined}
             disabled={!card || disabled || unavailable}
             onClick={() => card && onCardClick?.(card.id)}
           >
-            <CardView card={card?.card ?? null} compact nestedInButton />
+            <CardView
+              card={card?.card ?? null}
+              compact
+              faceDown={faceDown}
+              nestedInButton
+            />
           </motion.button>
         )
       })}

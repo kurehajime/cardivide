@@ -305,7 +305,15 @@ const CardView = ({
     }
   }, [closeDetail, nestedInButton, openDetail, updateDetailPosition])
 
-  if (!card || faceDown) {
+  if (faceDown) {
+    return (
+      <article className={`card-view card-back ${compact ? 'card-compact' : ''}`}>
+        <div className="card-back-emblem" aria-hidden="true" />
+      </article>
+    )
+  }
+
+  if (!card) {
     return (
       <article className={`card-view card-empty ${compact ? 'card-compact' : ''}`}>
         <div className="card-empty-label">{label ?? ''}</div>

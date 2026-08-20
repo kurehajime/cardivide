@@ -941,6 +941,25 @@
   font-weight: 700;
 }
 
+.card-back {
+  display: grid;
+  place-items: center;
+  border: 3px solid #24170f;
+  background: #432d22;
+  box-shadow:
+    inset 0 0 0 5px #fff,
+    inset 0 0 0 8px #24170f;
+  overflow: hidden;
+}
+
+.card-back-emblem {
+  width: 34%;
+  aspect-ratio: 1;
+  border: 5px double #fff;
+  background: #2d211a;
+  transform: rotate(45deg);
+}
+
 .card-title-row {
   display: flex;
   flex-wrap: wrap;

@@ -265,6 +265,7 @@ const GameSession = ({
           )}
           <HandView
             cards={playerBHand}
+            faceDown
             playerName={playerB.name}
             position="top"
             playableCardIds={undefined}
