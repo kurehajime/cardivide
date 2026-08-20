@@ -25,6 +25,7 @@ type BoardViewProps = {
   board: Board
   cards: Record<CardInstanceId, CardInstance>
   damageMarkers?: DamageMarker[]
+  destroyedCardIds?: CardInstanceId[]
   playerDamageMarker?: { playerId: PlayerId; damage: number } | null
   players: Record<PlayerState['id'], PlayerState>
   activePlayerId: PlayerId
@@ -170,6 +171,7 @@ const BoardView = ({
   board,
   cards,
   damageMarkers = [],
+  destroyedCardIds = [],
   playerDamageMarker = null,
   players,
   activePlayerId,
@@ -186,6 +188,7 @@ const BoardView = ({
   const damageByCardId = new Map(
     damageMarkers.map(({ cardId, damage }) => [cardId, damage]),
   )
+  const destroyedCardIdSet = new Set(destroyedCardIds)
   const summonOptionByIndex = new Map(
     summonOptions.map((option) => [option.insertIndex, option]),
   )
@@ -249,11 +252,22 @@ const BoardView = ({
                   className="board-slot"
                   style={{ gridColumn: index * 2 + 2, gridRow: 2 }}
                 >
-                  <CardView
-                    card={cards[creature.cardId].card}
-                    compact
-                    statModifier={creatureStatModifiers[creature.cardId]}
-                  />
+                  <motion.div
+                    className="board-card-content"
+                    initial={false}
+                    animate={{ scale: destroyedCardIdSet.has(creature.cardId) ? 0 : 1 }}
+                    transition={
+                      destroyedCardIdSet.has(creature.cardId)
+                        ? { delay: 0.12, duration: 0.3, ease: [0.4, 0, 0.6, 1] }
+                        : { duration: 0.15 }
+                    }
+                  >
+                    <CardView
+                      card={cards[creature.cardId].card}
+                      compact
+                      statModifier={creatureStatModifiers[creature.cardId]}
+                    />
+                  </motion.div>
                   {(abilitiesByCardId.get(creature.cardId) ?? []).length > 0 && (
                     <div className="board-ability-actions">
                       {(abilitiesByCardId.get(creature.cardId) ?? []).map((ability) => (

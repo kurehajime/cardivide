@@ -297,6 +297,7 @@ const GameSession = ({
             board={state.board}
             cards={state.cards}
             damageMarkers={state.pendingCombat?.damageMarkers ?? []}
+            destroyedCardIds={state.pendingCombat?.destroyedCardIds ?? []}
             playerDamageMarker={playerDamageMarker}
             players={state.players}
             activePlayerId={state.activePlayerId}

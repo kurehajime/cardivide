@@ -475,7 +475,13 @@
   min-width: 0;
 }
 
-.board-slot > .card-view {
+.board-card-content {
+  width: 100%;
+  transform-origin: center;
+  will-change: transform;
+}
+
+.board-card-content > .card-view {
   width: 100%;
   box-shadow: 0 9px 20px rgb(18 22 19 / 48%);
 }
