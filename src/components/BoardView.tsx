@@ -1,4 +1,4 @@
-import { Fragment } from 'react'
+import { Fragment, type CSSProperties } from 'react'
 import { motion } from 'motion/react'
 import type {
   ActivatedAbilityOption,
@@ -38,6 +38,10 @@ type BoardPlayerProps = {
 }
 
 type SummonSlotState = 'available' | 'reachable' | 'unreachable'
+
+const DAMAGE_MARKER_STYLE = {
+  '--damage-marker-icon': `url("${import.meta.env.BASE_URL}damage.svg")`,
+} as CSSProperties
 
 const getSummonSlotState = (option?: SummonOption): SummonSlotState | null => {
   if (!option) {
@@ -92,6 +96,7 @@ const BoardPlayer = ({ player, cards, damage }: BoardPlayerProps) => (
           className="damage-marker player-damage-marker"
           role="status"
           aria-label={`プレイヤーに${damage}ダメージ`}
+          style={DAMAGE_MARKER_STYLE}
         >
           {damage}
         </span>
@@ -214,6 +219,7 @@ const BoardView = ({
                       className="damage-marker card-damage-marker"
                       role="status"
                       aria-label={`${damageByCardId.get(creature.cardId)}ダメージ`}
+                      style={DAMAGE_MARKER_STYLE}
                     >
                       {damageByCardId.get(creature.cardId)}
                     </span>
