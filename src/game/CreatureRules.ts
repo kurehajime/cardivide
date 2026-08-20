@@ -228,6 +228,33 @@ export const formatAbility = (ability: KeywordAbility): string => {
   }
 }
 
+export const describeAbility = (ability: KeywordAbility): string => {
+  switch (ability.type) {
+    case 'summoningSickness':
+      return '召喚したターンは攻撃力0として扱う。'
+    case 'vanish':
+      return 'このクリーチャーが破壊された場合、通常の破壊によるマナ返還は発生しない。'
+    case 'loneWarrior':
+      return `このクリーチャーの両隣が敵クリーチャーまたは敵プレイヤーの場合、攻撃力+${ability.attack}、防御力+${ability.defense}する。`
+    case 'withdraw':
+      return '起動型能力。このクリーチャーを場から捨て札に置く。そうした場合、このクリーチャーのコストに等しいマナを得る。撤去で捨て札に置かれたクリーチャーは破壊されたものとして扱わない。'
+    case 'assassin':
+      return `このクリーチャーの隣が敵プレイヤーの場合、攻撃力を+${ability.attack}する。`
+    case 'counter':
+      return 'このクリーチャーが先頭にいる場合、攻撃グループの先頭にいるクリーチャー1体へ、自身の攻撃力と同じ攻撃を与える。通常の攻撃と反撃は同時に解決する。'
+    case 'return':
+      return '起動型能力。手札が4枚以下のとき、このクリーチャーを手札に戻す。半分のコストが戻ってくる。'
+    case 'beachhead':
+      return `このクリーチャーの両隣が敵クリーチャーまたは敵プレイヤーの場合、このクリーチャーの隣に召喚する味方のコストは${ability.costReduction}減少する。`
+    case 'capture':
+      return `このクリーチャーを越える際、必要進軍距離を+${ability.marchTax}する。`
+    case 'mining':
+      return `このクリーチャーが所属するグループの両側に敵クリーチャーまたは敵プレイヤーが隣接している場合、自分のキープアップフェイズに追加で${ability.mana}マナを得る。同じグループで複数の《採掘》が有効な場合、最も大きい数値だけを適用する。`
+    case 'rearguard':
+      return `このクリーチャーの後方に敵クリーチャーが隣接する場合、攻撃力+${ability.attack}、防御力+${ability.defense}する。`
+  }
+}
+
 export class CreatureRules {
   private readonly context: CreatureRuleContext
 

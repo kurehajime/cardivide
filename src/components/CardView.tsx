@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { formatAbility, type Card, type CreatureStatModifier } from '../game'
+import {
+  describeAbility,
+  formatAbility,
+  type Card,
+  type CreatureStatModifier,
+} from '../game'
 
 type CardViewProps = {
   card: Card | null
@@ -92,10 +97,6 @@ const CardFace = ({ card, colorLabel, statModifier }: CardFaceProps) => {
       <rect className="card-face-base" x="2" y="2" width="496" height="696" rx="18" />
 
       <rect className="card-face-art-frame" x="25" y="83" width="450" height="265" rx="12" />
-      <circle className="card-face-art-seal" cx="250" cy="215" r="72" />
-      <text className="card-face-art-letter" x="250" y="223">
-        {card.name.slice(0, 1)}
-      </text>
 
       <circle className="card-face-cost-circle" cx="55" cy="54" r="40" />
       <text className="card-face-cost-text" x="55" y="57">
@@ -385,7 +386,20 @@ const CardView = ({
                 </div>
               </dl>
             )}
-            <p className="card-rules">{getRulesText(card)}</p>
+            {card.kind === 'creature' ? (
+              card.abilities.length > 0 && (
+                <dl className="card-ability-descriptions">
+                  {card.abilities.map((ability, index) => (
+                    <div key={`${ability.type}-${index}`}>
+                      <dt>{formatAbility(ability)}</dt>
+                      <dd>{describeAbility(ability)}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )
+            ) : (
+              <p className="card-rules">{getRulesText(card)}</p>
+            )}
           </div>,
           document.body,
         )}

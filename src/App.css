@@ -231,6 +231,8 @@
 }
 
 .game-header {
+  position: relative;
+  z-index: 2;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -597,7 +599,54 @@
 }
 
 .hand-panel-top {
-  padding-bottom: 42px;
+  position: relative;
+  z-index: 1;
+  height: 0;
+  display: flex;
+  align-items: start;
+  justify-content: center;
+  margin-bottom: -8px;
+  padding: 0 10px;
+  overflow: visible;
+}
+
+.hand-panel-top .hand-card-button {
+  --fan-drop: 0px;
+  --fan-rotation: 0deg;
+
+  flex: 0 0 140px;
+  top: calc(-220px + var(--fan-drop));
+  margin-left: -82px;
+  rotate: var(--fan-rotation);
+  transform-origin: 50% -20%;
+}
+
+.hand-panel-top .hand-card-button:first-child {
+  margin-left: 0;
+}
+
+.hand-panel-top .hand-card-button:nth-child(1) {
+  --fan-drop: 0px;
+  --fan-rotation: 10deg;
+}
+
+.hand-panel-top .hand-card-button:nth-child(2) {
+  --fan-drop: 10px;
+  --fan-rotation: 5deg;
+}
+
+.hand-panel-top .hand-card-button:nth-child(3) {
+  --fan-drop: 20px;
+}
+
+.hand-panel-top .hand-card-button:nth-child(4) {
+  --fan-drop: 10px;
+  --fan-rotation: -5deg;
+}
+
+.hand-panel-top .hand-card-button:nth-child(5) {
+  --fan-drop: 0px;
+  --fan-rotation: -10deg;
 }
 
 .hand-panel-bottom {
@@ -741,7 +790,6 @@
 }
 
 .card-face-cost-text,
-.card-face-art-letter,
 .card-face-type-text,
 .card-face-stat-value,
 .card-face-kind-mark text,
@@ -777,17 +825,6 @@
   fill: var(--card-tint);
   stroke: var(--card-accent-dark);
   stroke-width: 6;
-}
-
-.card-face-art-seal {
-  fill: rgb(255 255 255 / 42%);
-  stroke: var(--card-accent-dark);
-  stroke-width: 7;
-}
-
-.card-face-art-letter {
-  fill: var(--card-accent-dark);
-  font-size: 82px;
 }
 
 .card-face-type-band {
@@ -879,7 +916,7 @@
 .card-detail-popover {
   position: fixed;
   z-index: 100;
-  width: min(280px, calc(100vw - 24px));
+  width: min(340px, calc(100vw - 24px));
   max-height: calc(100vh - 24px);
   display: grid;
   grid-auto-rows: max-content;
@@ -1028,6 +1065,32 @@
 .card-detail-popover .card-rules {
   font-size: 13px;
   line-height: 1.5;
+}
+
+.card-ability-descriptions {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.card-ability-descriptions div {
+  display: grid;
+  gap: 4px;
+  padding-top: 9px;
+  border-top: 1px solid rgb(52 58 53 / 24%);
+}
+
+.card-ability-descriptions dt {
+  color: #171a17;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.card-ability-descriptions dd {
+  margin: 0;
+  color: #303832;
+  font-size: 12px;
+  line-height: 1.55;
 }
 
 .card-stats {

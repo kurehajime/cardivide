@@ -14,7 +14,7 @@ export {
   summarizeTournament,
 } from './ai'
 export { GameManager, assertValidGameState } from './GameManager'
-export { CreatureRules, formatAbility } from './CreatureRules'
+export { CreatureRules, describeAbility, formatAbility } from './CreatureRules'
 export {
   CARD_BY_DEFINITION_ID,
   CARD_LIST,
