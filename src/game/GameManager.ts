@@ -161,6 +161,7 @@ const createInitialState = (
     activePlayerId: 'playerA',
     phase: 'keepUp',
     hasAttackedThisTurn: false,
+    hasDiscardedThisTurn: false,
     pendingCombat: null,
     cards,
     players: {
@@ -438,6 +439,7 @@ const endTurnState = (state: GameState): GameState => {
     activePlayerId: getOpponentId(state.activePlayerId),
     phase: 'keepUp',
     hasAttackedThisTurn: false,
+    hasDiscardedThisTurn: false,
     pendingCombat: null,
   }
 
@@ -763,8 +765,11 @@ export class GameManager {
             }]
           : [],
     )
+    const discardActions: GameAction[] = manager.state.hasDiscardedThisTurn
+      ? []
+      : activePlayer.hand.map((cardId) => ({ type: 'discardFromHand', cardId }))
 
-    return [...handActions, ...abilityActions]
+    return [...handActions, ...abilityActions, ...discardActions]
   }
 
   static getLegalBattleActions(manager: GameManager): GameAction[] {
@@ -1172,10 +1177,19 @@ export class GameManager {
 
   static discardFromHand(manager: GameManager, cardId: CardInstanceId): GameManager {
     assertGameInProgress(manager.state)
-    if (manager.state.pendingCombat) {
+    if (manager.state.phase !== 'main') {
+      throw new Error('Cards can only be discarded during the main phase.')
+    }
+    if (manager.state.pendingCombat !== null) {
       throw new Error('Cards cannot be discarded while combat is resolving.')
     }
+    if (manager.state.hasDiscardedThisTurn) {
+      throw new Error('Only one card can be discarded each turn.')
+    }
     const activePlayer = GameManager.getCurrentPlayer(manager)
-    return GameManager.from(replacePlayer(manager.state, discardCard(activePlayer, cardId)))
+    return GameManager.from({
+      ...replacePlayer(manager.state, discardCard(activePlayer, cardId)),
+      hasDiscardedThisTurn: true,
+    })
   }
 }

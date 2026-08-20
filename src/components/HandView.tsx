@@ -8,13 +8,16 @@ type HandViewProps = {
   playerName: string
   position: 'top' | 'bottom'
   playableCardIds?: ReadonlySet<CardInstanceId>
+  discardableCardIds?: ReadonlySet<CardInstanceId>
   active?: boolean
   disabled?: boolean
   selectedCardId?: CardInstanceId | null
   onCardClick?: (cardId: CardInstanceId) => void
+  onDiscardCard?: (cardId: CardInstanceId) => void
 }
 
 const EMPTY_HAND_SLOTS = 5
+const DISCARD_ICON_URL = `${import.meta.env.BASE_URL}trash.svg`
 
 const HandView = ({
   cards,
@@ -22,10 +25,12 @@ const HandView = ({
   playerName,
   position,
   playableCardIds,
+  discardableCardIds,
   active = false,
   disabled = false,
   selectedCardId = null,
   onCardClick,
+  onDiscardCard,
 }: HandViewProps) => {
   const visibleCards = cards.length > 0 ? cards : Array.from({ length: EMPTY_HAND_SLOTS }, () => null)
 
@@ -45,7 +50,7 @@ const HandView = ({
           .filter(Boolean)
           .join(' ')
 
-        return (
+        const cardButton = (
           <motion.button
             key={card?.id ?? `empty-${index}`}
             layout="position"
@@ -65,6 +70,29 @@ const HandView = ({
               nestedInButton
             />
           </motion.button>
+        )
+
+        if (position === 'top') {
+          return cardButton
+        }
+
+        const canDiscard = card !== null && discardableCardIds?.has(card.id) === true
+        return (
+          <div className="hand-card-slot" key={card?.id ?? `empty-${index}`}>
+            {cardButton}
+            {card !== null && (
+              <button
+                className="hand-discard-button"
+                type="button"
+                aria-label={`${card.card.name}を捨てる`}
+                title="このカードを捨てる"
+                disabled={!canDiscard}
+                onClick={() => onDiscardCard?.(card.id)}
+              >
+                <img src={DISCARD_ICON_URL} alt="" />
+              </button>
+            )}
+          </div>
         )
       })}
     </section>

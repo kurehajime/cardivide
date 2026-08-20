@@ -196,6 +196,44 @@ describe('GameManager card instance tracking', () => {
     expectCardsConserved(manager)
   })
 
+  it('allows one optional hand discard during each main phase', () => {
+    let manager = createTestManager()
+    const [discardedCardId, secondCardId] = manager.state.players.playerA.hand
+    const initialDiscardActions = GameManager.getLegalMainActions(manager).filter(
+      ({ type }) => type === 'discardFromHand',
+    )
+
+    expect(initialDiscardActions).toHaveLength(4)
+    manager = GameManager.discardFromHand(manager, discardedCardId)
+
+    expect(manager.state.players.playerA.hand).not.toContain(discardedCardId)
+    expect(manager.state.players.playerA.discard).toContain(discardedCardId)
+    expect(manager.state.hasDiscardedThisTurn).toBe(true)
+    expect(
+      GameManager.getLegalMainActions(manager).some(({ type }) => type === 'discardFromHand'),
+    ).toBe(false)
+    expect(() => GameManager.discardFromHand(manager, secondCardId)).toThrow(
+      /Only one card/,
+    )
+    expectCardsConserved(manager)
+
+    manager = GameManager.passPhase(manager)
+    expect(() => GameManager.discardFromHand(manager, secondCardId)).toThrow(
+      /main phase/,
+    )
+    manager = GameManager.passPhase(manager)
+    manager = GameManager.passPhase(manager)
+
+    expect(manager.state.activePlayerId).toBe('playerB')
+    expect(manager.state.phase).toBe('main')
+    expect(manager.state.hasDiscardedThisTurn).toBe(false)
+    expect(
+      GameManager.getLegalMainActions(manager).filter(
+        ({ type }) => type === 'discardFromHand',
+      ),
+    ).toHaveLength(5)
+  })
+
   it('tracks formation replacement with the same physical card ids', () => {
     let manager = moveDeckCardToHand(createTestManager(), 'playerA', 16, 4)
     manager = GameManager.playFormation(manager, 16)

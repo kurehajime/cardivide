@@ -111,6 +111,15 @@ const GameSession = ({
   const playableCardIds = new Set(
     currentPlayer.hand.filter((cardId) => GameManager.isCardPlayable(manager, cardId)),
   )
+  const discardableCardIds = new Set<CardInstanceId>(
+    state.activePlayerId === 'playerA' &&
+      state.phase === 'main' &&
+      !state.hasDiscardedThisTurn &&
+      state.pendingCombat === null &&
+      winnerId === null
+      ? playerA.hand
+      : [],
+  )
   const activatedAbilities = GameManager.getActivatedAbilities(manager)
   const playerDamageMarker =
     state.pendingCombat?.playerWasHit === true
@@ -186,6 +195,10 @@ const GameSession = ({
 
   const handleCardClick = (cardId: CardInstanceId) => {
     dispatch({ type: 'selectCard', cardId })
+  }
+
+  const handleDiscardCard = (cardId: CardInstanceId) => {
+    applyGameUpdate((currentManager) => GameManager.discardFromHand(currentManager, cardId))
   }
 
   const handleInsertClick = (insertIndex: number) => {
@@ -326,6 +339,7 @@ const GameSession = ({
             playerName={playerA.name}
             position="bottom"
             playableCardIds={state.activePlayerId === 'playerA' ? playableCardIds : undefined}
+            discardableCardIds={discardableCardIds}
             active={state.activePlayerId === 'playerA'}
             disabled={
               state.activePlayerId !== 'playerA' ||
@@ -334,6 +348,7 @@ const GameSession = ({
             }
             selectedCardId={state.activePlayerId === 'playerA' ? selectedCardId : null}
             onCardClick={handleCardClick}
+            onDiscardCard={handleDiscardCard}
           />
         </main>
       </LayoutGroup>

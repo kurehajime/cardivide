@@ -98,7 +98,20 @@ const BoardPlayer = ({ player, cards, damage }: BoardPlayerProps) => (
         <dd>{player.mana}</dd>
       </div>
     </dl>
-    <div className="board-endpoint" data-player-id={player.id}>
+    <motion.div
+      className="board-endpoint"
+      data-player-id={player.id}
+      initial={false}
+      animate={
+        damage !== null && damage >= 1
+          ? {
+              x: [0, -8, 7, -5, 4, -2, 0],
+              y: [0, 1, -1, 1, -1, 0, 0],
+            }
+          : { x: 0, y: 0 }
+      }
+      transition={{ duration: 0.34, ease: 'easeInOut' }}
+    >
       {player.name}
       {damage !== null && (
         <span
@@ -110,7 +123,7 @@ const BoardPlayer = ({ player, cards, damage }: BoardPlayerProps) => (
           {damage}
         </span>
       )}
-    </div>
+    </motion.div>
     <div className="board-formation" aria-label={`${player.name} formation`}>
       <CardView
         card={player.formation === null ? null : cards[player.formation].card}

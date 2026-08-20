@@ -160,6 +160,7 @@ export type GameState = {
   activePlayerId: PlayerId
   phase: Phase
   hasAttackedThisTurn: boolean
+  hasDiscardedThisTurn: boolean
   pendingCombat: PendingCombat | null
   cards: Readonly<Record<CardInstanceId, CardInstance>>
   players: Record<PlayerId, PlayerState>
