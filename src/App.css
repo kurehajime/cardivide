@@ -1,7 +1,7 @@
 .setup-shell {
   min-height: 100svh;
   padding: 24px;
-  background: #9e745b;
+  background: var(--table-background);
   color: #f8f3ec;
 }
 
@@ -177,7 +177,7 @@
   grid-template-rows: auto auto minmax(0, 1fr) auto;
   gap: 14px;
   padding: 18px;
-  background: #9e745b;
+  background: var(--table-background);
   color: #f8f3ec;
 }
 

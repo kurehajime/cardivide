@@ -1,8 +1,16 @@
 :root {
+  --table-background: radial-gradient(
+    circle at center,
+    #b88b6c 0%,
+    #9e745b 52%,
+    #6f4d3b 100%
+  );
+
   font: 16px/1.45 system-ui, 'Segoe UI', Roboto, sans-serif;
   letter-spacing: 0;
   color: #17140f;
-  background: #9e745b;
+  background: #6f4d3b;
+  background-image: var(--table-background);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
