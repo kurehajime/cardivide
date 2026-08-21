@@ -23,8 +23,15 @@ const EXPECTED_SPELLS_BY_DECK = {
   ],
 } as const
 
+const EXPECTED_CREATURE_COSTS_BY_DECK = {
+  'red-blue-skirmish': { 2: 25, 4: 9, 5: 3 },
+  'blue-green-intercept': { 2: 24, 4: 9, 5: 4 },
+  'green-red-frontline': { 2: 25, 4: 9, 5: 3 },
+} as const
+
 describe('theme decks', () => {
   it.each(THEME_DECKS)('$name contains the documented 40-card cost structure', (deck) => {
+    const expectedCreatureCosts = EXPECTED_CREATURE_COSTS_BY_DECK[deck.id]
     const cards = deck.cardDefinitionIds.map((definitionId) => {
       const card = CARD_BY_DEFINITION_ID[definitionId]
       expect(card, definitionId).toBeDefined()
@@ -32,9 +39,15 @@ describe('theme decks', () => {
     })
 
     expect(cards).toHaveLength(40)
-    expect(cards.filter((card) => card.kind === 'creature' && card.cost === 2)).toHaveLength(25)
-    expect(cards.filter((card) => card.kind === 'creature' && card.cost === 4)).toHaveLength(9)
-    expect(cards.filter((card) => card.kind === 'creature' && card.cost === 5)).toHaveLength(3)
+    expect(cards.filter((card) => card.kind === 'creature' && card.cost === 2)).toHaveLength(
+      expectedCreatureCosts[2],
+    )
+    expect(cards.filter((card) => card.kind === 'creature' && card.cost === 4)).toHaveLength(
+      expectedCreatureCosts[4],
+    )
+    expect(cards.filter((card) => card.kind === 'creature' && card.cost === 5)).toHaveLength(
+      expectedCreatureCosts[5],
+    )
     expect(cards.filter((card) => card.kind === 'spell')).toHaveLength(3)
     expect(cards.filter((card) => card.kind === 'spell' && card.cost === 0)).toHaveLength(3)
     expect(cards.filter((card) => card.kind === 'creature' && card.color === deck.colors[0])).toHaveLength(20)
@@ -44,6 +57,21 @@ describe('theme decks', () => {
         .filter((card) => card.kind === 'spell')
         .map((card) => card.definitionId),
     ).toEqual(EXPECTED_SPELLS_BY_DECK[deck.id])
+  })
+
+  it('gives 分断迎撃 one fewer 根張りの古木 and one more 夢渡りの森巨人', () => {
+    const deck = THEME_DECKS.find(({ id }) => id === 'blue-green-intercept')!
+
+    expect(
+      deck.cardDefinitionIds.filter(
+        (definitionId) => definitionId === 'green-cost2-attack2-defense4-march0',
+      ),
+    ).toHaveLength(1)
+    expect(
+      deck.cardDefinitionIds.filter(
+        (definitionId) => definitionId === 'green-cost5-attack6-defense7-march2-vanish',
+      ),
+    ).toHaveLength(2)
   })
 
   it('creates separate sequential card instances from the selected player and COM decks', () => {
