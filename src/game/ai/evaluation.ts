@@ -401,3 +401,41 @@ export const evaluateMainContinuation = (
     total: battleEntry.total + deployableHand,
   }
 }
+
+export const evaluateCoherentMainPlan = (
+  manager: GameManager,
+  aiPlayerId: PlayerId,
+): EvaluationBreakdown => {
+  let currentManager = manager
+  let bestEvaluation = evaluateBattleEntry(currentManager, aiPlayerId)
+
+  while (true) {
+    let nextManager: GameManager | null = null
+    let nextEvaluation: EvaluationBreakdown | null = null
+
+    for (const action of GameManager.getLegalMainActions(currentManager)) {
+      if (action.type !== 'summonCreature') {
+        continue
+      }
+
+      const candidateManager = GameManager.applyAction(currentManager, action)
+      const candidateEvaluation = evaluateBattleEntry(candidateManager, aiPlayerId)
+      if (
+        nextEvaluation === null ||
+        isMeaningfullyGreater(candidateEvaluation.total, nextEvaluation.total)
+      ) {
+        nextManager = candidateManager
+        nextEvaluation = candidateEvaluation
+      }
+    }
+
+    if (nextManager === null || nextEvaluation === null) {
+      return bestEvaluation
+    }
+
+    currentManager = nextManager
+    if (isMeaningfullyGreater(nextEvaluation.total, bestEvaluation.total)) {
+      bestEvaluation = nextEvaluation
+    }
+  }
+}

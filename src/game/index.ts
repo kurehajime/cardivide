@@ -6,6 +6,7 @@ export {
   GameAI,
   evaluateBase,
   evaluateBattleEntry,
+  evaluateCoherentMainPlan,
   evaluateMainContinuation,
   getDeployableHandValue,
   createRoundRobinSchedule,

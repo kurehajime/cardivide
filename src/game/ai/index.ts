@@ -3,6 +3,7 @@ export {
   AI_EVALUATION_PARAMETERS,
   evaluateBase,
   evaluateBattleEntry,
+  evaluateCoherentMainPlan,
   evaluateMainContinuation,
   getDeployableHandValue,
 } from './evaluation'

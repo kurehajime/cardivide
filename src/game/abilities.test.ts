@@ -276,7 +276,7 @@ describe('summon modifiers', () => {
     const [rootedCreature] = findCardIds(
       initial.state,
       'playerA',
-      'green-cost2-attack2-defense4-march0',
+      'green-cost2-attack1-defense4-march0',
     )
     const manager = configureManager(initial, {
       board: [{ cardId: enemy }],

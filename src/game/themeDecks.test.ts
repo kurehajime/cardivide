@@ -40,8 +40,9 @@ const DEEP_INTERCEPTOR_ID = 'blue-cost4-attack4-defense4-march2-counter'
 const DEEP_WHALE_ID = 'blue-cost5-attack6-defense6-march4-vanish'
 const MIST_RETURNER_ID = 'blue-cost2-attack2-defense1-march2-return'
 const WAVE_RETURNER_ID = 'blue-cost4-attack4-defense2-march2-return'
+const ROOTED_ANCIENT_ID = 'green-cost2-attack1-defense4-march0'
 const GEODE_MINER_ID = 'green-cost2-attack2-defense2-march1-mining1'
-const LEYLINE_MINER_ID = 'green-cost4-attack4-defense4-march2-mining1'
+const LEYLINE_MINER_ID = 'green-cost4-attack3-defense4-march1-mining1'
 
 describe('theme decks', () => {
   it.each(THEME_DECKS)('$name contains the documented 40-card cost structure', (deck) => {
@@ -81,9 +82,19 @@ describe('theme decks', () => {
   it('gives 分断迎撃 one fewer 根張りの古木 and one more 夢渡りの森巨人', () => {
     const deck = THEME_DECKS.find(({ id }) => id === 'blue-green-intercept')!
 
+    expect(CARD_BY_DEFINITION_ID[ROOTED_ANCIENT_ID]).toMatchObject({
+      name: '根張りの古木',
+      kind: 'creature',
+      color: 'green',
+      cost: 2,
+      attack: 1,
+      defense: 4,
+      march: 0,
+      abilities: [],
+    })
     expect(
       deck.cardDefinitionIds.filter(
-        (definitionId) => definitionId === 'green-cost2-attack2-defense4-march0',
+        (definitionId) => definitionId === ROOTED_ANCIENT_ID,
       ),
     ).toHaveLength(1)
     expect(
@@ -150,6 +161,16 @@ describe('theme decks', () => {
   })
 
   it('moves 分断迎撃 mining toward the low-cost 晶洞の坑夫', () => {
+    expect(CARD_BY_DEFINITION_ID[LEYLINE_MINER_ID]).toMatchObject({
+      name: '地脈掘りの巨人',
+      kind: 'creature',
+      color: 'green',
+      cost: 4,
+      attack: 3,
+      defense: 4,
+      march: 1,
+      abilities: [{ type: 'mining', mana: 1 }],
+    })
     expect(
       THEME_DECKS.map((deck) =>
         deck.cardDefinitionIds.filter((definitionId) => definitionId === GEODE_MINER_ID).length,

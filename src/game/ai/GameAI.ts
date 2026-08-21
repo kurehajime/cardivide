@@ -2,6 +2,7 @@ import { GameManager } from '../GameManager'
 import type { CardInstanceId, GameAction, PlayerId } from '../types'
 import {
   evaluateBattleEntry,
+  evaluateCoherentMainPlan,
   evaluateMainContinuation,
 } from './evaluation'
 import type { EvaluationBreakdown } from './types'
@@ -42,7 +43,7 @@ const chooseMainAction = (
 
   for (const action of actions) {
     const nextManager = resolveMainActionForEvaluation(manager, action)
-    const score = evaluateMainContinuation(nextManager, aiPlayerId).total
+    const score = evaluateCoherentMainPlan(nextManager, aiPlayerId).total
     if (isMeaningfullyGreater(score, bestScore)) {
       bestAction = action
       bestScore = score

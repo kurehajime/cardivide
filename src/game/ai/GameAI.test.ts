@@ -6,6 +6,7 @@ import {
   AI_EVALUATION_PARAMETERS,
   evaluateBase,
   evaluateBattleEntry,
+  evaluateCoherentMainPlan,
   getDeployableHandValue,
 } from './evaluation'
 import {
@@ -102,7 +103,7 @@ const createDuplicateLethalDefenseManager = (): {
     .filter(
       ({ ownerId, card }) =>
         ownerId === 'playerA' &&
-        card.definitionId === 'green-cost2-attack2-defense4-march0',
+        card.definitionId === 'green-cost2-attack1-defense4-march0',
     )
     .map(({ id }) => id)
   if (defenderIds.length < 2) {
@@ -409,6 +410,15 @@ describe('AI evaluation', () => {
     ).toBeCloseTo(
       2 * AI_EVALUATION_PARAMETERS.creatureHandReserve,
     )
+  })
+
+  it('evaluates a multi-summon continuation through actual state transitions', () => {
+    const { manager } = createDuplicateLethalDefenseManager()
+    const passScore = evaluateBattleEntry(manager, 'playerA').total
+    const firstAction = new GameAI().chooseAction(manager)
+
+    expect(firstAction?.type).toBe('summonCreature')
+    expect(evaluateCoherentMainPlan(manager, 'playerA').total).toBeGreaterThan(passScore)
   })
 
   it('keeps the total equal to the sum of its components', () => {
