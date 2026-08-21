@@ -61,9 +61,11 @@ export const evaluateBase = (
     return total + direction * instance.card.cost * AI_EVALUATION_PARAMETERS.boardMaterial
   }, 0)
   const handReserve = aiPlayer.hand.reduce(
-    (total, cardId) =>
-      total +
-      manager.state.cards[cardId].card.cost * AI_EVALUATION_PARAMETERS.handReserve,
+    (total, cardId) => {
+      const card = manager.state.cards[cardId].card
+      const reserveUnits = card.kind === 'spell' ? 1 : card.cost
+      return total + reserveUnits * AI_EVALUATION_PARAMETERS.handReserve
+    },
     0,
   )
   const upkeepMana =

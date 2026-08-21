@@ -20,6 +20,16 @@ const resolveBattleOption = (
   return GameManager.finishCombat(GameManager.applyAction(manager, action))
 }
 
+const resolveMainActionForEvaluation = (
+  manager: GameManager,
+  action: GameAction,
+): GameManager => {
+  const nextManager = GameManager.applyAction(manager, action)
+  return nextManager.state.pendingCombat?.endsTurnAfterResolution === false
+    ? GameManager.finishCombat(nextManager)
+    : nextManager
+}
+
 const chooseMainAction = (
   manager: GameManager,
   aiPlayerId: PlayerId,
@@ -30,7 +40,7 @@ const chooseMainAction = (
   let bestScore = passScore
 
   for (const action of actions) {
-    const nextManager = GameManager.applyAction(manager, action)
+    const nextManager = resolveMainActionForEvaluation(manager, action)
     const score = evaluateMainContinuation(nextManager, aiPlayerId).total
     if (score > bestScore) {
       bestAction = action

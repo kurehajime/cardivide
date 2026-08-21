@@ -81,6 +81,70 @@ const createMiningDilemmaManager = (): GameManager => {
   })
 }
 
+const createReturnFireDecisionManager = (
+  adjacentGroupOwnerId: PlayerId,
+): { manager: GameManager; returnFire: CardInstanceId } => {
+  const initial = createTestManager()
+  const returnFire = findCardId(
+    initial.state,
+    'playerA',
+    'cost0-spell-return-fire',
+  )
+  const adjacentCreature = findCardId(
+    initial.state,
+    adjacentGroupOwnerId,
+    'red-cost5-attack7-defense4-march2-vanish',
+  )
+  const redDiscards = Object.values(initial.state.cards)
+    .filter(
+      ({ id, ownerId, card }) =>
+        id !== adjacentCreature &&
+        ownerId === 'playerA' &&
+        card.kind === 'creature' &&
+        card.color === 'red',
+    )
+    .slice(0, 4)
+    .map(({ id }) => id)
+  const movedCardIds = new Set([
+    returnFire,
+    adjacentCreature,
+    ...redDiscards,
+  ])
+  const preparePlayer = (playerId: PlayerId) => ({
+    ...initial.state.players[playerId],
+    deck: Object.values(initial.state.cards)
+      .filter(
+        ({ id, ownerId }) =>
+          ownerId === playerId && !movedCardIds.has(id),
+      )
+      .map(({ id }) => id),
+    hand: playerId === 'playerA' ? [returnFire] : [],
+    discard: playerId === 'playerA' ? redDiscards : [],
+    exile: [],
+    placedSpell: null,
+  })
+
+  return {
+    returnFire,
+    manager: GameManager.from({
+      ...initial.state,
+      turn: 10,
+      activePlayerId: 'playerA',
+      phase: 'main',
+      hasAttackedThisTurn: false,
+      hasDiscardedThisTurn: false,
+      pendingCombat: null,
+      players: {
+        playerA: preparePlayer('playerA'),
+        playerB: preparePlayer('playerB'),
+      },
+      board: {
+        creatures: [{ cardId: adjacentCreature, summonedTurn: 9 }],
+      },
+    }),
+  }
+}
+
 describe('GameManager AI rule APIs', () => {
   it('only enumerates main actions that can be applied', () => {
     const manager = createTestManager()
@@ -172,10 +236,13 @@ describe('AI evaluation', () => {
     )
   })
 
-  it('values only the AI hand at 0.3 times printed cost', () => {
+  it('values AI creatures at 0.3 times printed cost and spells at 0.3', () => {
     const manager = createTestManager()
     const expectedReserve = manager.state.players.playerA.hand.reduce(
-      (total, cardId) => total + manager.state.cards[cardId].card.cost * 0.3,
+      (total, cardId) => {
+        const card = manager.state.cards[cardId].card
+        return total + (card.kind === 'spell' ? 1 : card.cost) * 0.3
+      },
       0,
     )
     const opponentWithHand = withState(manager, (state) => ({
@@ -194,6 +261,31 @@ describe('AI evaluation', () => {
     expect(evaluateBase(opponentWithHand, 'playerA').handReserve).toBeCloseTo(
       expectedReserve,
     )
+
+    const returnFire = findCardId(
+      manager.state,
+      'playerA',
+      'cost0-spell-return-fire',
+    )
+    const playerACardIds = Object.values(manager.state.cards)
+      .filter(({ ownerId }) => ownerId === 'playerA')
+      .map(({ id }) => id)
+    const spellOnlyHand = withState(manager, (state) => ({
+      ...state,
+      players: {
+        ...state.players,
+        playerA: {
+          ...state.players.playerA,
+          deck: playerACardIds.filter((cardId) => cardId !== returnFire),
+          hand: [returnFire],
+          discard: [],
+          exile: [],
+          placedSpell: null,
+        },
+      },
+    }))
+
+    expect(evaluateBase(spellOnlyHand, 'playerA').handReserve).toBeCloseTo(0.3)
   })
 
   it('keeps the total equal to the sum of its components', () => {
@@ -289,6 +381,21 @@ describe('GameAI action selection', () => {
     const action = new GameAI().chooseAction(createTestManager())
 
     expect(action?.type).toBe('summonCreature')
+  })
+
+  it('evaluates return fire after resolving its damage', () => {
+    const { manager, returnFire } = createReturnFireDecisionManager('playerB')
+
+    expect(new GameAI().chooseAction(manager)).toEqual({
+      type: 'playSpell',
+      cardId: returnFire,
+    })
+  })
+
+  it('does not use return fire when resolving it would destroy its own group', () => {
+    const { manager } = createReturnFireDecisionManager('playerA')
+
+    expect(new GameAI().chooseAction(manager)).toEqual({ type: 'passPhase' })
   })
 
   it('chooses a lethal attack during the battle phase', () => {
