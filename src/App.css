@@ -811,6 +811,12 @@
   top: -32px;
 }
 
+@media (hover: hover) {
+  .hand-panel-bottom .hand-card-button:hover:not(.hand-card-selected) {
+    top: -6px;
+  }
+}
+
 .hand-panel-top .hand-card-selected {
   top: 32px;
 }
