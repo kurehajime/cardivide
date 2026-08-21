@@ -8,6 +8,12 @@ import {
   evaluateBattleEntry,
   getDeployableHandValue,
 } from './evaluation'
+import {
+  AI_SCORE_EPSILON,
+  areScoresEquivalent,
+  isMeaningfullyGreater,
+  isMeaningfullyLess,
+} from './scoreComparison'
 
 const KEEP_ORDER_RANDOM = () => 1 - Number.EPSILON
 
@@ -269,6 +275,18 @@ describe('GameManager AI rule APIs', () => {
 })
 
 describe('AI evaluation', () => {
+  it('treats floating-point noise as an equal score', () => {
+    const first = -19.3
+    const second = -19.299999999999272
+
+    expect(Math.abs(first - second)).toBeLessThan(AI_SCORE_EPSILON)
+    expect(areScoresEquivalent(first, second)).toBe(true)
+    expect(isMeaningfullyGreater(second, first)).toBe(false)
+    expect(isMeaningfullyLess(first, second)).toBe(false)
+    expect(isMeaningfullyGreater(first + 0.1, first)).toBe(true)
+    expect(isMeaningfullyLess(first - 0.1, first)).toBe(true)
+  })
+
   it('uses asymmetric terminal scores and zeros the other components', () => {
     const manager = createTestManager()
     const won = withState(manager, (state) => ({

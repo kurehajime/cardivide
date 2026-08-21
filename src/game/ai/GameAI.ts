@@ -5,6 +5,7 @@ import {
   evaluateMainContinuation,
 } from './evaluation'
 import type { EvaluationBreakdown } from './types'
+import { isMeaningfullyGreater } from './scoreComparison'
 
 const resolveBattleOption = (
   manager: GameManager,
@@ -42,7 +43,7 @@ const chooseMainAction = (
   for (const action of actions) {
     const nextManager = resolveMainActionForEvaluation(manager, action)
     const score = evaluateMainContinuation(nextManager, aiPlayerId).total
-    if (score > bestScore) {
+    if (isMeaningfullyGreater(score, bestScore)) {
       bestAction = action
       bestScore = score
     }
@@ -105,7 +106,7 @@ const chooseBattleAction = (
       return action
     }
     const score = evaluateBattleEntry(resolvedManager, aiPlayerId).total
-    if (score > bestScore) {
+    if (isMeaningfullyGreater(score, bestScore)) {
       bestAction = action
       bestScore = score
     }

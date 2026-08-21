@@ -29,6 +29,10 @@ const EXPECTED_CREATURE_COSTS_BY_DECK = {
   'green-red-frontline': { 2: 25, 4: 9, 5: 3 },
 } as const
 
+const BURNING_VANGUARD_ID = 'red-cost2-attack4-defense1-march0'
+const DEEP_INTERCEPTOR_ID = 'blue-cost4-attack4-defense4-march2-counter'
+const DEEP_WHALE_ID = 'blue-cost5-attack6-defense6-march4-vanish'
+
 describe('theme decks', () => {
   it.each(THEME_DECKS)('$name contains the documented 40-card cost structure', (deck) => {
     const expectedCreatureCosts = EXPECTED_CREATURE_COSTS_BY_DECK[deck.id]
@@ -72,6 +76,62 @@ describe('theme decks', () => {
         (definitionId) => definitionId === 'green-cost5-attack6-defense7-march2-vanish',
       ),
     ).toHaveLength(2)
+  })
+
+  it('uses the current 燃え立つ先陣 in both red theme decks', () => {
+    expect(CARD_BY_DEFINITION_ID[BURNING_VANGUARD_ID]).toMatchObject({
+      name: '燃え立つ先陣',
+      kind: 'creature',
+      color: 'red',
+      cost: 2,
+      attack: 4,
+      defense: 1,
+      march: 0,
+      abilities: [],
+    })
+    expect(
+      THEME_DECKS.map((deck) =>
+        deck.cardDefinitionIds.filter((definitionId) => definitionId === BURNING_VANGUARD_ID)
+          .length,
+      ),
+    ).toEqual([2, 0, 2])
+  })
+
+  it('uses the current 深潮の迎撃者 in both blue theme decks', () => {
+    expect(CARD_BY_DEFINITION_ID[DEEP_INTERCEPTOR_ID]).toMatchObject({
+      name: '深潮の迎撃者',
+      kind: 'creature',
+      color: 'blue',
+      cost: 4,
+      attack: 4,
+      defense: 4,
+      march: 2,
+      abilities: [{ type: 'counter' }],
+    })
+    expect(
+      THEME_DECKS.map((deck) =>
+        deck.cardDefinitionIds.filter((definitionId) => definitionId === DEEP_INTERCEPTOR_ID)
+          .length,
+      ),
+    ).toEqual([1, 2, 0])
+  })
+
+  it('uses the strengthened 泡沫の深海鯨 in both blue theme decks', () => {
+    expect(CARD_BY_DEFINITION_ID[DEEP_WHALE_ID]).toMatchObject({
+      name: '泡沫の深海鯨',
+      kind: 'creature',
+      color: 'blue',
+      cost: 5,
+      attack: 6,
+      defense: 6,
+      march: 4,
+      abilities: [{ type: 'vanish' }],
+    })
+    expect(
+      THEME_DECKS.map((deck) =>
+        deck.cardDefinitionIds.filter((definitionId) => definitionId === DEEP_WHALE_ID).length,
+      ),
+    ).toEqual([1, 2, 0])
   })
 
   it('creates separate sequential card instances from the selected player and COM decks', () => {

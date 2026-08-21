@@ -2,6 +2,11 @@ import { GameManager } from '../GameManager'
 import { getOpponentId } from '../boardQueries'
 import type { CardInstanceId, GameAction, PlayerId } from '../types'
 import type { EvaluationBreakdown, HandPlayCandidate } from './types'
+import {
+  areScoresEquivalent,
+  isMeaningfullyGreater,
+  isMeaningfullyLess,
+} from './scoreComparison'
 
 export const AI_EVALUATION_PARAMETERS = {
   victory: 20_000,
@@ -186,9 +191,9 @@ const selectBestAttackerOutcome = (
 ): CombatOutcomeScores =>
   outcomes.reduce(
     (best, candidate) =>
-      candidate.attackerScore > best.attackerScore ||
-      (candidate.attackerScore === best.attackerScore &&
-        candidate.aiScore < best.aiScore)
+      isMeaningfullyGreater(candidate.attackerScore, best.attackerScore) ||
+      (areScoresEquivalent(candidate.attackerScore, best.attackerScore) &&
+        isMeaningfullyLess(candidate.aiScore, best.aiScore))
         ? candidate
         : best,
     noAttack,
@@ -289,7 +294,7 @@ const getHandPlayCandidates = (
         ),
       }
       const currentBest = bestByCost.get(effectiveCost)
-      if (!currentBest || candidate.value > currentBest.value) {
+      if (!currentBest || isMeaningfullyGreater(candidate.value, currentBest.value)) {
         bestByCost.set(effectiveCost, candidate)
       }
     })

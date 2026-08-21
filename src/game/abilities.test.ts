@@ -548,7 +548,7 @@ describe('combat abilities', () => {
     const [vanishingDefender] = findCardIds(
       initial.state,
       'playerB',
-      'blue-cost5-attack5-defense6-march4-vanish',
+      'blue-cost5-attack6-defense6-march4-vanish',
     )
     let manager = configureManager(initial, {
       board: [{ cardId: attacker }, { cardId: vanishingDefender }],
