@@ -6,6 +6,7 @@ import {
   AI_EVALUATION_PARAMETERS,
   evaluateBase,
   evaluateBattleEntry,
+  getDeployableHandValue,
 } from './evaluation'
 
 const KEEP_ORDER_RANDOM = () => 1 - Number.EPSILON
@@ -79,6 +80,76 @@ const createMiningDilemmaManager = (): GameManager => {
       })),
     },
   })
+}
+
+const createDuplicateLethalDefenseManager = (): {
+  manager: GameManager
+  defenderIds: [CardInstanceId, CardInstanceId]
+} => {
+  const initial = createTestManager()
+  const attackerId = findCardId(
+    initial.state,
+    'playerB',
+    'red-cost5-attack7-defense4-march2-vanish',
+  )
+  const defenderIds = Object.values(initial.state.cards)
+    .filter(
+      ({ ownerId, card }) =>
+        ownerId === 'playerA' &&
+        card.definitionId === 'green-cost2-attack2-defense4-march0',
+    )
+    .map(({ id }) => id)
+  if (defenderIds.length < 2) {
+    throw new Error('Expected two defenders for the terminal-swing test.')
+  }
+  const selectedDefenders = defenderIds.slice(0, 2) as [
+    CardInstanceId,
+    CardInstanceId,
+  ]
+  const movedCardIds = new Set([attackerId, ...selectedDefenders])
+  const deckFor = (playerId: PlayerId) =>
+    Object.values(initial.state.cards)
+      .filter(
+        ({ id, ownerId }) => ownerId === playerId && !movedCardIds.has(id),
+      )
+      .map(({ id }) => id)
+
+  return {
+    manager: GameManager.from({
+      ...initial.state,
+      turn: 10,
+      phase: 'main',
+      activePlayerId: 'playerA',
+      hasAttackedThisTurn: false,
+      hasDiscardedThisTurn: false,
+      pendingCombat: null,
+      players: {
+        playerA: {
+          ...initial.state.players.playerA,
+          hp: 2,
+          mana: 4,
+          deck: deckFor('playerA'),
+          hand: selectedDefenders,
+          discard: [],
+          exile: [],
+          placedSpell: null,
+        },
+        playerB: {
+          ...initial.state.players.playerB,
+          mana: 0,
+          deck: deckFor('playerB'),
+          hand: [],
+          discard: [],
+          exile: [],
+          placedSpell: null,
+        },
+      },
+      board: {
+        creatures: [{ cardId: attackerId, summonedTurn: 9 }],
+      },
+    }),
+    defenderIds: selectedDefenders,
+  }
 }
 
 const createReturnFireDecisionManager = (
@@ -236,12 +307,19 @@ describe('AI evaluation', () => {
     )
   })
 
-  it('values AI creatures at 0.3 times printed cost and spells at 0.3', () => {
+  it('values AI creatures by printed cost and keeps a higher flat spell reserve', () => {
     const manager = createTestManager()
+    expect(AI_EVALUATION_PARAMETERS.creatureHandReserve).toBe(0.3)
+    expect(AI_EVALUATION_PARAMETERS.spellHandReserve).toBe(2)
     const expectedReserve = manager.state.players.playerA.hand.reduce(
       (total, cardId) => {
         const card = manager.state.cards[cardId].card
-        return total + (card.kind === 'spell' ? 1 : card.cost) * 0.3
+        return (
+          total +
+          (card.kind === 'spell'
+            ? AI_EVALUATION_PARAMETERS.spellHandReserve
+            : card.cost * AI_EVALUATION_PARAMETERS.creatureHandReserve)
+        )
       },
       0,
     )
@@ -285,7 +363,34 @@ describe('AI evaluation', () => {
       },
     }))
 
-    expect(evaluateBase(spellOnlyHand, 'playerA').handReserve).toBeCloseTo(0.3)
+    expect(evaluateBase(spellOnlyHand, 'playerA').handReserve).toBeCloseTo(
+      AI_EVALUATION_PARAMETERS.spellHandReserve,
+    )
+  })
+
+  it('counts a shared lethal-defense swing only once in deployable hand value', () => {
+    const { manager, defenderIds } = createDuplicateLethalDefenseManager()
+    const oneDefender = withState(manager, (state) => ({
+      ...state,
+      players: {
+        ...state.players,
+        playerA: {
+          ...state.players.playerA,
+          hand: [defenderIds[0]],
+          deck: [...state.players.playerA.deck, defenderIds[1]],
+        },
+      },
+    }))
+
+    expect(evaluateBattleEntry(manager, 'playerA').opponentAttackThreat).toBeGreaterThan(
+      Math.abs(AI_EVALUATION_PARAMETERS.defeat) * 0.9,
+    )
+    expect(
+      getDeployableHandValue(manager, 'playerA') -
+        getDeployableHandValue(oneDefender, 'playerA'),
+    ).toBeCloseTo(
+      2 * AI_EVALUATION_PARAMETERS.creatureHandReserve,
+    )
   })
 
   it('keeps the total equal to the sum of its components', () => {

@@ -1,6 +1,6 @@
 import { GameManager } from '../GameManager'
 import { getOpponentId } from '../boardQueries'
-import type { GameAction, PlayerId } from '../types'
+import type { CardInstanceId, GameAction, PlayerId } from '../types'
 import type { EvaluationBreakdown, HandPlayCandidate } from './types'
 
 export const AI_EVALUATION_PARAMETERS = {
@@ -9,7 +9,8 @@ export const AI_EVALUATION_PARAMETERS = {
   hp: 4,
   mana: 1,
   boardMaterial: 1,
-  handReserve: 0.3,
+  creatureHandReserve: 0.3,
+  spellHandReserve: 2,
   upkeepManaMultiplier: 1.2,
   captureMarch: 1,
   capturePosition: 0.5,
@@ -63,8 +64,12 @@ export const evaluateBase = (
   const handReserve = aiPlayer.hand.reduce(
     (total, cardId) => {
       const card = manager.state.cards[cardId].card
-      const reserveUnits = card.kind === 'spell' ? 1 : card.cost
-      return total + reserveUnits * AI_EVALUATION_PARAMETERS.handReserve
+      return (
+        total +
+        (card.kind === 'spell'
+          ? AI_EVALUATION_PARAMETERS.spellHandReserve
+          : card.cost * AI_EVALUATION_PARAMETERS.creatureHandReserve)
+      )
     },
     0,
   )
@@ -226,11 +231,37 @@ export const evaluateBattleEntry = (
   }
 }
 
+const TERMINAL_SCORE_EPSILON = 1e-6
+
+const getBattleEntryBaseTotal = (evaluation: EvaluationBreakdown): number =>
+  evaluation.total - evaluation.myAttackPotential + evaluation.opponentAttackThreat
+
+const isPredictedVictory = (evaluation: EvaluationBreakdown): boolean =>
+  Math.abs(
+    getBattleEntryBaseTotal(evaluation) +
+      evaluation.myAttackPotential -
+      AI_EVALUATION_PARAMETERS.victory,
+  ) < TERMINAL_SCORE_EPSILON
+
+const isPredictedDefeat = (evaluation: EvaluationBreakdown): boolean =>
+  Math.abs(
+    getBattleEntryBaseTotal(evaluation) -
+      evaluation.opponentAttackThreat -
+      AI_EVALUATION_PARAMETERS.defeat,
+  ) < TERMINAL_SCORE_EPSILON
+
+const hasTerminalSwing = (
+  current: EvaluationBreakdown,
+  next: EvaluationBreakdown,
+): boolean =>
+  (!isPredictedVictory(current) && isPredictedVictory(next)) ||
+  (isPredictedDefeat(current) && !isPredictedDefeat(next))
+
 const getHandPlayCandidates = (
   manager: GameManager,
   aiPlayerId: PlayerId,
-  cardId: number,
-  currentBattleScore: number,
+  cardId: CardInstanceId,
+  currentBattleEvaluation: EvaluationBreakdown,
 ): HandPlayCandidate[] => {
   const card = manager.state.cards[cardId].card
   if (card.kind !== 'creature') {
@@ -243,11 +274,19 @@ const getHandPlayCandidates = (
     .forEach(({ insertIndex, effectiveCost }) => {
       const action = { type: 'summonCreature', cardId, insertIndex } satisfies GameAction
       const nextManager = GameManager.applyAction(manager, action)
+      const nextBattleEvaluation = evaluateBattleEntry(nextManager, aiPlayerId)
       const candidate = {
         cardId,
         action,
         effectiveCost,
-        value: evaluateBattleEntry(nextManager, aiPlayerId).total - currentBattleScore,
+        value: nextBattleEvaluation.total - currentBattleEvaluation.total,
+        baseValue:
+          getBattleEntryBaseTotal(nextBattleEvaluation) -
+          getBattleEntryBaseTotal(currentBattleEvaluation),
+        terminalSwing: hasTerminalSwing(
+          currentBattleEvaluation,
+          nextBattleEvaluation,
+        ),
       }
       const currentBest = bestByCost.get(effectiveCost)
       if (!currentBest || candidate.value > currentBest.value) {
@@ -266,10 +305,10 @@ const canEvaluateDeployableHand = (
   manager.state.activePlayerId === aiPlayerId &&
   GameManager.getWinner(manager) === null
 
-const getDeployableHandValueFromBattleScore = (
+const getDeployableHandValueFromBattleEvaluation = (
   manager: GameManager,
   aiPlayerId: PlayerId,
-  currentBattleScore: number,
+  currentBattleEvaluation: EvaluationBreakdown,
 ): number => {
   if (!canEvaluateDeployableHand(manager, aiPlayerId)) {
     return 0
@@ -277,25 +316,49 @@ const getDeployableHandValueFromBattleScore = (
 
   const mana = manager.state.players[aiPlayerId].mana
   const candidatesByCard = manager.state.players[aiPlayerId].hand.map((cardId) =>
-    getHandPlayCandidates(manager, aiPlayerId, cardId, currentBattleScore),
+    getHandPlayCandidates(manager, aiPlayerId, cardId, currentBattleEvaluation),
   )
-  const bestValueByMana = Array<number>(mana + 1).fill(0)
+  const bestWithoutTerminalByMana = Array<number>(mana + 1).fill(0)
+  const bestWithTerminalByMana = Array<number>(mana + 1).fill(
+    Number.NEGATIVE_INFINITY,
+  )
 
   for (const candidates of candidatesByCard) {
-    const previous = [...bestValueByMana]
+    const previousWithoutTerminal = [...bestWithoutTerminalByMana]
+    const previousWithTerminal = [...bestWithTerminalByMana]
     for (let availableMana = 0; availableMana <= mana; availableMana += 1) {
       for (const candidate of candidates) {
         if (candidate.effectiveCost <= availableMana) {
-          bestValueByMana[availableMana] = Math.max(
-            bestValueByMana[availableMana],
-            previous[availableMana - candidate.effectiveCost] + candidate.value,
-          )
+          const remainingMana = availableMana - candidate.effectiveCost
+          if (candidate.terminalSwing) {
+            bestWithoutTerminalByMana[availableMana] = Math.max(
+              bestWithoutTerminalByMana[availableMana],
+              previousWithoutTerminal[remainingMana] + candidate.baseValue,
+            )
+            bestWithTerminalByMana[availableMana] = Math.max(
+              bestWithTerminalByMana[availableMana],
+              previousWithoutTerminal[remainingMana] + candidate.value,
+              previousWithTerminal[remainingMana] + candidate.baseValue,
+            )
+          } else {
+            bestWithoutTerminalByMana[availableMana] = Math.max(
+              bestWithoutTerminalByMana[availableMana],
+              previousWithoutTerminal[remainingMana] + candidate.value,
+            )
+            bestWithTerminalByMana[availableMana] = Math.max(
+              bestWithTerminalByMana[availableMana],
+              previousWithTerminal[remainingMana] + candidate.value,
+            )
+          }
         }
       }
     }
   }
 
-  return Math.max(...bestValueByMana)
+  return Math.max(
+    ...bestWithoutTerminalByMana,
+    ...bestWithTerminalByMana,
+  )
 }
 
 export const getDeployableHandValue = (
@@ -306,10 +369,10 @@ export const getDeployableHandValue = (
     return 0
   }
 
-  return getDeployableHandValueFromBattleScore(
+  return getDeployableHandValueFromBattleEvaluation(
     manager,
     aiPlayerId,
-    evaluateBattleEntry(manager, aiPlayerId).total,
+    evaluateBattleEntry(manager, aiPlayerId),
   )
 }
 
@@ -322,10 +385,10 @@ export const evaluateMainContinuation = (
     return battleEntry
   }
 
-  const deployableHand = getDeployableHandValueFromBattleScore(
+  const deployableHand = getDeployableHandValueFromBattleEvaluation(
     manager,
     aiPlayerId,
-    battleEntry.total,
+    battleEntry,
   )
   return {
     ...battleEntry,

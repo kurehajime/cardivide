@@ -19,4 +19,6 @@ export type HandPlayCandidate = {
   action: GameAction
   effectiveCost: number
   value: number
+  baseValue: number
+  terminalSwing: boolean
 }

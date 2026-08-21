@@ -17,7 +17,7 @@
 - 相手の非公開手札の推定
 - 山札順の参照または予測
 - 複数ターンにまたがる行動列の探索
-- 展開可能手札価値における布陣カードや将来実装する呪文との組み合わせ評価
+- 魔法を展開可能手札価値のナップサック候補へ含めた同時使用列の評価
 
 これらは初期AIとの対戦結果を確認した後、必要なものだけ追加する。
 
@@ -25,7 +25,7 @@
 
 AIは以下の情報だけを評価に使用する。
 
-- 公開されている盤面、布陣、捨て札
+- 公開されている盤面、配置魔法、捨て札
 - 両プレイヤーのHP、マナ、手札枚数、山札枚数
 - AI自身の手札
 - 現在の手番、フェイズ、攻撃済みかどうか
@@ -148,7 +148,8 @@ type EvaluationBreakdown = {
 | HP | 4 | HP1点あたりの価値 |
 | マナ | 1 | 所持マナ1点あたりの価値 |
 | 場のカードコスト | 1 | 場のクリーチャーの召喚コスト1点あたりの価値 |
-| 手札の予備価値 | 0.3 | 自分のクリーチャーの召喚コスト、または魔法の仮想コスト1へ掛ける値 |
+| クリーチャーの手札予備価値 | 0.3 | 自分のクリーチャーの召喚コストへ掛ける値 |
+| 魔法の手札予備価値 | 2.0 | 自分の手札にある魔法1枚の固定価値 |
 | 次回マナの係数 | 1.2 | 次のキープアップで得る追加マナへ掛ける値 |
 | 捕獲評価用の進軍 | 1 | 捕獲による配置制限を調べる仮想クリーチャーの進軍値 |
 | 捕獲による配置制限 | 0.5 | 相手の配置可能位置を1つ減らす価値 |
@@ -203,7 +204,8 @@ const evaluate = (
 配置魔法によるバリア、マナ、攻撃制限への実際の影響を各評価項目で加点する。
 
 手札カードは、場のカードより低い予備価値を持つ。
-初期値では、AI自身の手札にあるクリーチャーを`召喚コスト × 0.3`、魔法を種類や現在の効果量によらず`1 × 0.3`として評価する。
+AI自身の手札にあるクリーチャーを`召喚コスト × 0.3`、魔法を種類や現在の効果量によらず1枚`2.0`として評価する。
+魔法は0コストでも使い切りであるため、即時効果が小さい局面で温存しやすいよう、クリーチャーとは別の固定値を使う。
 手札枚数そのものには固定価値を付けない。
 相手の手札内容は参照せず、公開されている手札枚数から平均コストや予備価値を見積もることもしない。
 手札から現在使えることで生じる具体的な価値は、クリーチャーでは展開可能手札価値、魔法では使用後状態の評価へ反映する。
@@ -286,6 +288,8 @@ type HandPlayCandidate = {
   action: GameAction
   effectiveCost: number
   value: number
+  baseValue: number
+  terminalSwing: boolean
 }
 
 const getHandPlayCandidates = (
@@ -296,12 +300,17 @@ const getHandPlayCandidates = (
     getLegalPlayActions(manager, cardId).map((action) => {
       const nextManager = applyActionImmediately(manager, action)
 
+      const current = evaluateBattleEntry(manager)
+      const next = evaluateBattleEntry(nextManager)
+
       return {
         cardId,
         action,
         effectiveCost: getEffectiveActionCost(manager, action),
-        value: evaluateBattleEntry(nextManager)
-          - evaluateBattleEntry(manager),
+        value: next.total - current.total,
+        baseValue: getBaseTotal(next) - getBaseTotal(current),
+        terminalSwing: newlyFindsVictory(current, next)
+          || newlyAvoidsDefeat(current, next),
       }
     }),
   )
@@ -315,6 +324,11 @@ const getHandPlayCandidates = (
 現在のマナを複数のカードで重複して使ったものとして評価してはならない。
 各カードを0回または1回だけ選べる多項目ナップサックとして扱い、合計有効コストが現在マナ以下になる組み合わせのうち、展開価値の合計が最大になるものを採用する。
 
+各候補を単独で評価した結果、複数の候補が同じ致死攻撃を成立させる、または同じ敗北を回避することがある。
+この勝敗級の差分をそのまま足すと、実際には一度しか起きない勝利・敗北回避を手札枚数分だけ重複加算してしまう。
+DPは「勝敗級差分をまだ加えていない状態」と「すでに加えた状態」の2つを持ち、組み合わせ全体で勝敗級差分を1回だけ加える。
+2枚目以降の勝敗級候補は、攻撃プレビューを除いた基礎評価の差分`baseValue`だけを加える。
+
 ```ts
 const deployableHandValue = (
   manager: GameManager,
@@ -322,24 +336,30 @@ const deployableHandValue = (
 ): number => {
   const mana = manager.state.players[playerId].mana
   const candidatesByCard = getCandidatesByCard(manager, playerId)
-  const bestValueByMana = Array<number>(mana + 1).fill(0)
+  const bestWithoutTerminalByMana = Array<number>(mana + 1).fill(0)
+  const bestWithTerminalByMana = Array<number>(mana + 1).fill(-Infinity)
 
   for (const candidates of candidatesByCard) {
-    const previous = [...bestValueByMana]
+    const previousWithoutTerminal = [...bestWithoutTerminalByMana]
+    const previousWithTerminal = [...bestWithTerminalByMana]
 
     for (let availableMana = 0; availableMana <= mana; availableMana += 1) {
       for (const candidate of candidates) {
         if (candidate.effectiveCost <= availableMana) {
-          bestValueByMana[availableMana] = Math.max(
-            bestValueByMana[availableMana],
-            previous[availableMana - candidate.effectiveCost] + candidate.value,
+          updateTwoStateKnapsack(
+            candidate,
+            availableMana,
+            previousWithoutTerminal,
+            previousWithTerminal,
+            bestWithoutTerminalByMana,
+            bestWithTerminalByMana,
           )
         }
       }
     }
   }
 
-  return Math.max(...bestValueByMana)
+  return Math.max(...bestWithoutTerminalByMana, ...bestWithTerminalByMana)
 }
 ```
 
@@ -485,7 +505,8 @@ AIは選んだ攻撃、または攻撃しない処理を1回だけ実行する�
 
 ## 魔法の評価
 
-- 手札にある魔法は、種類や現在の効果量によらず仮想コスト1として予備価値を計算する。
+- 手札にある魔法は、種類や現在の効果量によらず1枚あたり2.0の予備価値を持つ。
+- 0コストでも使い切りの魔法を小さな効果で消費しにくくし、効果量が大きい局面まで保持するため、クリーチャーの係数とは分離する。
 - 魔法の具体的な効果へ固定点を付けず、使用後に生じた盤面、HP、マナ、攻撃可能性の変化を評価する。
 - 配置魔法は実際の期限と上書き状態を含む配置後の状態から評価する。
 - 《返り火》は候補評価時にダメージと破壊を即時解決し、返還マナと盤面変化を反映した後で評価する。この仮想解決ではターンを終了しない。
@@ -553,10 +574,11 @@ AIは選んだ攻撃、または攻撃しない処理を1回だけ実行する�
 - 各内訳の合計と`total`が一致する。
 - パラメータ変更の影響を局面単位で確認できる。
 - 自分の手札にあるクリーチャーの予備価値が召喚コストの0.3倍になる。
-- 自分の手札にある魔法の予備価値が1枚あたり0.3になる。
+- 自分の手札にある魔法の予備価値が1枚あたり2.0になる。
 - 《返り火》の行動候補はダメージ解決後の盤面で評価される。
 - 相手の手札枚数が変わっても、手札の予備価値は変わらない。
 - 展開可能手札価値は、現在マナを複数のカードで重複利用しない。
+- 複数の展開候補が同じ勝利または敗北回避を生む場合、勝敗級の差分を1回だけ加算する。
 - 展開可能手札価値の計算が再帰しない。
 - 何もしない評価には展開可能手札価値を加えない。
 - 行動候補の評価では、行動後に残った手札の展開可能手札価値だけを加える。

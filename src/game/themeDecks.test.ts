@@ -5,6 +5,24 @@ import { THEME_DECKS } from './themeDecks'
 
 const KEEP_ORDER_RANDOM = () => 1 - Number.EPSILON
 
+const EXPECTED_SPELLS_BY_DECK = {
+  'red-blue-skirmish': [
+    'cost0-spell-return-fire',
+    'cost0-spell-return-fire',
+    'cost0-spell-bubble-wall',
+  ],
+  'blue-green-intercept': [
+    'cost0-spell-bubble-wall',
+    'cost0-spell-abundance',
+    'cost0-spell-abundance',
+  ],
+  'green-red-frontline': [
+    'cost0-spell-abundance',
+    'cost0-spell-abundance',
+    'cost0-spell-return-fire',
+  ],
+} as const
+
 describe('theme decks', () => {
   it.each(THEME_DECKS)('$name contains the documented 40-card cost structure', (deck) => {
     const cards = deck.cardDefinitionIds.map((definitionId) => {
@@ -21,6 +39,11 @@ describe('theme decks', () => {
     expect(cards.filter((card) => card.kind === 'spell' && card.cost === 0)).toHaveLength(3)
     expect(cards.filter((card) => card.kind === 'creature' && card.color === deck.colors[0])).toHaveLength(20)
     expect(cards.filter((card) => card.kind === 'creature' && card.color === deck.colors[1])).toHaveLength(17)
+    expect(
+      cards
+        .filter((card) => card.kind === 'spell')
+        .map((card) => card.definitionId),
+    ).toEqual(EXPECTED_SPELLS_BY_DECK[deck.id])
   })
 
   it('creates separate sequential card instances from the selected player and COM decks', () => {

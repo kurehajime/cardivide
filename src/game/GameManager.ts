@@ -2,11 +2,8 @@ import { createDeck, STANDARD_DECK_LIST } from './decks'
 import { CreatureRules } from './CreatureRules'
 import {
   collectBoardGroups,
-  getCrossedIndexes,
   getCreatureOwnerAt,
   getOpponentId,
-  isAdjacentInsertToAnchor,
-  isForwardInsertFromAnchor,
   isWholeGroup,
 } from './boardQueries'
 import { PLAYER_IDS } from './types'
@@ -245,39 +242,47 @@ const getRequiredMarchForInsert = (
   ignoreCapture: boolean,
 ): number => {
   const board = state.board.creatures
-  const anchorIndexes: Array<number | null> = [
-    null,
-    ...board.flatMap((_, index) =>
-      getCreatureOwnerAt(state, index) === ownerId ? [index] : [],
-    ),
-  ]
+  let crossedStart = ownerId === 'playerA' ? 0 : insertIndex
+  let crossedEnd = ownerId === 'playerA' ? insertIndex : board.length
 
-  return Math.min(
-    ...anchorIndexes
-      .filter(
-        (anchorIndex) =>
-          anchorIndex === null ||
-          isAdjacentInsertToAnchor(anchorIndex, insertIndex) ||
-          isForwardInsertFromAnchor(ownerId, anchorIndex, insertIndex),
-      )
-      .map((anchorIndex) => {
-        const crossedIndexes = getCrossedIndexes(
-          board.length,
-          ownerId,
-          anchorIndex,
-          insertIndex,
-        )
-        return crossedIndexes.reduce(
-          (distance, crossedIndex) =>
-            distance +
-            1 +
-            (ignoreCapture
-              ? 0
-              : new CreatureRules(state, crossedIndex).getOpponentMarchCost(ownerId)),
-          0,
-        )
-      }),
-  )
+  // Every crossed position has non-negative cost, so the nearest rear anchor is optimal.
+  if (ownerId === 'playerA') {
+    for (
+      let anchorIndex = Math.min(insertIndex, board.length - 1);
+      anchorIndex >= 0;
+      anchorIndex -= 1
+    ) {
+      if (getCreatureOwnerAt(state, anchorIndex) === ownerId) {
+        crossedStart = Math.min(anchorIndex + 1, insertIndex)
+        break
+      }
+    }
+  } else {
+    for (
+      let anchorIndex = Math.max(0, insertIndex - 1);
+      anchorIndex < board.length;
+      anchorIndex += 1
+    ) {
+      if (getCreatureOwnerAt(state, anchorIndex) === ownerId) {
+        crossedEnd = Math.max(anchorIndex, insertIndex)
+        break
+      }
+    }
+  }
+
+  let distance = 0
+  for (
+    let crossedIndex = crossedStart;
+    crossedIndex < crossedEnd;
+    crossedIndex += 1
+  ) {
+    distance +=
+      1 +
+      (ignoreCapture
+        ? 0
+        : new CreatureRules(state, crossedIndex).getOpponentMarchCost(ownerId))
+  }
+  return distance
 }
 
 const getSummonOptionsForState = (
@@ -804,18 +809,24 @@ export class GameManager {
     march: number,
     ignoreCapture = false,
   ): number {
-    return Array.from(
-      { length: manager.state.board.creatures.length + 1 },
-      (_, insertIndex) => insertIndex,
-    ).filter(
-      (insertIndex) =>
+    let reachablePositions = 0
+    for (
+      let insertIndex = 0;
+      insertIndex <= manager.state.board.creatures.length;
+      insertIndex += 1
+    ) {
+      if (
         getRequiredMarchForInsert(
           manager.state,
           playerId,
           insertIndex,
           ignoreCapture,
-        ) <= march,
-    ).length
+        ) <= march
+      ) {
+        reachablePositions += 1
+      }
+    }
+    return reachablePositions
   }
 
   static setPhase(manager: GameManager, phase: Phase): GameManager {

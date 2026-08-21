@@ -81,7 +81,7 @@ const BLUE_GREEN_INTERCEPT = [
   'blue-cost5-attack5-defense6-march4-vanish',
   'blue-cost5-attack5-defense6-march4-vanish',
   'cost0-spell-bubble-wall',
-  'cost0-spell-bubble-wall',
+  'cost0-spell-abundance',
   'green-cost2-attack2-defense3-march1',
   'green-cost2-attack2-defense3-march1',
   'green-cost2-attack2-defense3-march1',
@@ -157,7 +157,7 @@ export const THEME_DECKS = [
     id: 'blue-green-intercept',
     name: '分断迎撃',
     colors: ['blue', 'green'],
-    description: '反撃と高防御に泡の壁を重ね、敵の進軍と配置を制御する。',
+    description: '反撃と高防御を泡の壁で支え、豊穣から戦線を立て直す。',
     cardDefinitionIds: BLUE_GREEN_INTERCEPT,
   },
   {
