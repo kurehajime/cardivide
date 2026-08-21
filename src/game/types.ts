@@ -4,7 +4,7 @@ export type PlayerId = (typeof PLAYER_IDS)[number]
 
 export type CardColor = 'red' | 'blue' | 'green'
 
-export type CardKind = 'creature' | 'formation' | 'spell'
+export type CardKind = 'creature' | 'spell'
 
 export type Phase = 'keepUp' | 'main' | 'battle' | 'cleanup'
 
@@ -46,18 +46,21 @@ export type CreatureCard = CardBase & {
   abilities: KeywordAbility[]
 }
 
-export type FormationCard = CardBase & {
-  kind: 'formation'
-  color: CardColor
-  text: string
-}
+export type SpellDuration = 'immediate' | 'untilTurnEnd' | 'untilNextTurnStart'
+
+export type SpellEffect =
+  | { type: 'returnFire'; exileColor: 'red' }
+  | { type: 'bubbleWall'; exileColor: 'blue' }
+  | { type: 'abundance'; exileColor: 'green' }
 
 export type SpellCard = CardBase & {
   kind: 'spell'
+  duration: SpellDuration
+  effect: SpellEffect
   text: string
 }
 
-export type Card = CreatureCard | FormationCard | SpellCard
+export type Card = CreatureCard | SpellCard
 
 export type CardInstance = Readonly<{
   id: CardInstanceId
@@ -127,6 +130,7 @@ export type PendingCombat = {
   defendingPlayerId: PlayerId
   playerWasHit: boolean
   playerDamage: number
+  endsTurnAfterResolution?: false
 }
 
 export type CombatPreview = {
@@ -142,6 +146,11 @@ export type Board = {
   creatures: CreatureInstance[]
 }
 
+export type PlacedSpell = {
+  cardId: CardInstanceId
+  effectAmount: number
+}
+
 export type PlayerState = {
   id: PlayerId
   name: string
@@ -150,7 +159,8 @@ export type PlayerState = {
   deck: CardInstanceId[]
   hand: CardInstanceId[]
   discard: CardInstanceId[]
-  formation: CardInstanceId | null
+  exile: CardInstanceId[]
+  placedSpell: PlacedSpell | null
 }
 
 export type GameDeckLists = Record<PlayerId, readonly string[]>
@@ -171,7 +181,6 @@ export type GameAction =
   | { type: 'resolveKeepUp' }
   | { type: 'passPhase' }
   | { type: 'summonCreature'; cardId: CardInstanceId; insertIndex: number }
-  | { type: 'playFormation'; cardId: CardInstanceId }
   | { type: 'playSpell'; cardId: CardInstanceId }
   | { type: 'attackGroup'; startIndex: number; endIndex: number }
   | { type: 'finishCombat' }

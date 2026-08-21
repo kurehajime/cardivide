@@ -443,13 +443,13 @@
   text-align: center;
 }
 
-.board-formation {
+.board-spell {
   min-width: 0;
   display: grid;
   place-items: center;
 }
 
-.board-formation > .card-view {
+.board-spell > .card-view {
   width: min(140px, 100%);
   box-shadow: 0 9px 20px rgb(18 22 19 / 48%);
 }

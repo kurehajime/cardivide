@@ -17,10 +17,10 @@ describe('theme decks', () => {
     expect(cards.filter((card) => card.kind === 'creature' && card.cost === 2)).toHaveLength(25)
     expect(cards.filter((card) => card.kind === 'creature' && card.cost === 4)).toHaveLength(9)
     expect(cards.filter((card) => card.kind === 'creature' && card.cost === 5)).toHaveLength(3)
-    expect(cards.filter((card) => card.kind === 'formation')).toHaveLength(3)
-    expect(cards.filter((card) => card.kind === 'formation' && card.cost === 3)).toHaveLength(3)
-    expect(cards.filter((card) => 'color' in card && card.color === deck.colors[0])).toHaveLength(22)
-    expect(cards.filter((card) => 'color' in card && card.color === deck.colors[1])).toHaveLength(18)
+    expect(cards.filter((card) => card.kind === 'spell')).toHaveLength(3)
+    expect(cards.filter((card) => card.kind === 'spell' && card.cost === 0)).toHaveLength(3)
+    expect(cards.filter((card) => card.kind === 'creature' && card.color === deck.colors[0])).toHaveLength(20)
+    expect(cards.filter((card) => card.kind === 'creature' && card.color === deck.colors[1])).toHaveLength(17)
   })
 
   it('creates separate sequential card instances from the selected player and COM decks', () => {

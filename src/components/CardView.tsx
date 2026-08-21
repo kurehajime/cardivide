@@ -24,8 +24,13 @@ const COLOR_LABELS = {
 
 const KIND_LABELS = {
   creature: 'クリーチャー',
-  formation: '布陣',
-  spell: '呪文',
+  spell: '魔法',
+} as const
+
+const SPELL_DURATION_LABELS = {
+  immediate: '起動',
+  untilTurnEnd: '配置',
+  untilNextTurnStart: '配置',
 } as const
 
 const STAT_ICON_URLS = {
@@ -64,7 +69,10 @@ type CardFaceProps = {
 }
 
 const CardFace = ({ card, colorLabel, statModifier }: CardFaceProps) => {
-  const isFormation = card.kind === 'formation'
+  const isSpell = card.kind === 'spell'
+  const typeLabel = isSpell
+    ? `${KIND_LABELS.spell}・${SPELL_DURATION_LABELS[card.duration]}`
+    : `${KIND_LABELS.creature}・${colorLabel}`
   const hasAttackModifier = statModifier !== undefined && statModifier.attack !== 0
   const hasDefenseModifier = statModifier !== undefined && statModifier.defense !== 0
   const modifiers: Array<{
@@ -129,7 +137,7 @@ const CardFace = ({ card, colorLabel, statModifier }: CardFaceProps) => {
 
       <rect className="card-face-type-band" x="25" y="362" width="450" height="48" rx="8" />
       <text className="card-face-type-text" x="45" y="387">
-        {KIND_LABELS[card.kind]}・{colorLabel}
+        {typeLabel}
       </text>
 
       <rect
@@ -137,10 +145,10 @@ const CardFace = ({ card, colorLabel, statModifier }: CardFaceProps) => {
         x="25"
         y="424"
         width="450"
-        height={isFormation ? 255 : 163}
+        height={isSpell ? 255 : 163}
         rx="10"
       />
-      <foreignObject x="43" y="440" width="414" height={isFormation ? 223 : 131}>
+      <foreignObject x="43" y="440" width="414" height={isSpell ? 223 : 131}>
         <div
           className={`card-face-rules ${card.kind === 'creature' ? 'card-face-rules-creature' : ''}`}
         >
@@ -171,13 +179,6 @@ const CardFace = ({ card, colorLabel, statModifier }: CardFaceProps) => {
               </text>
             </g>
           ))}
-        </g>
-      ) : card.kind === 'spell' ? (
-        <g className="card-face-kind-mark">
-          <rect x="25" y="601" width="450" height="78" rx="8" />
-          <text x="250" y="641">
-            {KIND_LABELS[card.kind]}
-          </text>
         </g>
       ) : null}
     </svg>
@@ -323,7 +324,7 @@ const CardView = ({
   }
 
   const colorClass = card.kind === 'spell' ? 'neutral' : card.color
-  const colorLabel = card.kind === 'spell' ? '無' : COLOR_LABELS[card.color]
+  const colorLabel = card.kind === 'spell' ? '属性なし' : COLOR_LABELS[card.color]
   const hasAttackModifier = statModifier !== undefined && statModifier.attack !== 0
   const hasDefenseModifier = statModifier !== undefined && statModifier.defense !== 0
   const hasStatModifier = hasAttackModifier || hasDefenseModifier

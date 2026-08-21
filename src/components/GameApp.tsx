@@ -211,13 +211,13 @@ const GameSession = ({
     )
   }
 
-  const handlePlayFormation = () => {
+  const handlePlaySpell = () => {
     if (selectedCardId === null) {
       return
     }
 
     applyGameUpdate((currentManager) =>
-      GameManager.playFormation(currentManager, selectedCardId),
+      GameManager.playSpell(currentManager, selectedCardId),
     )
   }
 
@@ -274,12 +274,14 @@ const GameSession = ({
                 disabled={
                   state.activePlayerId === AI_PLAYER_ID ||
                   state.phase !== 'main' ||
-                  selectedCard?.card.kind !== 'formation' ||
+                  selectedCard?.card.kind !== 'spell' ||
+                  selectedCardId === null ||
+                  !GameManager.isCardPlayable(manager, selectedCardId) ||
                   winnerId !== null
                 }
-                onClick={handlePlayFormation}
+                onClick={handlePlaySpell}
               >
-                布陣に配置
+                魔法を使用
               </button>
               <button
                 className="game-action-button game-action-secondary"
@@ -327,6 +329,7 @@ const GameSession = ({
               state.activePlayerId === 'playerA' &&
               ['main', 'battle'].includes(state.phase) &&
               !state.hasAttackedThisTurn &&
+              GameManager.canCurrentPlayerAttack(manager) &&
               state.pendingCombat === null &&
               winnerId === null
             }

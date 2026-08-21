@@ -19,7 +19,6 @@ export {
   CARD_BY_DEFINITION_ID,
   CARD_LIST,
   CREATURE_CARDS,
-  FORMATION_CARDS,
   SPELL_CARDS,
 } from './cards'
 export {
@@ -52,7 +51,6 @@ export type {
   DamageMarker,
   EffectiveBoardGroup,
   EffectiveCreatureStats,
-  FormationCard,
   GameAction,
   GameDeckLists,
   GameState,
@@ -63,7 +61,10 @@ export type {
   PendingCombat,
   PlayerId,
   PlayerState,
+  PlacedSpell,
   SpellCard,
+  SpellDuration,
+  SpellEffect,
   SummonOption,
 } from './types'
 export type { DeckSummary } from './decks'

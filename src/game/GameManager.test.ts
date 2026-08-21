@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { GameManager, assertValidGameState } from './GameManager'
-import type { CardInstanceId, GameState, PlayerId } from './types'
+import type { CardInstanceId, GameState } from './types'
 
 const KEEP_ORDER_RANDOM = () => 1 - Number.EPSILON
 
@@ -11,9 +11,9 @@ const collectZoneIds = (state: GameState): CardInstanceId[] => {
 
   ;(['playerA', 'playerB'] as const).forEach((playerId) => {
     const player = state.players[playerId]
-    ids.push(...player.deck, ...player.hand, ...player.discard)
-    if (player.formation !== null) {
-      ids.push(player.formation)
+    ids.push(...player.deck, ...player.hand, ...player.discard, ...player.exile)
+    if (player.placedSpell !== null) {
+      ids.push(player.placedSpell.cardId)
     }
   })
   ids.push(...state.board.creatures.map(({ cardId }) => cardId))
@@ -36,31 +36,6 @@ const passTurnWithoutAttack = (manager: GameManager): GameManager => {
     nextManager = GameManager.passPhase(nextManager)
   }
   return nextManager
-}
-
-const moveDeckCardToHand = (
-  manager: GameManager,
-  playerId: PlayerId,
-  cardId: CardInstanceId,
-  mana: number,
-): GameManager => {
-  const player = manager.state.players[playerId]
-  if (!player.deck.includes(cardId)) {
-    throw new Error(`Test card ${cardId} is not in the deck.`)
-  }
-
-  return GameManager.from({
-    ...manager.state,
-    players: {
-      ...manager.state.players,
-      [playerId]: {
-        ...player,
-        mana,
-        deck: player.deck.filter((id) => id !== cardId),
-        hand: [...player.hand, cardId],
-      },
-    },
-  })
 }
 
 describe('GameManager card instance tracking', () => {
@@ -232,21 +207,6 @@ describe('GameManager card instance tracking', () => {
         ({ type }) => type === 'discardFromHand',
       ),
     ).toHaveLength(5)
-  })
-
-  it('tracks formation replacement with the same physical card ids', () => {
-    let manager = moveDeckCardToHand(createTestManager(), 'playerA', 16, 4)
-    manager = GameManager.playFormation(manager, 16)
-
-    expect(manager.state.players.playerA.formation).toBe(16)
-    expect(manager.state.players.playerA.hand).not.toContain(16)
-
-    manager = moveDeckCardToHand(manager, 'playerA', 32, 4)
-    manager = GameManager.playFormation(manager, 32)
-
-    expect(manager.state.players.playerA.formation).toBe(32)
-    expect(manager.state.players.playerA.discard).toContain(16)
-    expectCardsConserved(manager)
   })
 
   it('rejects duplicate zones, orphaned cards, and a six-card hand', () => {

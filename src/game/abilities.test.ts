@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest'
-import { CreatureRules } from './CreatureRules'
 import { GameManager } from './GameManager'
 import {
   getCrossedIndexes,
@@ -27,7 +26,6 @@ type ConfigureOptions = {
   activePlayerId?: PlayerId
   phase?: Phase
   mana?: Partial<Record<PlayerId, number>>
-  formations?: Partial<Record<PlayerId, CardInstanceId>>
   handAdditions?: CardInstanceId[]
   turn?: number
 }
@@ -60,14 +58,12 @@ const configureManager = (
     activePlayerId = 'playerA',
     phase = 'main',
     mana = {},
-    formations = {},
     handAdditions = [],
     turn = 10,
   }: ConfigureOptions,
 ): GameManager => {
   const movedCardIds = new Set([
     ...board.map(({ cardId }) => cardId),
-    ...Object.values(formations),
     ...handAdditions,
   ])
   const preparePlayer = (playerId: PlayerId) => {
@@ -84,7 +80,6 @@ const configureManager = (
         ...addedHandCards,
       ],
       discard: player.discard.filter((cardId) => !movedCardIds.has(cardId)),
-      formation: formations[playerId] ?? null,
     }
   }
 
@@ -501,126 +496,6 @@ describe('keep-up mana abilities', () => {
     expect(manager.state.players.playerA.mana).toBe(3)
   })
 
-  it('adds green formation mana at three green groups', () => {
-    const initial = createTestManager()
-    const greenCreatures = findCardIds(
-      initial.state,
-      'playerA',
-      'green-cost2-attack2-defense3-march1',
-      3,
-    )
-    const enemies = findCardIds(
-      initial.state,
-      'playerB',
-      'red-cost2-attack3-defense2-march1',
-      2,
-    )
-    const [formation] = findCardIds(
-      initial.state,
-      'playerA',
-      'green-cost3-formation',
-    )
-    let manager = configureManager(initial, {
-      board: [
-        { cardId: greenCreatures[0] },
-        { cardId: enemies[0] },
-        { cardId: greenCreatures[1] },
-        { cardId: enemies[1] },
-        { cardId: greenCreatures[2] },
-      ],
-      phase: 'keepUp',
-      mana: { playerA: 0 },
-      formations: { playerA: formation },
-    })
-
-    manager = GameManager.resolveKeepUp(manager)
-    expect(manager.state.players.playerA.mana).toBe(3)
-  })
-})
-
-describe('formation creature effects', () => {
-  it('applies red, blue, and green singleton effects at two color groups', () => {
-    const initial = createTestManager()
-    const enemies = findCardIds(
-      initial.state,
-      'playerB',
-      'red-cost2-attack3-defense2-march1',
-      2,
-    )
-
-    const redCreatures = findCardIds(
-      initial.state,
-      'playerA',
-      'red-cost2-attack3-defense2-march1',
-      2,
-    )
-    const [redFormation] = findCardIds(
-      initial.state,
-      'playerA',
-      'red-cost3-formation',
-    )
-    let manager = configureManager(initial, {
-      board: [
-        { cardId: enemies[0] },
-        { cardId: redCreatures[0] },
-        { cardId: enemies[1] },
-        { cardId: redCreatures[1] },
-      ],
-      formations: { playerA: redFormation },
-    })
-    expect(GameManager.getCreatureStats(manager, redCreatures[0])).toMatchObject({
-      attack: 4,
-      defense: 2,
-    })
-
-    const [blueCounter] = findCardIds(
-      initial.state,
-      'playerA',
-      'blue-cost2-attack3-defense1-march1-counter',
-    )
-    const [blueVanilla] = findCardIds(
-      initial.state,
-      'playerA',
-      'blue-cost2-attack2-defense2-march2',
-    )
-    const [blueFormation] = findCardIds(
-      initial.state,
-      'playerA',
-      'blue-cost3-formation',
-    )
-    manager = configureManager(initial, {
-      board: [
-        { cardId: enemies[0] },
-        { cardId: blueCounter },
-        { cardId: enemies[1] },
-        { cardId: blueVanilla },
-      ],
-      formations: { playerA: blueFormation },
-    })
-    expect(GameManager.getCreatureStats(manager, blueCounter).attack).toBe(4)
-    expect(CreatureRules.fromCardId(manager.state, blueVanilla).getCounterAttack()).toBe(2)
-
-    const greenCreatures = findCardIds(
-      initial.state,
-      'playerA',
-      'green-cost2-attack2-defense3-march1',
-      2,
-    )
-    const [greenFormation] = findCardIds(
-      initial.state,
-      'playerA',
-      'green-cost3-formation',
-    )
-    manager = configureManager(initial, {
-      board: [
-        { cardId: greenCreatures[0] },
-        { cardId: enemies[0] },
-        { cardId: greenCreatures[1] },
-      ],
-      formations: { playerA: greenFormation },
-    })
-    expect(GameManager.getCreatureStats(manager, greenCreatures[0]).defense).toBe(4)
-  })
 })
 
 describe('combat abilities', () => {

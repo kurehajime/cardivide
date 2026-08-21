@@ -37,8 +37,8 @@ const RED_BLUE_SKIRMISH = [
   'red-cost4-attack5-defense1-march2-withdraw',
   'red-cost5-attack7-defense4-march2-vanish',
   'red-cost5-attack7-defense4-march2-vanish',
-  'red-cost3-formation',
-  'red-cost3-formation',
+  'cost0-spell-return-fire',
+  'cost0-spell-return-fire',
   'blue-cost2-attack2-defense2-march2',
   'blue-cost2-attack2-defense2-march2',
   'blue-cost2-attack2-defense2-march2',
@@ -56,7 +56,7 @@ const RED_BLUE_SKIRMISH = [
   'blue-cost4-attack4-defense2-march2-return',
   'blue-cost4-attack4-defense2-march2-return',
   'blue-cost5-attack5-defense6-march4-vanish',
-  'blue-cost3-formation',
+  'cost0-spell-bubble-wall',
 ] satisfies string[]
 
 const BLUE_GREEN_INTERCEPT = [
@@ -80,8 +80,8 @@ const BLUE_GREEN_INTERCEPT = [
   'blue-cost4-attack4-defense2-march2-return',
   'blue-cost5-attack5-defense6-march4-vanish',
   'blue-cost5-attack5-defense6-march4-vanish',
-  'blue-cost3-formation',
-  'blue-cost3-formation',
+  'cost0-spell-bubble-wall',
+  'cost0-spell-bubble-wall',
   'green-cost2-attack2-defense3-march1',
   'green-cost2-attack2-defense3-march1',
   'green-cost2-attack2-defense3-march1',
@@ -99,7 +99,7 @@ const BLUE_GREEN_INTERCEPT = [
   'green-cost4-attack4-defense5-march1-capture2',
   'green-cost4-attack4-defense4-march2-mining1',
   'green-cost5-attack6-defense7-march2-vanish',
-  'green-cost3-formation',
+  'cost0-spell-abundance',
 ] satisfies string[]
 
 const GREEN_RED_FRONTLINE = [
@@ -123,8 +123,8 @@ const GREEN_RED_FRONTLINE = [
   'green-cost4-attack4-defense4-march2-mining1',
   'green-cost5-attack6-defense7-march2-vanish',
   'green-cost5-attack6-defense7-march2-vanish',
-  'green-cost3-formation',
-  'green-cost3-formation',
+  'cost0-spell-abundance',
+  'cost0-spell-abundance',
   'red-cost2-attack3-defense2-march1',
   'red-cost2-attack3-defense2-march1',
   'red-cost2-attack3-defense2-march1',
@@ -142,7 +142,7 @@ const GREEN_RED_FRONTLINE = [
   'red-cost4-attack4-defense2-march2-lone-warrior-2-1',
   'red-cost4-attack5-defense1-march2-withdraw',
   'red-cost5-attack7-defense4-march2-vanish',
-  'red-cost3-formation',
+  'cost0-spell-return-fire',
 ] satisfies string[]
 
 export const THEME_DECKS = [
@@ -150,21 +150,21 @@ export const THEME_DECKS = [
     id: 'red-blue-skirmish',
     name: '遊撃突破',
     colors: ['red', 'blue'],
-    description: '青で足場を作り、単独の赤クリーチャーで敵陣を突破する。',
+    description: '青で足場を作り、赤の攻撃力と返り火で突破する。',
     cardDefinitionIds: RED_BLUE_SKIRMISH,
   },
   {
     id: 'blue-green-intercept',
     name: '分断迎撃',
     colors: ['blue', 'green'],
-    description: '反撃と高防御を組み合わせ、敵の進軍と配置を制御する。',
+    description: '反撃と高防御に泡の壁を重ね、敵の進軍と配置を制御する。',
     cardDefinitionIds: BLUE_GREEN_INTERCEPT,
   },
   {
     id: 'green-red-frontline',
     name: '連環戦線',
     colors: ['green', 'red'],
-    description: '緑の拠点で戦線を維持し、赤の攻撃力で反攻する。',
+    description: '緑の拠点と豊穣で戦線を維持し、赤の攻撃力で反攻する。',
     cardDefinitionIds: GREEN_RED_FRONTLINE,
   },
 ] satisfies ThemeDeck[]

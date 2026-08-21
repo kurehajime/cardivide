@@ -1,8 +1,5 @@
 import { createDeck, STANDARD_DECK_LIST } from './decks'
-import {
-  CreatureRules,
-  getGreenFormationKeepUpMana,
-} from './CreatureRules'
+import { CreatureRules } from './CreatureRules'
 import {
   collectBoardGroups,
   getCrossedIndexes,
@@ -16,6 +13,7 @@ import { PLAYER_IDS } from './types'
 import type {
   ActivatedAbilityOption,
   ActivatedAbilityType,
+  CardColor,
   CardInstance,
   CardInstanceId,
   CombatPreview,
@@ -30,6 +28,8 @@ import type {
   Phase,
   PlayerId,
   PlayerState,
+  SpellCard,
+  SpellDuration,
   SummonOption,
 } from './types'
 
@@ -86,7 +86,8 @@ const createPlayer = (
   deck,
   hand: [],
   discard: [],
-  formation: null,
+  exile: [],
+  placedSpell: null,
 })
 
 const clonePlayer = (player: PlayerState): PlayerState => ({
@@ -94,6 +95,8 @@ const clonePlayer = (player: PlayerState): PlayerState => ({
   deck: [...player.deck],
   hand: [...player.hand],
   discard: [...player.discard],
+  exile: [...player.exile],
+  placedSpell: player.placedSpell ? { ...player.placedSpell } : null,
 })
 
 const immutableCardRegistries = new WeakSet<GameState['cards']>()
@@ -364,6 +367,97 @@ const refundDestroyedCreatures = (
   return nextPlayers
 }
 
+const getPlayerBarrierForState = (state: GameState, playerId: PlayerId): number => {
+  const player = state.players[playerId]
+  const spell = getPlacedSpellCard(state, playerId)
+  return PLAYER_BARRIER +
+    (spell?.effect.type === 'bubbleWall'
+      ? player.placedSpell?.effectAmount ?? 0
+      : 0)
+}
+
+const isAttackPreventedForState = (state: GameState, playerId: PlayerId): boolean =>
+  getPlacedSpellCard(state, playerId)?.effect.type === 'abundance'
+
+const exileDiscardedCreatures = (
+  state: GameState,
+  player: PlayerState,
+  color: CardColor,
+): { player: PlayerState; count: number } => {
+  const exiledCardIds = player.discard.filter((cardId) => {
+    const card = getCardInstance(state, cardId).card
+    return card.kind === 'creature' && card.color === color
+  })
+  const exiledSet = new Set(exiledCardIds)
+  return {
+    player: {
+      ...player,
+      discard: player.discard.filter((cardId) => !exiledSet.has(cardId)),
+      exile: [...player.exile, ...exiledCardIds],
+    },
+    count: exiledCardIds.length,
+  }
+}
+
+const applyReturnFire = (
+  state: GameState,
+  casterId: PlayerId,
+  damage: number,
+): GameState => {
+  const board = state.board.creatures
+  if (damage <= 0 || board.length === 0) {
+    return state
+  }
+
+  const targetIndex = casterId === 'playerA' ? 0 : board.length - 1
+  const targetGroup = collectBoardGroups(state).find(
+    ({ startIndex, endIndex }) =>
+      startIndex <= targetIndex && targetIndex <= endIndex,
+  )
+  if (!targetGroup) {
+    return state
+  }
+  const targetIndexes = Array.from(
+    { length: targetGroup.endIndex - targetGroup.startIndex + 1 },
+    (_, offset) =>
+      casterId === 'playerA'
+        ? targetGroup.startIndex + offset
+        : targetGroup.endIndex - offset,
+  )
+  let remainingDamage = damage
+  const damageMarkers: NonNullable<GameState['pendingCombat']>['damageMarkers'] = []
+  const destroyedCardIds: CardInstanceId[] = []
+
+  for (const index of targetIndexes) {
+    if (remainingDamage <= 0) {
+      break
+    }
+    const creature = board[index]
+    damageMarkers.push({ cardId: creature.cardId, damage: remainingDamage })
+    const defense = CreatureRules.fromCardId(
+      state,
+      creature.cardId,
+    ).getEffectiveStats().defense
+    if (remainingDamage < defense) {
+      break
+    }
+    remainingDamage -= defense
+    destroyedCardIds.push(creature.cardId)
+  }
+
+  return {
+    ...state,
+    pendingCombat: {
+      damageMarkers,
+      destroyedCardIds,
+      defendingPlayerId: targetGroup.ownerId,
+      playerWasHit: false,
+      playerDamage: 0,
+      endsTurnAfterResolution: false,
+    },
+  }
+}
+
 const getKeepUpManaBonusForState = (
   state: GameState,
   playerId: PlayerId,
@@ -382,7 +476,42 @@ const getKeepUpManaBonusForState = (
     (total, amount) => total + amount,
     0,
   )
-  return abilityMana + getGreenFormationKeepUpMana(state, playerId)
+  return abilityMana
+}
+
+const getPlacedSpellCard = (
+  state: GameState,
+  playerId: PlayerId,
+): SpellCard | null => {
+  const placedSpell = state.players[playerId].placedSpell
+  if (placedSpell === null) {
+    return null
+  }
+  const card = getCardInstance(state, placedSpell.cardId).card
+  if (card.kind !== 'spell') {
+    throw new Error(`Placed card ${placedSpell.cardId} is not a spell.`)
+  }
+  return card
+}
+
+const expirePlacedSpell = (
+  state: GameState,
+  playerId: PlayerId,
+  duration: SpellDuration,
+): GameState => {
+  const player = state.players[playerId]
+  if (
+    player.placedSpell === null ||
+    getPlacedSpellCard(state, playerId)?.duration !== duration
+  ) {
+    return state
+  }
+
+  return replacePlayer(state, {
+    ...player,
+    discard: [...player.discard, player.placedSpell.cardId],
+    placedSpell: null,
+  })
 }
 
 const resolveKeepUpState = (state: GameState): GameState => {
@@ -433,25 +562,34 @@ const resolvePendingCombatState = (state: GameState): GameState => {
 }
 
 const endTurnState = (state: GameState): GameState => {
+  const afterTurnEndExpiration = expirePlacedSpell(
+    state,
+    state.activePlayerId,
+    'untilTurnEnd',
+  )
+  const nextPlayerId = getOpponentId(state.activePlayerId)
   const nextTurnState: GameState = {
-    ...state,
-    turn: state.turn + 1,
-    activePlayerId: getOpponentId(state.activePlayerId),
+    ...afterTurnEndExpiration,
+    turn: afterTurnEndExpiration.turn + 1,
+    activePlayerId: nextPlayerId,
     phase: 'keepUp',
     hasAttackedThisTurn: false,
     hasDiscardedThisTurn: false,
     pendingCombat: null,
   }
 
-  return resolveKeepUpState(nextTurnState)
+  return resolveKeepUpState(
+    expirePlacedSpell(nextTurnState, nextPlayerId, 'untilNextTurnStart'),
+  )
 }
 
 const CARD_LOCATION_NONE = 0
 const CARD_LOCATION_DECK = 1
 const CARD_LOCATION_HAND = 2
 const CARD_LOCATION_DISCARD = 3
-const CARD_LOCATION_FORMATION = 4
-const CARD_LOCATION_BOARD = 5
+const CARD_LOCATION_EXILE = 4
+const CARD_LOCATION_PLACED_SPELL = 5
+const CARD_LOCATION_BOARD = 6
 const COMBAT_FLAG_DAMAGE_MARKED = 1
 const COMBAT_FLAG_DESTROYED = 2
 const CARD_LOCATION_LABELS = [
@@ -459,7 +597,8 @@ const CARD_LOCATION_LABELS = [
   'deck',
   'hand',
   'discard',
-  'formation',
+  'exile',
+  'placed spell',
   'board',
 ] as const
 
@@ -467,7 +606,8 @@ type CardLocation =
   | typeof CARD_LOCATION_DECK
   | typeof CARD_LOCATION_HAND
   | typeof CARD_LOCATION_DISCARD
-  | typeof CARD_LOCATION_FORMATION
+  | typeof CARD_LOCATION_EXILE
+  | typeof CARD_LOCATION_PLACED_SPELL
   | typeof CARD_LOCATION_BOARD
 
 export const assertValidGameState = (state: GameState): void => {
@@ -534,8 +674,24 @@ export const assertValidGameState = (state: GameState): void => {
     player.discard.forEach((cardId) =>
       locate(cardId, playerId, CARD_LOCATION_DISCARD),
     )
-    if (player.formation !== null) {
-      locate(player.formation, playerId, CARD_LOCATION_FORMATION, 'formation')
+    player.exile.forEach((cardId) => locate(cardId, playerId, CARD_LOCATION_EXILE))
+    if (player.placedSpell !== null) {
+      locate(
+        player.placedSpell.cardId,
+        playerId,
+        CARD_LOCATION_PLACED_SPELL,
+        'spell',
+      )
+      if (
+        !Number.isInteger(player.placedSpell.effectAmount) ||
+        player.placedSpell.effectAmount < 0
+      ) {
+        throw new Error('Placed spell effect amount must be a non-negative integer.')
+      }
+      const spell = state.cards[player.placedSpell.cardId].card
+      if (spell.kind !== 'spell' || spell.duration === 'immediate') {
+        throw new Error('Only duration spells can occupy the placed spell zone.')
+      }
     }
   })
 
@@ -548,11 +704,16 @@ export const assertValidGameState = (state: GameState): void => {
   })
 
   if (state.pendingCombat) {
-    if (state.phase !== 'battle' || !state.hasAttackedThisTurn) {
-      throw new Error('Pending combat requires the battle phase and a completed attack.')
-    }
-    if (state.pendingCombat.defendingPlayerId !== getOpponentId(state.activePlayerId)) {
-      throw new Error('Pending combat has the wrong defending player.')
+    const endsTurnAfterResolution = state.pendingCombat.endsTurnAfterResolution !== false
+    if (endsTurnAfterResolution) {
+      if (state.phase !== 'battle' || !state.hasAttackedThisTurn) {
+        throw new Error('Pending combat requires the battle phase and a completed attack.')
+      }
+      if (state.pendingCombat.defendingPlayerId !== getOpponentId(state.activePlayerId)) {
+        throw new Error('Pending combat has the wrong defending player.')
+      }
+    } else if (state.phase !== 'main' || state.hasAttackedThisTurn) {
+      throw new Error('Pending spell damage requires an unattacked main phase.')
     }
     if (
       !Number.isInteger(state.pendingCombat.playerDamage) ||
@@ -562,6 +723,9 @@ export const assertValidGameState = (state: GameState): void => {
     }
     if (!state.pendingCombat.playerWasHit && state.pendingCombat.playerDamage !== 0) {
       throw new Error('Combat cannot damage a player it did not reach.')
+    }
+    if (!endsTurnAfterResolution && state.pendingCombat.playerWasHit) {
+      throw new Error('Spell group damage cannot reach a player.')
     }
 
     const combatFlags = new Uint8Array(registeredCardCount + 1)
@@ -624,6 +788,14 @@ export class GameManager {
 
   static getKeepUpManaBonus(manager: GameManager, playerId: PlayerId): number {
     return getKeepUpManaBonusForState(manager.state, playerId)
+  }
+
+  static getPlayerBarrier(manager: GameManager, playerId: PlayerId): number {
+    return getPlayerBarrierForState(manager.state, playerId)
+  }
+
+  static canCurrentPlayerAttack(manager: GameManager): boolean {
+    return !isAttackPreventedForState(manager.state, manager.state.activePlayerId)
   }
 
   static countReachableSummonPositions(
@@ -751,9 +923,7 @@ export class GameManager {
       if (!GameManager.isCardPlayable(manager, cardId)) {
         return []
       }
-      return card.kind === 'formation'
-        ? [{ type: 'playFormation', cardId }]
-        : [{ type: 'playSpell', cardId }]
+      return [{ type: 'playSpell', cardId }]
     })
     const abilityActions = GameManager.getActivatedAbilities(manager).flatMap(
       (option): GameAction[] =>
@@ -776,6 +946,7 @@ export class GameManager {
     if (
       manager.state.phase !== 'battle' ||
       manager.state.hasAttackedThisTurn ||
+      !GameManager.canCurrentPlayerAttack(manager) ||
       manager.state.pendingCombat !== null ||
       GameManager.getWinner(manager) !== null
     ) {
@@ -821,8 +992,6 @@ export class GameManager {
         return GameManager.passPhase(manager)
       case 'summonCreature':
         return GameManager.summonCreature(manager, action.cardId, action.insertIndex)
-      case 'playFormation':
-        return GameManager.playFormation(manager, action.cardId)
       case 'playSpell':
         return GameManager.playSpell(manager, action.cardId)
       case 'attackGroup':
@@ -922,43 +1091,13 @@ export class GameManager {
     })
   }
 
-  static playFormation(manager: GameManager, cardId: CardInstanceId): GameManager {
-    assertGameInProgress(manager.state)
-    if (manager.state.phase !== 'main') {
-      throw new Error('Formations can only be played during the main phase.')
-    }
-
-    const activePlayer = GameManager.getCurrentPlayer(manager)
-    if (!activePlayer.hand.includes(cardId)) {
-      throw new Error(`Card instance ${cardId} is not in ${activePlayer.name}'s hand.`)
-    }
-    const instance = getCardInstance(manager.state, cardId)
-    if (instance.card.kind !== 'formation') {
-      throw new Error('Selected card is not a formation.')
-    }
-    if (activePlayer.mana < instance.card.cost) {
-      throw new Error('Not enough mana to play this formation.')
-    }
-
-    const playerWithoutCard = removeHandCard(activePlayer, cardId)
-    const oldFormationId = activePlayer.formation
-    const nextPlayer = {
-      ...playerWithoutCard,
-      mana: playerWithoutCard.mana - instance.card.cost,
-      formation: cardId,
-      discard:
-        oldFormationId === null
-          ? playerWithoutCard.discard
-          : [...playerWithoutCard.discard, oldFormationId],
-    }
-
-    return GameManager.from(replacePlayer(manager.state, nextPlayer))
-  }
-
   static playSpell(manager: GameManager, cardId: CardInstanceId): GameManager {
     assertGameInProgress(manager.state)
     if (manager.state.phase !== 'main') {
       throw new Error('Spells can only be played during the main phase.')
+    }
+    if (manager.state.pendingCombat !== null) {
+      throw new Error('A spell cannot be played while damage is resolving.')
     }
 
     const activePlayer = GameManager.getCurrentPlayer(manager)
@@ -972,12 +1111,40 @@ export class GameManager {
     if (activePlayer.mana < instance.card.cost) {
       throw new Error('Not enough mana to play this spell.')
     }
-
     const playerWithoutCard = removeHandCard(activePlayer, cardId)
-    const nextPlayer = {
+    const paidPlayer = {
       ...playerWithoutCard,
       mana: playerWithoutCard.mana - instance.card.cost,
-      discard: [...playerWithoutCard.discard, cardId],
+    }
+    const { player: playerAfterExile, count: effectAmount } =
+      exileDiscardedCreatures(
+        manager.state,
+        paidPlayer,
+        instance.card.effect.exileColor,
+      )
+
+    if (instance.card.duration === 'immediate') {
+      const stateAfterSpell = replacePlayer(manager.state, {
+        ...playerAfterExile,
+        discard: [...playerAfterExile.discard, cardId],
+      })
+      return GameManager.from(
+        instance.card.effect.type === 'returnFire'
+          ? applyReturnFire(stateAfterSpell, activePlayer.id, effectAmount)
+          : stateAfterSpell,
+      )
+    }
+
+    const nextPlayer = {
+      ...playerAfterExile,
+      mana:
+        playerAfterExile.mana +
+        (instance.card.effect.type === 'abundance' ? effectAmount : 0),
+      discard:
+        activePlayer.placedSpell === null
+          ? playerAfterExile.discard
+          : [...playerAfterExile.discard, activePlayer.placedSpell.cardId],
+      placedSpell: { cardId, effectAmount },
     }
 
     return GameManager.from(replacePlayer(manager.state, nextPlayer))
@@ -993,6 +1160,9 @@ export class GameManager {
     }
     if (manager.state.hasAttackedThisTurn) {
       throw new Error('Only one group can attack each turn.')
+    }
+    if (!GameManager.canCurrentPlayerAttack(manager)) {
+      throw new Error('The current player cannot attack this turn.')
     }
 
     const attackerId = manager.state.activePlayerId
@@ -1023,7 +1193,10 @@ export class GameManager {
           destroyedCardIds: [],
           defendingPlayerId: defenderId,
           playerWasHit: true,
-          playerDamage: Math.max(0, attackPower - PLAYER_BARRIER),
+          playerDamage: Math.max(
+            0,
+            attackPower - getPlayerBarrierForState(manager.state, defenderId),
+          ),
         },
       })
     }
@@ -1068,7 +1241,12 @@ export class GameManager {
         : defendingGroupIndexes.at(-1) === 0
     const playerWasHit =
       destroyedIndexes.length === defendingGroupIndexes.length && groupTouchedDefenderPlayer
-    const playerDamage = playerWasHit ? Math.max(0, remainingAttack - PLAYER_BARRIER) : 0
+    const playerDamage = playerWasHit
+      ? Math.max(
+          0,
+          remainingAttack - getPlayerBarrierForState(manager.state, defenderId),
+        )
+      : 0
     const defendingFront = board[targetIndex]
     const counterDamage = CreatureRules.fromCardId(
       manager.state,
@@ -1132,9 +1310,11 @@ export class GameManager {
   }
 
   static finishCombat(manager: GameManager): GameManager {
+    const endsTurnAfterResolution =
+      manager.state.pendingCombat?.endsTurnAfterResolution !== false
     const resolvedState = resolvePendingCombatState(manager.state)
     return GameManager.from(
-      getWinnerFromState(resolvedState) === null
+      endsTurnAfterResolution && getWinnerFromState(resolvedState) === null
         ? endTurnState(resolvedState)
         : resolvedState,
     )

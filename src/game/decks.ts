@@ -4,7 +4,6 @@ import type { Card, CardInstance, CardInstanceId, PlayerId } from './types'
 export type DeckSummary = {
   total: number
   creature: number
-  formation: number
   spell: number
   red: number
   blue: number
@@ -27,7 +26,7 @@ export const STANDARD_DECK_LIST = [
   'red-cost2-attack2-defense1-march1-assassin2',
   'red-cost4-attack4-defense2-march2-lone-warrior-2-1',
   'red-cost4-attack5-defense1-march2-withdraw',
-  'red-cost3-formation',
+  'cost0-spell-return-fire',
 
   'blue-cost2-attack2-defense2-march2',
   'blue-cost2-attack2-defense2-march2',
@@ -44,7 +43,7 @@ export const STANDARD_DECK_LIST = [
   'blue-cost2-attack2-defense1-march2-beachhead1',
   'blue-cost4-attack3-defense4-march2-counter',
   'blue-cost4-attack4-defense2-march2-return',
-  'blue-cost3-formation',
+  'cost0-spell-bubble-wall',
 
   'green-cost2-attack2-defense3-march1',
   'green-cost2-attack2-defense3-march1',
@@ -61,7 +60,7 @@ export const STANDARD_DECK_LIST = [
   'green-cost2-attack2-defense2-march1-rearguard-0-2',
   'green-cost4-attack4-defense5-march1-capture2',
   'green-cost4-attack4-defense4-march2-mining1',
-  'green-cost3-formation',
+  'cost0-spell-abundance',
 ] satisfies string[]
 
 const getCardDefinition = (definitionId: string): Card => {
@@ -78,7 +77,7 @@ const summarizeDeck = (deck: CardInstance[]): DeckSummary =>
       const { card } = instance
       summary.total += 1
       summary[card.kind] += 1
-      if (card.kind === 'creature' || card.kind === 'formation') {
+      if (card.kind === 'creature') {
         summary[card.color] += 1
       }
       return summary
@@ -86,7 +85,6 @@ const summarizeDeck = (deck: CardInstance[]): DeckSummary =>
     {
       total: 0,
       creature: 0,
-      formation: 0,
       spell: 0,
       red: 0,
       blue: 0,

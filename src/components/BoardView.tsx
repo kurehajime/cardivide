@@ -124,11 +124,15 @@ const BoardPlayer = ({ player, cards, damage }: BoardPlayerProps) => (
         </span>
       )}
     </motion.div>
-    <div className="board-formation" aria-label={`${player.name} formation`}>
+    <div className="board-spell" aria-label={`${player.name} spell`}>
       <CardView
-        card={player.formation === null ? null : cards[player.formation].card}
+        card={
+          player.placedSpell === null
+            ? null
+            : cards[player.placedSpell.cardId].card
+        }
         compact
-        label="布陣"
+        label="魔法"
       />
     </div>
   </section>

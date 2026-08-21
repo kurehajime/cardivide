@@ -1,4 +1,4 @@
-import type { Card, CreatureCard, FormationCard, SpellCard } from './types'
+import type { Card, CreatureCard, SpellCard } from './types'
 
 export const CREATURE_CARDS = [
   {
@@ -300,38 +300,38 @@ export const CREATURE_CARDS = [
   },
 ] satisfies CreatureCard[]
 
-export const FORMATION_CARDS = [
+export const SPELL_CARDS = [
   {
-    definitionId: 'red-cost3-formation',
-    name: '孤軍を照らす烽火',
-    kind: 'formation',
-    color: 'red',
-    cost: 3,
-    text: '自分の赤クリーチャーを含むグループが2つ以上ある間、グループが1体の自分のすべての赤クリーチャーは一騎当千(+1/+0)を持つ。',
+    definitionId: 'cost0-spell-return-fire',
+    name: '返り火',
+    kind: 'spell',
+    cost: 0,
+    duration: 'immediate',
+    effect: { type: 'returnFire', exileColor: 'red' },
+    text: '自分の捨て札にあるすべての赤クリーチャーを除外する。自プレイヤーに隣接するグループへ、除外した枚数に等しいダメージを与える。このダメージは通常攻撃と同じように伝播・減衰する。',
   },
   {
-    definitionId: 'blue-cost3-formation',
-    name: '逆潮の戦列',
-    kind: 'formation',
-    color: 'blue',
-    cost: 3,
-    text: '自分の青クリーチャーを含むグループが2つ以上ある間、グループが1体の自分のすべての青クリーチャーは反撃を持つ。既に反撃を持っている場合攻撃力+1する。',
+    definitionId: 'cost0-spell-bubble-wall',
+    name: '泡の壁',
+    kind: 'spell',
+    cost: 0,
+    duration: 'untilNextTurnStart',
+    effect: { type: 'bubbleWall', exileColor: 'blue' },
+    text: '自分の捨て札にあるすべての青クリーチャーを除外する。次の自分のターン開始まで、自プレイヤーのバリアを除外した枚数だけ増やす。',
   },
   {
-    definitionId: 'green-cost3-formation',
-    name: '千樹の連環',
-    kind: 'formation',
-    color: 'green',
-    cost: 3,
-    text: '自分の緑クリーチャーを含むグループが2つ以上ある間、1体だけでグループを作っている自分の緑クリーチャーは防御力+1。自分の緑クリーチャーを含むグループが3つ以上ある場合、自分のキープアップフェイズに追加で1マナを得る。',
+    definitionId: 'cost0-spell-abundance',
+    name: '豊穣',
+    kind: 'spell',
+    cost: 0,
+    duration: 'untilTurnEnd',
+    effect: { type: 'abundance', exileColor: 'green' },
+    text: '自分の捨て札にあるすべての緑クリーチャーを除外し、その枚数に等しいマナを得る。ターン終了時まで攻撃できない。',
   },
-] satisfies FormationCard[]
-
-export const SPELL_CARDS = [] satisfies SpellCard[]
+] satisfies SpellCard[]
 
 export const CARD_LIST = [
   ...CREATURE_CARDS,
-  ...FORMATION_CARDS,
   ...SPELL_CARDS,
 ] satisfies Card[]
 

@@ -1,5 +1,4 @@
 import {
-  countOwnerGroupsContainingColor,
   findCreatureIndex,
   getCreatureAt,
   getCreatureCardAt,
@@ -26,9 +25,6 @@ import type {
   PlayerId,
 } from './types'
 
-const RED_FORMATION_ID = 'red-cost3-formation'
-const BLUE_FORMATION_ID = 'blue-cost3-formation'
-const GREEN_FORMATION_ID = 'green-cost3-formation'
 const NO_STAT_MODIFIER: CreatureStatModifier = { attack: 0, defense: 0 }
 
 type AbilityByType<T extends KeywordAbilityType> = Extract<KeywordAbility, { type: T }>
@@ -193,14 +189,6 @@ const ABILITY_HANDLERS = {
 const getAbilityHandler = (ability: KeywordAbility): AbilityHandler =>
   ABILITY_HANDLERS[ability.type] as AbilityHandler
 
-const getFormationDefinitionId = (
-  state: GameState,
-  ownerId: PlayerId,
-): string | null => {
-  const formationId = state.players[ownerId].formation
-  return formationId === null ? null : state.cards[formationId].card.definitionId
-}
-
 export const formatAbility = (ability: KeywordAbility): string => {
   switch (ability.type) {
     case 'summoningSickness':
@@ -286,68 +274,8 @@ export class CreatureRules {
     return this.context.ownerId
   }
 
-  private getFormationAbilities(): KeywordAbility[] {
-    const { state, boardIndex, card, ownerId } = this.context
-    const formationDefinitionId = getFormationDefinitionId(state, ownerId)
-    const group = getGroupAt(state, boardIndex)
-    const isSingleton = group.startIndex === group.endIndex
-
-    if (!isSingleton) {
-      return []
-    }
-
-    if (
-      formationDefinitionId === RED_FORMATION_ID &&
-      card.color === 'red' &&
-      countOwnerGroupsContainingColor(state, ownerId, 'red') >= 2
-    ) {
-      return [{ type: 'loneWarrior', attack: 1, defense: 0 }]
-    }
-
-    if (
-      formationDefinitionId === BLUE_FORMATION_ID &&
-      card.color === 'blue' &&
-      countOwnerGroupsContainingColor(state, ownerId, 'blue') >= 2 &&
-      !card.abilities.some((ability) => ability.type === 'counter')
-    ) {
-      return [{ type: 'counter' }]
-    }
-
-    return []
-  }
-
   private getAbilities(): KeywordAbility[] {
-    return [...this.context.card.abilities, ...this.getFormationAbilities()]
-  }
-
-  private getFormationStatModifier(): CreatureStatModifier {
-    const { state, boardIndex, card, ownerId } = this.context
-    const formationDefinitionId = getFormationDefinitionId(state, ownerId)
-    const group = getGroupAt(state, boardIndex)
-    const isSingleton = group.startIndex === group.endIndex
-
-    if (!isSingleton) {
-      return NO_STAT_MODIFIER
-    }
-
-    if (
-      formationDefinitionId === BLUE_FORMATION_ID &&
-      card.color === 'blue' &&
-      countOwnerGroupsContainingColor(state, ownerId, 'blue') >= 2 &&
-      card.abilities.some((ability) => ability.type === 'counter')
-    ) {
-      return { attack: 1, defense: 0 }
-    }
-
-    if (
-      formationDefinitionId === GREEN_FORMATION_ID &&
-      card.color === 'green' &&
-      countOwnerGroupsContainingColor(state, ownerId, 'green') >= 2
-    ) {
-      return { attack: 0, defense: 1 }
-    }
-
-    return NO_STAT_MODIFIER
+    return this.context.card.abilities
   }
 
   getPositionStatModifier(): CreatureStatModifier {
@@ -363,11 +291,7 @@ export class CreatureRules {
       },
       NO_STAT_MODIFIER,
     )
-    const formationModifier = this.getFormationStatModifier()
-    return {
-      attack: abilityModifier.attack + formationModifier.attack,
-      defense: abilityModifier.defense + formationModifier.defense,
-    }
+    return abilityModifier
   }
 
   getEffectiveStats(): EffectiveCreatureStats {
@@ -459,12 +383,3 @@ export class CreatureRules {
     )
   }
 }
-
-export const getGreenFormationKeepUpMana = (
-  state: GameState,
-  ownerId: PlayerId,
-): number =>
-  getFormationDefinitionId(state, ownerId) === GREEN_FORMATION_ID &&
-  countOwnerGroupsContainingColor(state, ownerId, 'green') >= 3
-    ? 1
-    : 0
