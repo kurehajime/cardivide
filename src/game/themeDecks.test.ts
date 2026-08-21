@@ -25,7 +25,7 @@ const EXPECTED_SPELLS_BY_DECK = {
 
 const EXPECTED_CREATURE_COSTS_BY_DECK = {
   'red-blue-skirmish': { 2: 25, 4: 9, 5: 3 },
-  'blue-green-intercept': { 2: 24, 4: 10, 5: 3 },
+  'blue-green-intercept': { 2: 26, 4: 8, 5: 3 },
   'green-red-frontline': { 2: 25, 4: 9, 5: 3 },
 } as const
 
@@ -38,7 +38,10 @@ const EXPECTED_CREATURE_COLORS_BY_DECK = {
 const BURNING_VANGUARD_ID = 'red-cost2-attack4-defense1-march0'
 const DEEP_INTERCEPTOR_ID = 'blue-cost4-attack4-defense4-march2-counter'
 const DEEP_WHALE_ID = 'blue-cost5-attack6-defense6-march4-vanish'
+const MIST_RETURNER_ID = 'blue-cost2-attack2-defense1-march2-return'
+const WAVE_RETURNER_ID = 'blue-cost4-attack4-defense2-march2-return'
 const GEODE_MINER_ID = 'green-cost2-attack2-defense2-march1-mining1'
+const LEYLINE_MINER_ID = 'green-cost4-attack4-defense4-march2-mining1'
 
 describe('theme decks', () => {
   it.each(THEME_DECKS)('$name contains the documented 40-card cost structure', (deck) => {
@@ -146,12 +149,30 @@ describe('theme decks', () => {
     ).toEqual([1, 1, 0])
   })
 
-  it('reduces 晶洞の坑夫 in 連環戦線', () => {
+  it('moves 分断迎撃 mining toward the low-cost 晶洞の坑夫', () => {
     expect(
       THEME_DECKS.map((deck) =>
         deck.cardDefinitionIds.filter((definitionId) => definitionId === GEODE_MINER_ID).length,
       ),
-    ).toEqual([0, 2, 2])
+    ).toEqual([0, 3, 2])
+    expect(
+      THEME_DECKS.map((deck) =>
+        deck.cardDefinitionIds.filter((definitionId) => definitionId === LEYLINE_MINER_ID).length,
+      ),
+    ).toEqual([0, 0, 2])
+  })
+
+  it('moves 分断迎撃 return toward the low-cost 霧渡りの使者', () => {
+    expect(
+      THEME_DECKS.map((deck) =>
+        deck.cardDefinitionIds.filter((definitionId) => definitionId === MIST_RETURNER_ID).length,
+      ),
+    ).toEqual([2, 3, 0])
+    expect(
+      THEME_DECKS.map((deck) =>
+        deck.cardDefinitionIds.filter((definitionId) => definitionId === WAVE_RETURNER_ID).length,
+      ),
+    ).toEqual([2, 0, 0])
   })
 
   it('creates separate sequential card instances from the selected player and COM decks', () => {
