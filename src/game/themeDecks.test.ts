@@ -25,17 +25,25 @@ const EXPECTED_SPELLS_BY_DECK = {
 
 const EXPECTED_CREATURE_COSTS_BY_DECK = {
   'red-blue-skirmish': { 2: 25, 4: 9, 5: 3 },
-  'blue-green-intercept': { 2: 24, 4: 9, 5: 4 },
+  'blue-green-intercept': { 2: 24, 4: 10, 5: 3 },
   'green-red-frontline': { 2: 25, 4: 9, 5: 3 },
+} as const
+
+const EXPECTED_CREATURE_COLORS_BY_DECK = {
+  'red-blue-skirmish': { primary: 20, secondary: 17 },
+  'blue-green-intercept': { primary: 20, secondary: 17 },
+  'green-red-frontline': { primary: 19, secondary: 18 },
 } as const
 
 const BURNING_VANGUARD_ID = 'red-cost2-attack4-defense1-march0'
 const DEEP_INTERCEPTOR_ID = 'blue-cost4-attack4-defense4-march2-counter'
 const DEEP_WHALE_ID = 'blue-cost5-attack6-defense6-march4-vanish'
+const GEODE_MINER_ID = 'green-cost2-attack2-defense2-march1-mining1'
 
 describe('theme decks', () => {
   it.each(THEME_DECKS)('$name contains the documented 40-card cost structure', (deck) => {
     const expectedCreatureCosts = EXPECTED_CREATURE_COSTS_BY_DECK[deck.id]
+    const expectedCreatureColors = EXPECTED_CREATURE_COLORS_BY_DECK[deck.id]
     const cards = deck.cardDefinitionIds.map((definitionId) => {
       const card = CARD_BY_DEFINITION_ID[definitionId]
       expect(card, definitionId).toBeDefined()
@@ -54,8 +62,12 @@ describe('theme decks', () => {
     )
     expect(cards.filter((card) => card.kind === 'spell')).toHaveLength(3)
     expect(cards.filter((card) => card.kind === 'spell' && card.cost === 0)).toHaveLength(3)
-    expect(cards.filter((card) => card.kind === 'creature' && card.color === deck.colors[0])).toHaveLength(20)
-    expect(cards.filter((card) => card.kind === 'creature' && card.color === deck.colors[1])).toHaveLength(17)
+    expect(
+      cards.filter((card) => card.kind === 'creature' && card.color === deck.colors[0]),
+    ).toHaveLength(expectedCreatureColors.primary)
+    expect(
+      cards.filter((card) => card.kind === 'creature' && card.color === deck.colors[1]),
+    ).toHaveLength(expectedCreatureColors.secondary)
     expect(
       cards
         .filter((card) => card.kind === 'spell')
@@ -94,7 +106,7 @@ describe('theme decks', () => {
         deck.cardDefinitionIds.filter((definitionId) => definitionId === BURNING_VANGUARD_ID)
           .length,
       ),
-    ).toEqual([2, 0, 2])
+    ).toEqual([2, 0, 3])
   })
 
   it('uses the current 深潮の迎撃者 in both blue theme decks', () => {
@@ -113,7 +125,7 @@ describe('theme decks', () => {
         deck.cardDefinitionIds.filter((definitionId) => definitionId === DEEP_INTERCEPTOR_ID)
           .length,
       ),
-    ).toEqual([1, 2, 0])
+    ).toEqual([1, 3, 0])
   })
 
   it('uses the strengthened 泡沫の深海鯨 in both blue theme decks', () => {
@@ -131,7 +143,15 @@ describe('theme decks', () => {
       THEME_DECKS.map((deck) =>
         deck.cardDefinitionIds.filter((definitionId) => definitionId === DEEP_WHALE_ID).length,
       ),
-    ).toEqual([1, 2, 0])
+    ).toEqual([1, 1, 0])
+  })
+
+  it('reduces 晶洞の坑夫 in 連環戦線', () => {
+    expect(
+      THEME_DECKS.map((deck) =>
+        deck.cardDefinitionIds.filter((definitionId) => definitionId === GEODE_MINER_ID).length,
+      ),
+    ).toEqual([0, 2, 2])
   })
 
   it('creates separate sequential card instances from the selected player and COM decks', () => {

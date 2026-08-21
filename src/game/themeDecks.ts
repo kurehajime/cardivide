@@ -16,6 +16,7 @@ export type ThemeDeck = {
   cardDefinitionIds: readonly string[]
 }
 
+// Source order is stable because fixed-seed tournament shuffling starts from this order.
 const RED_BLUE_SKIRMISH = [
   'red-cost2-attack3-defense2-march1',
   'red-cost2-attack3-defense2-march1',
@@ -79,7 +80,7 @@ const BLUE_GREEN_INTERCEPT = [
   'blue-cost4-attack4-defense4-march2-counter',
   'blue-cost4-attack4-defense2-march2-return',
   'blue-cost5-attack6-defense6-march4-vanish',
-  'blue-cost5-attack6-defense6-march4-vanish',
+  'blue-cost4-attack4-defense4-march2-counter',
   'cost0-spell-bubble-wall',
   'cost0-spell-abundance',
   'green-cost2-attack2-defense3-march1',
@@ -113,7 +114,7 @@ const GREEN_RED_FRONTLINE = [
   'green-cost2-attack2-defense3-march0-capture1',
   'green-cost2-attack2-defense2-march1-mining1',
   'green-cost2-attack2-defense2-march1-mining1',
-  'green-cost2-attack2-defense2-march1-mining1',
+  'red-cost2-attack4-defense1-march0',
   'green-cost2-attack2-defense2-march1-rearguard-0-2',
   'green-cost2-attack2-defense2-march1-rearguard-0-2',
   'green-cost4-attack4-defense6-march2',
