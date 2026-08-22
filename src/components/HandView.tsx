@@ -14,6 +14,7 @@ type HandViewProps = {
   selectedCardId?: CardInstanceId | null
   onCardClick?: (cardId: CardInstanceId) => void
   onDiscardCard?: (cardId: CardInstanceId) => void
+  onPlaySpell?: (cardId: CardInstanceId) => void
 }
 
 const EMPTY_HAND_SLOTS = 5
@@ -31,6 +32,7 @@ const HandView = ({
   selectedCardId = null,
   onCardClick,
   onDiscardCard,
+  onPlaySpell,
 }: HandViewProps) => {
   const visibleCards = cards.length > 0 ? cards : Array.from({ length: EMPTY_HAND_SLOTS }, () => null)
 
@@ -77,9 +79,26 @@ const HandView = ({
         }
 
         const canDiscard = card !== null && discardableCardIds?.has(card.id) === true
+        const canPlaySelectedSpell =
+          card !== null &&
+          card.card.kind === 'spell' &&
+          selectedCardId === card.id &&
+          playableCardIds?.has(card.id) === true
         return (
           <div className="hand-card-slot" key={card?.id ?? `empty-${index}`}>
-            {cardButton}
+            <div className="hand-card-main">
+              {cardButton}
+              {canPlaySelectedSpell && (
+                <button
+                  className="hand-spell-play-button"
+                  type="button"
+                  aria-label={`${card.card.name}を使用する`}
+                  onClick={() => onPlaySpell?.(card.id)}
+                >
+                  使用
+                </button>
+              )}
+            </div>
             {card !== null && (
               <button
                 className="hand-discard-button"

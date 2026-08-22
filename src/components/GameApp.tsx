@@ -194,7 +194,16 @@ const GameSession = ({
   }
 
   const handlePassPhase = () => {
-    applyGameUpdate((currentManager) => GameManager.passPhase(currentManager))
+    applyGameUpdate((currentManager) => {
+      const endingPlayerId = currentManager.state.activePlayerId
+      let nextManager = currentManager
+
+      while (nextManager.state.activePlayerId === endingPlayerId) {
+        nextManager = GameManager.passPhase(nextManager)
+      }
+
+      return nextManager
+    })
   }
 
   const handleCardClick = (cardId: CardInstanceId) => {
@@ -215,13 +224,9 @@ const GameSession = ({
     )
   }
 
-  const handlePlaySpell = () => {
-    if (selectedCardId === null) {
-      return
-    }
-
+  const handlePlaySpell = (cardId: CardInstanceId) => {
     applyGameUpdate((currentManager) =>
-      GameManager.playSpell(currentManager, selectedCardId),
+      GameManager.playSpell(currentManager, cardId),
     )
   }
 
@@ -259,34 +264,6 @@ const GameSession = ({
             <h1>Card Line</h1>
             <div className="game-header-controls">
               <PhaseBar phase={state.phase} turn={state.turn} activePlayer={currentPlayer.name} />
-              <button
-                className="game-action-button"
-                type="button"
-                disabled={
-                  state.activePlayerId === AI_PLAYER_ID ||
-                  state.phase === 'keepUp' ||
-                  state.pendingCombat !== null ||
-                  winnerId !== null
-                }
-                onClick={handlePassPhase}
-              >
-                フェイズ進行
-              </button>
-              <button
-                className="game-action-button"
-                type="button"
-                disabled={
-                  state.activePlayerId === AI_PLAYER_ID ||
-                  state.phase !== 'main' ||
-                  selectedCard?.card.kind !== 'spell' ||
-                  selectedCardId === null ||
-                  !GameManager.isCardPlayable(manager, selectedCardId) ||
-                  winnerId !== null
-                }
-                onClick={handlePlaySpell}
-              >
-                魔法を使用
-              </button>
               <button
                 className="game-action-button game-action-secondary"
                 type="button"
@@ -342,22 +319,42 @@ const GameSession = ({
             onGroupAttack={handleGroupAttack}
             onActivateAbility={handleActivateAbility}
           />
-          <HandView
-            cards={playerAHand}
-            playerName={playerA.name}
-            position="bottom"
-            playableCardIds={state.activePlayerId === 'playerA' ? playableCardIds : undefined}
-            discardableCardIds={discardableCardIds}
-            active={state.activePlayerId === 'playerA'}
-            disabled={
-              state.activePlayerId !== 'playerA' ||
-              state.phase !== 'main' ||
-              winnerId !== null
-            }
-            selectedCardId={state.activePlayerId === 'playerA' ? selectedCardId : null}
-            onCardClick={handleCardClick}
-            onDiscardCard={handleDiscardCard}
-          />
+          <div className="player-hand-row">
+            <div className="player-hand-row-spacer" aria-hidden="true" />
+            <HandView
+              cards={playerAHand}
+              playerName={playerA.name}
+              position="bottom"
+              playableCardIds={state.activePlayerId === 'playerA' ? playableCardIds : undefined}
+              discardableCardIds={discardableCardIds}
+              active={state.activePlayerId === 'playerA'}
+              disabled={
+                state.activePlayerId !== 'playerA' ||
+                state.phase !== 'main' ||
+                winnerId !== null
+              }
+              selectedCardId={state.activePlayerId === 'playerA' ? selectedCardId : null}
+              onCardClick={handleCardClick}
+              onDiscardCard={handleDiscardCard}
+              onPlaySpell={handlePlaySpell}
+            />
+            <button
+              className="turn-end-button"
+              type="button"
+              aria-label="ターン終了"
+              disabled={
+                state.activePlayerId === AI_PLAYER_ID ||
+                state.phase === 'keepUp' ||
+                state.pendingCombat !== null ||
+                winnerId !== null
+              }
+              onClick={handlePassPhase}
+            >
+              ターン
+              <br />
+              終了
+            </button>
+          </div>
         </main>
       </LayoutGroup>
     </MotionConfig>

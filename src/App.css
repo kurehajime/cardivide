@@ -812,6 +812,55 @@
   padding-top: 42px;
 }
 
+.player-hand-row {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 112px minmax(0, 740px) 112px;
+  gap: 16px;
+  align-items: center;
+  justify-content: center;
+}
+
+.player-hand-row-spacer {
+  width: 112px;
+}
+
+.turn-end-button {
+  width: 112px;
+  min-height: 112px;
+  padding: 14px;
+  border: 2px solid #d9dfd4;
+  border-radius: 8px;
+  background: #26342f;
+  box-shadow: 0 8px 18px rgb(18 12 9 / 34%);
+  color: #f8fbf5;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1.35;
+  transition: background-color 120ms ease, transform 120ms ease, opacity 120ms ease;
+}
+
+.turn-end-button:not(:disabled) {
+  cursor: pointer;
+}
+
+.turn-end-button:not(:disabled):hover {
+  background: #18231f;
+  transform: translateY(-2px);
+}
+
+.turn-end-button:focus-visible {
+  outline: 3px solid #f5eee7;
+  outline-offset: 3px;
+}
+
+.turn-end-button:disabled {
+  border-color: rgb(217 223 212 / 40%);
+  background: rgb(38 52 47 / 50%);
+  color: rgb(248 251 245 / 45%);
+  box-shadow: none;
+}
+
 .hand-card-slot {
   min-width: 0;
   display: grid;
@@ -820,8 +869,42 @@
   justify-items: center;
 }
 
-.hand-card-slot > .hand-card-button {
+.hand-card-main {
+  position: relative;
   width: 100%;
+  min-width: 0;
+}
+
+.hand-card-main > .hand-card-button {
+  width: 100%;
+}
+
+.hand-spell-play-button {
+  position: absolute;
+  z-index: 4;
+  top: -24px;
+  left: 50%;
+  min-width: 74px;
+  min-height: 34px;
+  padding: 4px 14px;
+  border: 2px solid #f8fbf5;
+  border-radius: 6px;
+  background: #26342f;
+  box-shadow: 0 5px 12px rgb(18 12 9 / 42%);
+  color: #f8fbf5;
+  font-size: 14px;
+  font-weight: 800;
+  transform: translateX(-50%);
+}
+
+.hand-spell-play-button:hover {
+  background: #18231f;
+  cursor: pointer;
+}
+
+.hand-spell-play-button:focus-visible {
+  outline: 3px solid #f5eee7;
+  outline-offset: 2px;
 }
 
 .hand-discard-button {
@@ -1407,6 +1490,22 @@
     grid-template-columns: repeat(5, minmax(96px, 1fr));
     justify-content: start;
     overflow-x: auto;
+  }
+
+  .player-hand-row {
+    grid-template-columns: minmax(0, 1fr) 88px;
+    gap: 10px;
+  }
+
+  .player-hand-row-spacer {
+    display: none;
+  }
+
+  .turn-end-button {
+    width: 88px;
+    min-height: 96px;
+    padding: 10px;
+    font-size: 16px;
   }
 
   .card-detail-popover {
