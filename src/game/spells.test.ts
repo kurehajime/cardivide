@@ -90,7 +90,7 @@ const findDefinition = (
   )[0]
 
 describe('spell rules', () => {
-  it('casts return fire with no usage restriction when it exiles no cards', () => {
+  it('keeps return fire in the spell zone until the caster turn ends', () => {
     const initial = GameManager.create(KEEP_ORDER_RANDOM)
     const returnFire = findDefinition(
       initial.state,
@@ -103,8 +103,20 @@ describe('spell rules', () => {
     manager = GameManager.playSpell(manager, returnFire)
 
     expect(manager.state.players.playerA.hand).toEqual([])
-    expect(manager.state.players.playerA.discard).toEqual([returnFire])
+    expect(manager.state.players.playerA.discard).toEqual([])
+    expect(manager.state.players.playerA.placedSpell).toEqual({
+      cardId: returnFire,
+      effectAmount: 0,
+    })
     expect(manager.state.pendingCombat).toBeNull()
+
+    manager = GameManager.passPhase(manager)
+    manager = GameManager.passPhase(manager)
+    manager = GameManager.passPhase(manager)
+
+    expect(manager.state.activePlayerId).toBe('playerB')
+    expect(manager.state.players.playerA.placedSpell).toBeNull()
+    expect(manager.state.players.playerA.discard).toEqual([returnFire])
   })
 
   it('makes return fire exile only the caster discard and damage an adjacent friendly group', () => {
@@ -149,7 +161,11 @@ describe('spell rules', () => {
     manager = GameManager.playSpell(manager, returnFire)
 
     expect(manager.state.players.playerA.exile).toEqual(redDiscards)
-    expect(manager.state.players.playerA.discard).toEqual([blueDiscard, returnFire])
+    expect(manager.state.players.playerA.discard).toEqual([blueDiscard])
+    expect(manager.state.players.playerA.placedSpell).toEqual({
+      cardId: returnFire,
+      effectAmount: 5,
+    })
     expect(manager.state.pendingCombat).toMatchObject({
       damageMarkers: [
         { cardId: friendlyGroup[0], damage: 5 },
@@ -171,6 +187,7 @@ describe('spell rules', () => {
       friendlyGroup[1],
     ])
     expect(manager.state.players.playerA.discard).toContain(friendlyGroup[0])
+    expect(manager.state.players.playerA.placedSpell?.cardId).toBe(returnFire)
     expect(manager.state.players.playerA.mana).toBe(1)
     expect(() => assertValidGameState(manager.state)).not.toThrow()
   })

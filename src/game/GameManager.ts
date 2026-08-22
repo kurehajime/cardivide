@@ -567,8 +567,13 @@ const resolvePendingCombatState = (state: GameState): GameState => {
 }
 
 const endTurnState = (state: GameState): GameState => {
-  const afterTurnEndExpiration = expirePlacedSpell(
+  const afterImmediateExpiration = expirePlacedSpell(
     state,
+    state.activePlayerId,
+    'immediate',
+  )
+  const afterTurnEndExpiration = expirePlacedSpell(
+    afterImmediateExpiration,
     state.activePlayerId,
     'untilTurnEnd',
   )
@@ -694,8 +699,8 @@ export const assertValidGameState = (state: GameState): void => {
         throw new Error('Placed spell effect amount must be a non-negative integer.')
       }
       const spell = state.cards[player.placedSpell.cardId].card
-      if (spell.kind !== 'spell' || spell.duration === 'immediate') {
-        throw new Error('Only duration spells can occupy the placed spell zone.')
+      if (spell.kind !== 'spell') {
+        throw new Error('Only spells can occupy the placed spell zone.')
       }
     }
   })
@@ -1137,7 +1142,11 @@ export class GameManager {
     if (instance.card.duration === 'immediate') {
       const stateAfterSpell = replacePlayer(manager.state, {
         ...playerAfterExile,
-        discard: [...playerAfterExile.discard, cardId],
+        discard:
+          activePlayer.placedSpell === null
+            ? playerAfterExile.discard
+            : [...playerAfterExile.discard, activePlayer.placedSpell.cardId],
+        placedSpell: { cardId, effectAmount },
       })
       return GameManager.from(
         instance.card.effect.type === 'returnFire'
