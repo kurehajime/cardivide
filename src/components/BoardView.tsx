@@ -1,4 +1,4 @@
-import { Fragment, useEffect, type CSSProperties } from 'react'
+import { Fragment, useEffect, useRef, type CSSProperties } from 'react'
 import { motion, useAnimationControls } from 'motion/react'
 import type {
   ActivatedAbilityOption,
@@ -14,6 +14,7 @@ import type {
 } from '../game'
 import CardView from './CardView'
 import GraveyardSummary from './GraveyardSummary'
+import ManaRefundEffects from './ManaRefundEffects'
 
 export type BoardAttackAnimation = {
   id: number
@@ -27,6 +28,7 @@ type BoardViewProps = {
   cards: Record<CardInstanceId, CardInstance>
   damageMarkers?: DamageMarker[]
   destroyedCardIds?: CardInstanceId[]
+  manaRefundCardIds?: CardInstanceId[]
   playerDamageMarker?: { playerId: PlayerId; damage: number } | null
   players: Record<PlayerState['id'], PlayerState>
   activePlayerId: PlayerId
@@ -193,6 +195,7 @@ const BoardView = ({
   cards,
   damageMarkers = [],
   destroyedCardIds = [],
+  manaRefundCardIds = [],
   playerDamageMarker = null,
   players,
   activePlayerId,
@@ -206,6 +209,7 @@ const BoardView = ({
   onGroupAttack,
   onActivateAbility,
 }: BoardViewProps) => {
+  const boardRef = useRef<HTMLElement>(null)
   const damageByCardId = new Map(
     damageMarkers.map(({ cardId, damage }) => [cardId, damage]),
   )
@@ -228,7 +232,12 @@ const BoardView = ({
       : `34px ${board.creatures.map(() => '140px 34px').join(' ')}`
 
   return (
-    <section className="board-panel" aria-label="battlefield">
+    <section ref={boardRef} className="board-panel" aria-label="battlefield">
+      <ManaRefundEffects
+        boardRef={boardRef}
+        cardIds={manaRefundCardIds}
+        cards={cards}
+      />
       <BoardPlayer
         player={players.playerA}
         cards={cards}

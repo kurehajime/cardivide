@@ -344,6 +344,16 @@ const collectDefendingGroup = (
   return indexes
 }
 
+const getDestructionManaRefundForState = (
+  state: GameState,
+  cardId: CardInstanceId,
+): number => {
+  const instance = getCardInstance(state, cardId)
+  return CreatureRules.fromCardId(state, cardId).preventsDestructionRefund()
+    ? 0
+    : Math.floor(instance.card.cost / 2)
+}
+
 const refundDestroyedCreatures = (
   state: GameState,
   destroyedCreatures: CreatureInstance[],
@@ -356,12 +366,7 @@ const refundDestroyedCreatures = (
   destroyedCreatures.forEach((creature) => {
     const instance = getCardInstance(state, creature.cardId)
     const owner = nextPlayers[instance.ownerId]
-    const refund = CreatureRules.fromCardId(
-      state,
-      creature.cardId,
-    ).preventsDestructionRefund()
-      ? 0
-      : Math.floor(instance.card.cost / 2)
+    const refund = getDestructionManaRefundForState(state, creature.cardId)
     nextPlayers[instance.ownerId] = {
       ...owner,
       mana: owner.mana + refund,
@@ -802,6 +807,13 @@ export class GameManager {
 
   static getPlayerBarrier(manager: GameManager, playerId: PlayerId): number {
     return getPlayerBarrierForState(manager.state, playerId)
+  }
+
+  static getDestructionManaRefund(
+    manager: GameManager,
+    cardId: CardInstanceId,
+  ): number {
+    return getDestructionManaRefundForState(manager.state, cardId)
   }
 
   static canCurrentPlayerAttack(manager: GameManager): boolean {

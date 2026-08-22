@@ -128,6 +128,10 @@ const GameSession = ({
           damage: state.pendingCombat.playerDamage,
         }
       : null
+  const manaRefundCardIds =
+    state.pendingCombat?.destroyedCardIds.filter(
+      (cardId) => GameManager.getDestructionManaRefund(manager, cardId) > 0,
+    ) ?? []
 
   useEffect(() => {
     if (!state.pendingCombat) {
@@ -313,6 +317,7 @@ const GameSession = ({
             cards={state.cards}
             damageMarkers={state.pendingCombat?.damageMarkers ?? []}
             destroyedCardIds={state.pendingCombat?.destroyedCardIds ?? []}
+            manaRefundCardIds={manaRefundCardIds}
             playerDamageMarker={playerDamageMarker}
             players={state.players}
             activePlayerId={state.activePlayerId}

@@ -41,6 +41,53 @@ const findCardId = (
   return instance.id
 }
 
+const createDeferredAttackDecisionManager = (): GameManager => {
+  const initial = createTestManager()
+  const assassin = findCardId(
+    initial.state,
+    'playerA',
+    'red-cost2-attack2-defense1-march1-assassin2',
+  )
+  const capturer = findCardId(
+    initial.state,
+    'playerB',
+    'green-cost2-attack2-defense3-march0-capture1',
+  )
+  const boardCardIds = new Set([assassin, capturer])
+  const preparePlayer = (playerId: PlayerId) => {
+    const player = initial.state.players[playerId]
+    return {
+      ...player,
+      hp: playerId === 'playerA' ? 20 : 18,
+      mana: playerId === 'playerA' ? 0 : 1,
+      deck: player.deck.filter((cardId) => !boardCardIds.has(cardId)),
+      hand: player.hand.filter((cardId) => !boardCardIds.has(cardId)),
+      discard: player.discard.filter((cardId) => !boardCardIds.has(cardId)),
+      exile: player.exile.filter((cardId) => !boardCardIds.has(cardId)),
+    }
+  }
+
+  return GameManager.from({
+    ...initial.state,
+    turn: 2,
+    phase: 'battle',
+    activePlayerId: 'playerB',
+    hasAttackedThisTurn: false,
+    hasDiscardedThisTurn: false,
+    pendingCombat: null,
+    players: {
+      playerA: preparePlayer('playerA'),
+      playerB: preparePlayer('playerB'),
+    },
+    board: {
+      creatures: [assassin, capturer].map((cardId) => ({
+        cardId,
+        summonedTurn: 1,
+      })),
+    },
+  })
+}
+
 const createMiningDilemmaManager = (): GameManager => {
   const manager = createTestManager()
   const playerAttacker = findCardId(
@@ -430,6 +477,16 @@ describe('AI evaluation', () => {
     )
   })
 
+  it('discounts its attack potential after passing the turn', () => {
+    const battle = createDeferredAttackDecisionManager()
+    const nextMain = GameManager.passPhase(GameManager.passPhase(battle))
+    const attackPotential = evaluateBattleEntry(nextMain, 'playerB').myAttackPotential
+
+    expect(nextMain.state.activePlayerId).toBe('playerA')
+    expect(AI_EVALUATION_PARAMETERS.futureAttackPotentialMultiplier).toBe(0.75)
+    expect(attackPotential).toBeCloseTo(0.75)
+  })
+
   it('predicts the attack that benefits the opponent most even when mining survives', () => {
     const manager = createMiningDilemmaManager()
     const opponentBattle = withState(manager, (state) => ({
@@ -548,6 +605,14 @@ describe('GameAI action selection', () => {
       type: 'attackGroup',
       startIndex: 0,
       endIndex: 0,
+    })
+  })
+
+  it('attacks now instead of valuing the same attack fully after passing', () => {
+    expect(new GameAI().chooseAction(createDeferredAttackDecisionManager())).toEqual({
+      type: 'attackGroup',
+      startIndex: 1,
+      endIndex: 1,
     })
   })
 

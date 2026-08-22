@@ -529,6 +529,12 @@ describe('combat abilities', () => {
     expect(new Set(manager.state.pendingCombat?.destroyedCardIds)).toEqual(
       new Set([attackingFront, counter]),
     )
+    expect(GameManager.getDestructionManaRefund(manager, attackingFront)).toBe(
+      Math.floor(manager.state.cards[attackingFront].card.cost / 2),
+    )
+    expect(GameManager.getDestructionManaRefund(manager, counter)).toBe(
+      Math.floor(manager.state.cards[counter].card.cost / 2),
+    )
 
     manager = GameManager.finishCombat(manager)
     expect(manager.state.players.playerA.discard).toContain(attackingFront)
@@ -555,6 +561,7 @@ describe('combat abilities', () => {
       mana: { playerA: 0, playerB: 0 },
     })
 
+    expect(GameManager.getDestructionManaRefund(manager, vanishingDefender)).toBe(0)
     manager = GameManager.attackGroup(manager, 0, 0)
     manager = GameManager.finishCombat(manager)
     expect(manager.state.players.playerB.discard).toContain(vanishingDefender)

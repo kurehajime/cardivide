@@ -19,6 +19,7 @@ export const AI_EVALUATION_PARAMETERS = {
   upkeepManaMultiplier: 1.2,
   captureMarch: 1,
   capturePosition: 0.5,
+  futureAttackPotentialMultiplier: 0.75,
 } as const
 
 const zeroBreakdown = (): EvaluationBreakdown => ({
@@ -222,7 +223,12 @@ export const evaluateBattleEntry = (
     },
     opponentOutcomes,
   )
-  const myAttackPotential = Math.max(myBestOutcome - base.total, 0)
+  const myAttackPotentialMultiplier =
+    manager.state.activePlayerId === aiPlayerId
+      ? 1
+      : AI_EVALUATION_PARAMETERS.futureAttackPotentialMultiplier
+  const myAttackPotential =
+    Math.max(myBestOutcome - base.total, 0) * myAttackPotentialMultiplier
   const opponentAttackThreat = Math.max(
     base.total - opponentBestOutcome.aiScore,
     0,
