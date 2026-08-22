@@ -1,5 +1,12 @@
 import type { CardInstanceId, GameAction } from '../types'
 
+export type AiDifficulty = 'easy' | 'normal' | 'hard'
+
+export type GameAIOptions = {
+  difficulty?: AiDifficulty
+  random?: () => number
+}
+
 export type EvaluationBreakdown = {
   terminal: number
   hp: number

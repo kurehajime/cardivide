@@ -5,8 +5,18 @@ import {
   evaluateCoherentMainPlan,
   evaluateMainContinuation,
 } from './evaluation'
-import type { EvaluationBreakdown } from './types'
+import type {
+  AiDifficulty,
+  EvaluationBreakdown,
+  GameAIOptions,
+} from './types'
 import { isMeaningfullyGreater } from './scoreComparison'
+
+export const AI_DIFFICULTY_IGNORED_HAND_COUNT: Record<AiDifficulty, number> = {
+  easy: 2,
+  normal: 1,
+  hard: 0,
+}
 
 const resolveBattleOption = (
   manager: GameManager,
@@ -36,14 +46,23 @@ const chooseMainAction = (
   manager: GameManager,
   aiPlayerId: PlayerId,
   actions: readonly GameAction[],
+  ignoredHandCardIds: ReadonlySet<CardInstanceId>,
 ): GameAction => {
-  const passScore = evaluateBattleEntry(manager, aiPlayerId).total
+  const passScore = evaluateBattleEntry(
+    manager,
+    aiPlayerId,
+    ignoredHandCardIds,
+  ).total
   let bestAction: GameAction | null = null
   let bestScore = passScore
 
   for (const action of actions) {
     const nextManager = resolveMainActionForEvaluation(manager, action)
-    const score = evaluateCoherentMainPlan(nextManager, aiPlayerId).total
+    const score = evaluateCoherentMainPlan(
+      nextManager,
+      aiPlayerId,
+      ignoredHandCardIds,
+    ).total
     if (isMeaningfullyGreater(score, bestScore)) {
       bestAction = action
       bestScore = score
@@ -62,6 +81,8 @@ export class AiTurnActionMemory {
   private turn: number | null = null
   private playerId: PlayerId | null = null
   private readonly returnedCardIds = new Set<CardInstanceId>()
+  private readonly ignoredHandCardIds = new Set<CardInstanceId>()
+  private handMaskInitialized = false
 
   private syncTurn(manager: GameManager): void {
     const { turn, activePlayerId } = manager.state
@@ -72,6 +93,33 @@ export class AiTurnActionMemory {
     this.turn = turn
     this.playerId = activePlayerId
     this.returnedCardIds.clear()
+    this.ignoredHandCardIds.clear()
+    this.handMaskInitialized = false
+  }
+
+  getIgnoredHandCardIds(
+    manager: GameManager,
+    ignoredCount: number,
+    random: () => number,
+  ): ReadonlySet<CardInstanceId> {
+    this.syncTurn(manager)
+    if (this.handMaskInitialized) {
+      return this.ignoredHandCardIds
+    }
+
+    const candidates = [...GameManager.getCurrentPlayer(manager).hand]
+    const count = Math.min(ignoredCount, candidates.length)
+    for (let index = 0; index < count; index += 1) {
+      const randomValue = random()
+      if (!Number.isFinite(randomValue) || randomValue < 0 || randomValue >= 1) {
+        throw new Error('AI random must return a value from 0 (inclusive) to 1 (exclusive).')
+      }
+      const selectedIndex = Math.floor(randomValue * candidates.length)
+      const [cardId] = candidates.splice(selectedIndex, 1)
+      this.ignoredHandCardIds.add(cardId)
+    }
+    this.handMaskInitialized = true
+    return this.ignoredHandCardIds
   }
 
   allows(manager: GameManager, action: GameAction): boolean {
@@ -93,10 +141,12 @@ export class AiTurnActionMemory {
 const chooseBattleAction = (
   manager: GameManager,
   aiPlayerId: PlayerId,
+  ignoredHandCardIds: ReadonlySet<CardInstanceId>,
 ): GameAction => {
   const noAttackScore = evaluateBattleEntry(
     resolveBattleOption(manager, null),
     aiPlayerId,
+    ignoredHandCardIds,
   ).total
   let bestAction: GameAction | null = null
   let bestScore = noAttackScore
@@ -106,7 +156,11 @@ const chooseBattleAction = (
     if (GameManager.getWinner(resolvedManager) === aiPlayerId) {
       return action
     }
-    const score = evaluateBattleEntry(resolvedManager, aiPlayerId).total
+    const score = evaluateBattleEntry(
+      resolvedManager,
+      aiPlayerId,
+      ignoredHandCardIds,
+    ).total
     if (isMeaningfullyGreater(score, bestScore)) {
       bestAction = action
       bestScore = score
@@ -118,20 +172,51 @@ const chooseBattleAction = (
 
 export class GameAI {
   private readonly turnMemory = new AiTurnActionMemory()
+  private readonly difficulty: AiDifficulty
+  private readonly random: () => number
 
-  private getMainActions(manager: GameManager): GameAction[] {
+  constructor({ difficulty = 'hard', random = Math.random }: GameAIOptions = {}) {
+    this.difficulty = difficulty
+    this.random = random
+  }
+
+  private getIgnoredHandCardIds(manager: GameManager): ReadonlySet<CardInstanceId> {
+    return this.turnMemory.getIgnoredHandCardIds(
+      manager,
+      AI_DIFFICULTY_IGNORED_HAND_COUNT[this.difficulty],
+      this.random,
+    )
+  }
+
+  private getMainActions(
+    manager: GameManager,
+    ignoredHandCardIds: ReadonlySet<CardInstanceId>,
+  ): GameAction[] {
     return GameManager.getLegalMainActions(manager).filter(
-      (action) => this.turnMemory.allows(manager, action),
+      (action) => {
+        if (!this.turnMemory.allows(manager, action)) {
+          return false
+        }
+        switch (action.type) {
+          case 'summonCreature':
+          case 'playSpell':
+          case 'discardFromHand':
+            return !ignoredHandCardIds.has(action.cardId)
+          default:
+            return true
+        }
+      },
     )
   }
 
   static evaluate(
     manager: GameManager,
     aiPlayerId: PlayerId = manager.state.activePlayerId,
+    ignoredHandCardIds?: ReadonlySet<CardInstanceId>,
   ): EvaluationBreakdown {
     return manager.state.phase === 'main'
-      ? evaluateMainContinuation(manager, aiPlayerId)
-      : evaluateBattleEntry(manager, aiPlayerId)
+      ? evaluateMainContinuation(manager, aiPlayerId, ignoredHandCardIds)
+      : evaluateBattleEntry(manager, aiPlayerId, ignoredHandCardIds)
   }
 
   chooseAction(manager: GameManager): GameAction | null {
@@ -147,16 +232,22 @@ export class GameAI {
       case 'keepUp':
         return { type: 'resolveKeepUp' }
       case 'main': {
+        const ignoredHandCardIds = this.getIgnoredHandCardIds(manager)
         const action = chooseMainAction(
           manager,
           aiPlayerId,
-          this.getMainActions(manager),
+          this.getMainActions(manager, ignoredHandCardIds),
+          ignoredHandCardIds,
         )
         this.turnMemory.remember(manager, action)
         return action
       }
       case 'battle':
-        return chooseBattleAction(manager, aiPlayerId)
+        return chooseBattleAction(
+          manager,
+          aiPlayerId,
+          this.getIgnoredHandCardIds(manager),
+        )
       case 'cleanup':
         return { type: 'passPhase' }
     }

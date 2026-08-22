@@ -8,6 +8,8 @@ import {
   isMeaningfullyLess,
 } from './scoreComparison'
 
+const NO_IGNORED_HAND_CARDS: ReadonlySet<CardInstanceId> = new Set()
+
 export const AI_EVALUATION_PARAMETERS = {
   victory: 20_000,
   defeat: -10_000,
@@ -48,6 +50,7 @@ const sumBreakdown = (breakdown: Omit<EvaluationBreakdown, 'total'>): number =>
 export const evaluateBase = (
   manager: GameManager,
   aiPlayerId: PlayerId,
+  ignoredHandCardIds: ReadonlySet<CardInstanceId> = NO_IGNORED_HAND_CARDS,
 ): EvaluationBreakdown => {
   const winner = GameManager.getWinner(manager)
   if (winner === aiPlayerId) {
@@ -69,6 +72,9 @@ export const evaluateBase = (
   }, 0)
   const handReserve = aiPlayer.hand.reduce(
     (total, cardId) => {
+      if (ignoredHandCardIds.has(cardId)) {
+        return total
+      }
       const card = manager.state.cards[cardId].card
       return (
         total +
@@ -162,6 +168,7 @@ const getCombatOutcomeScores = (
   manager: GameManager,
   attackerId: PlayerId,
   aiPlayerId: PlayerId,
+  ignoredHandCardIds: ReadonlySet<CardInstanceId>,
 ): CombatOutcomeScores[] => {
   const battleManager = createBattleView(manager, attackerId)
   return GameManager.getLegalBattleActions(battleManager).map((action) => {
@@ -174,7 +181,7 @@ const getCombatOutcomeScores = (
       action.endIndex,
     )
     const nextManager = GameManager.from(preview.nextState)
-    const aiEvaluation = evaluateBase(nextManager, aiPlayerId)
+    const aiEvaluation = evaluateBase(nextManager, aiPlayerId, ignoredHandCardIds)
     const aiScore = aiEvaluation.total
     return {
       aiScore,
@@ -203,15 +210,26 @@ const selectBestAttackerOutcome = (
 export const evaluateBattleEntry = (
   manager: GameManager,
   aiPlayerId: PlayerId,
+  ignoredHandCardIds: ReadonlySet<CardInstanceId> = NO_IGNORED_HAND_CARDS,
 ): EvaluationBreakdown => {
-  const base = evaluateBase(manager, aiPlayerId)
+  const base = evaluateBase(manager, aiPlayerId, ignoredHandCardIds)
   if (base.terminal !== 0) {
     return base
   }
 
   const opponentId = getOpponentId(aiPlayerId)
-  const myOutcomes = getCombatOutcomeScores(manager, aiPlayerId, aiPlayerId)
-  const opponentOutcomes = getCombatOutcomeScores(manager, opponentId, aiPlayerId)
+  const myOutcomes = getCombatOutcomeScores(
+    manager,
+    aiPlayerId,
+    aiPlayerId,
+    ignoredHandCardIds,
+  )
+  const opponentOutcomes = getCombatOutcomeScores(
+    manager,
+    opponentId,
+    aiPlayerId,
+    ignoredHandCardIds,
+  )
   const myBestOutcome = Math.max(
     base.total,
     ...myOutcomes.map(({ aiScore }) => aiScore),
@@ -273,6 +291,7 @@ const getHandPlayCandidates = (
   aiPlayerId: PlayerId,
   cardId: CardInstanceId,
   currentBattleEvaluation: EvaluationBreakdown,
+  ignoredHandCardIds: ReadonlySet<CardInstanceId>,
 ): HandPlayCandidate[] => {
   const card = manager.state.cards[cardId].card
   if (card.kind !== 'creature') {
@@ -285,7 +304,11 @@ const getHandPlayCandidates = (
     .forEach(({ insertIndex, effectiveCost }) => {
       const action = { type: 'summonCreature', cardId, insertIndex } satisfies GameAction
       const nextManager = GameManager.applyAction(manager, action)
-      const nextBattleEvaluation = evaluateBattleEntry(nextManager, aiPlayerId)
+      const nextBattleEvaluation = evaluateBattleEntry(
+        nextManager,
+        aiPlayerId,
+        ignoredHandCardIds,
+      )
       const candidate = {
         cardId,
         action,
@@ -320,15 +343,24 @@ const getDeployableHandValueFromBattleEvaluation = (
   manager: GameManager,
   aiPlayerId: PlayerId,
   currentBattleEvaluation: EvaluationBreakdown,
+  ignoredHandCardIds: ReadonlySet<CardInstanceId>,
 ): number => {
   if (!canEvaluateDeployableHand(manager, aiPlayerId)) {
     return 0
   }
 
   const mana = manager.state.players[aiPlayerId].mana
-  const candidatesByCard = manager.state.players[aiPlayerId].hand.map((cardId) =>
-    getHandPlayCandidates(manager, aiPlayerId, cardId, currentBattleEvaluation),
-  )
+  const candidatesByCard = manager.state.players[aiPlayerId].hand
+    .filter((cardId) => !ignoredHandCardIds.has(cardId))
+    .map((cardId) =>
+      getHandPlayCandidates(
+        manager,
+        aiPlayerId,
+        cardId,
+        currentBattleEvaluation,
+        ignoredHandCardIds,
+      ),
+    )
   const bestWithoutTerminalByMana = Array<number>(mana + 1).fill(0)
   const bestWithTerminalByMana = Array<number>(mana + 1).fill(
     Number.NEGATIVE_INFINITY,
@@ -375,6 +407,7 @@ const getDeployableHandValueFromBattleEvaluation = (
 export const getDeployableHandValue = (
   manager: GameManager,
   aiPlayerId: PlayerId,
+  ignoredHandCardIds: ReadonlySet<CardInstanceId> = NO_IGNORED_HAND_CARDS,
 ): number => {
   if (!canEvaluateDeployableHand(manager, aiPlayerId)) {
     return 0
@@ -383,15 +416,17 @@ export const getDeployableHandValue = (
   return getDeployableHandValueFromBattleEvaluation(
     manager,
     aiPlayerId,
-    evaluateBattleEntry(manager, aiPlayerId),
+    evaluateBattleEntry(manager, aiPlayerId, ignoredHandCardIds),
+    ignoredHandCardIds,
   )
 }
 
 export const evaluateMainContinuation = (
   manager: GameManager,
   aiPlayerId: PlayerId,
+  ignoredHandCardIds: ReadonlySet<CardInstanceId> = NO_IGNORED_HAND_CARDS,
 ): EvaluationBreakdown => {
-  const battleEntry = evaluateBattleEntry(manager, aiPlayerId)
+  const battleEntry = evaluateBattleEntry(manager, aiPlayerId, ignoredHandCardIds)
   if (battleEntry.terminal !== 0) {
     return battleEntry
   }
@@ -400,6 +435,7 @@ export const evaluateMainContinuation = (
     manager,
     aiPlayerId,
     battleEntry,
+    ignoredHandCardIds,
   )
   return {
     ...battleEntry,
@@ -411,21 +447,33 @@ export const evaluateMainContinuation = (
 export const evaluateCoherentMainPlan = (
   manager: GameManager,
   aiPlayerId: PlayerId,
+  ignoredHandCardIds: ReadonlySet<CardInstanceId> = NO_IGNORED_HAND_CARDS,
 ): EvaluationBreakdown => {
   let currentManager = manager
-  let bestEvaluation = evaluateBattleEntry(currentManager, aiPlayerId)
+  let bestEvaluation = evaluateBattleEntry(
+    currentManager,
+    aiPlayerId,
+    ignoredHandCardIds,
+  )
 
   while (true) {
     let nextManager: GameManager | null = null
     let nextEvaluation: EvaluationBreakdown | null = null
 
     for (const action of GameManager.getLegalMainActions(currentManager)) {
-      if (action.type !== 'summonCreature') {
+      if (
+        action.type !== 'summonCreature' ||
+        ignoredHandCardIds.has(action.cardId)
+      ) {
         continue
       }
 
       const candidateManager = GameManager.applyAction(currentManager, action)
-      const candidateEvaluation = evaluateBattleEntry(candidateManager, aiPlayerId)
+      const candidateEvaluation = evaluateBattleEntry(
+        candidateManager,
+        aiPlayerId,
+        ignoredHandCardIds,
+      )
       if (
         nextEvaluation === null ||
         isMeaningfullyGreater(candidateEvaluation.total, nextEvaluation.total)

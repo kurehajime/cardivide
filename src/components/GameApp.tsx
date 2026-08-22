@@ -4,6 +4,7 @@ import {
   GameAI,
   GameManager,
   THEME_DECK_BY_ID,
+  type AiDifficulty,
   type ActivatedAbilityOption,
   type CardInstanceId,
   type ThemeDeckId,
@@ -30,6 +31,7 @@ type GameUiAction =
 type GameSelection = {
   playerDeckId: ThemeDeckId
   comDeckId: ThemeDeckId
+  difficulty: AiDifficulty
 }
 
 type GameSessionProps = GameSelection & {
@@ -74,18 +76,19 @@ const gameUiReducer = (state: GameUiState, action: GameUiAction): GameUiState =>
 const GameSession = ({
   playerDeckId,
   comDeckId,
+  difficulty,
   onChangeDecks,
 }: GameSessionProps) => {
   const aiRef = useRef<GameAI | null>(null)
   const attackAnimationIdRef = useRef(0)
   const [attackAnimation, setAttackAnimation] = useState<BoardAttackAnimation | null>(null)
   if (aiRef.current === null) {
-    aiRef.current = new GameAI()
+    aiRef.current = new GameAI({ difficulty, random: Math.random })
   }
   const ai = aiRef.current
   const [{ manager, selectedCardId, message }, dispatch] = useReducer(
     gameUiReducer,
-    { playerDeckId, comDeckId },
+    { playerDeckId, comDeckId, difficulty },
     createGameUiState,
   )
   const { state } = manager
@@ -365,6 +368,7 @@ const GameApp = () => {
   const [selection, setSelection] = useState<GameSelection>({
     playerDeckId: 'green-red-frontline',
     comDeckId: 'red-blue-skirmish',
+    difficulty: 'hard',
   })
   const [gameStarted, setGameStarted] = useState(false)
 
@@ -373,8 +377,9 @@ const GameApp = () => {
       <GameSetup
         initialPlayerDeckId={selection.playerDeckId}
         initialComDeckId={selection.comDeckId}
-        onStart={(playerDeckId, comDeckId) => {
-          setSelection({ playerDeckId, comDeckId })
+        initialDifficulty={selection.difficulty}
+        onStart={(playerDeckId, comDeckId, difficulty) => {
+          setSelection({ playerDeckId, comDeckId, difficulty })
           setGameStarted(true)
         }}
       />
@@ -383,7 +388,7 @@ const GameApp = () => {
 
   return (
     <GameSession
-      key={`${selection.playerDeckId}-${selection.comDeckId}`}
+      key={`${selection.playerDeckId}-${selection.comDeckId}-${selection.difficulty}`}
       {...selection}
       onChangeDecks={() => setGameStarted(false)}
     />

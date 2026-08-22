@@ -198,6 +198,66 @@
   line-height: 1.6;
 }
 
+.setup-difficulty-fieldset {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.setup-difficulty-fieldset legend {
+  margin-bottom: 8px;
+  color: #4e594f;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.setup-difficulty-options {
+  width: min(420px, 100%);
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  padding: 3px;
+  border: 1px solid #7f8b7c;
+  border-radius: 7px;
+  background: #e8ece6;
+}
+
+.setup-difficulty-options label {
+  position: relative;
+  min-width: 0;
+  cursor: pointer;
+}
+
+.setup-difficulty-options input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.setup-difficulty-options span {
+  min-height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 5px;
+  color: #465047;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.setup-difficulty-options input:checked + span {
+  background: #26342f;
+  box-shadow: 0 2px 6px rgb(28 39 34 / 28%);
+  color: #f8fbf5;
+}
+
+.setup-difficulty-options input:focus-visible + span {
+  outline: 3px solid #276fbf;
+  outline-offset: 2px;
+}
+
 .setup-start-button {
   min-height: 44px;
   justify-self: end;

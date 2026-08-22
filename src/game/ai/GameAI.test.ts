@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { CARD_DEFINITION_IDS } from '../cards'
 import { GameManager } from '../GameManager'
 import type { CardInstanceId, GameState, PlayerId } from '../types'
-import { AiTurnActionMemory, GameAI } from './GameAI'
+import {
+  AI_DIFFICULTY_IGNORED_HAND_COUNT,
+  AiTurnActionMemory,
+  GameAI,
+} from './GameAI'
 import {
   AI_EVALUATION_PARAMETERS,
   evaluateBase,
@@ -436,6 +440,19 @@ describe('AI evaluation', () => {
     )
   })
 
+  it('excludes ignored cards from hand reserve and deployable hand value', () => {
+    const manager = createTestManager()
+    const hand = manager.state.players.playerA.hand
+    const ignoredHandCardIds = new Set(hand)
+
+    expect(
+      evaluateBase(manager, 'playerA', ignoredHandCardIds).handReserve,
+    ).toBe(0)
+    expect(
+      getDeployableHandValue(manager, 'playerA', ignoredHandCardIds),
+    ).toBe(0)
+  })
+
   it('counts a shared lethal-defense swing only once in deployable hand value', () => {
     const { manager, defenderIds } = createDuplicateLethalDefenseManager()
     const oneDefender = withState(manager, (state) => ({
@@ -522,6 +539,73 @@ describe('AI evaluation', () => {
 })
 
 describe('GameAI action selection', () => {
+  it('uses the configured number of ignored hand cards for each difficulty', () => {
+    expect(AI_DIFFICULTY_IGNORED_HAND_COUNT).toEqual({
+      easy: 2,
+      normal: 1,
+      hard: 0,
+    })
+  })
+
+  it('keeps ignored hand cards fixed for the turn and redraws them next turn', () => {
+    const manager = createTestManager()
+    const memory = new AiTurnActionMemory()
+    let randomCallCount = 0
+    const random = () => {
+      randomCallCount += 1
+      return 0
+    }
+
+    const first = memory.getIgnoredHandCardIds(manager, 2, random)
+    const repeated = memory.getIgnoredHandCardIds(manager, 2, random)
+    expect([...first]).toEqual(manager.state.players.playerA.hand.slice(0, 2))
+    expect(repeated).toBe(first)
+    expect(randomCallCount).toBe(2)
+
+    const nextTurn = withState(manager, (state) => ({
+      ...state,
+      turn: state.turn + 1,
+    }))
+    memory.getIgnoredHandCardIds(nextTurn, 2, random)
+    expect(randomCallCount).toBe(4)
+  })
+
+  it('cannot play or discard a hand card ignored by the selected difficulty', () => {
+    const initial = createTestManager()
+    const usefulAction = new GameAI().chooseAction(initial)
+    expect(usefulAction?.type).toBe('summonCreature')
+    if (usefulAction?.type !== 'summonCreature') {
+      throw new Error('Expected the hard AI to find a useful summon.')
+    }
+
+    const singleCardHand = withState(initial, (state) => {
+      const player = state.players.playerA
+      return {
+        ...state,
+        players: {
+          ...state.players,
+          playerA: {
+            ...player,
+            deck: [
+              ...player.hand.filter((cardId) => cardId !== usefulAction.cardId),
+              ...player.deck,
+            ],
+            hand: [usefulAction.cardId],
+          },
+        },
+      }
+    })
+
+    expect(
+      new GameAI({ difficulty: 'easy', random: () => 0 }).chooseAction(
+        singleCardHand,
+      ),
+    ).toEqual({ type: 'passPhase' })
+    expect(new GameAI({ difficulty: 'hard' }).chooseAction(singleCardHand)?.type).toBe(
+      'summonCreature',
+    )
+  })
+
   it('considers each physical card for return only once per turn', () => {
     const manager = createTestManager()
     const [sourceCardId, otherCardId] = manager.state.players.playerA.hand

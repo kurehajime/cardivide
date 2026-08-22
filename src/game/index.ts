@@ -1,5 +1,6 @@
 export {
   AI_EVALUATION_PARAMETERS,
+  AI_DIFFICULTY_IGNORED_HAND_COUNT,
   DEFAULT_MATCH_TURN_LIMIT,
   DEFAULT_TOURNAMENT_GAMES_PER_SIDE,
   DEFAULT_TOURNAMENT_SEED,
@@ -14,6 +15,7 @@ export {
   runRoundRobinTournament,
   summarizeTournament,
 } from './ai'
+export type { AiDifficulty, GameAIOptions } from './ai'
 export { GameManager, assertValidGameState } from './GameManager'
 export { CreatureRules, describeAbility, formatAbility } from './CreatureRules'
 export {

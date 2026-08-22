@@ -1,4 +1,4 @@
-export { GameAI } from './GameAI'
+export { AI_DIFFICULTY_IGNORED_HAND_COUNT, GameAI } from './GameAI'
 export {
   AI_EVALUATION_PARAMETERS,
   evaluateBase,
@@ -7,7 +7,12 @@ export {
   evaluateMainContinuation,
   getDeployableHandValue,
 } from './evaluation'
-export type { EvaluationBreakdown, HandPlayCandidate } from './types'
+export type {
+  AiDifficulty,
+  EvaluationBreakdown,
+  GameAIOptions,
+  HandPlayCandidate,
+} from './types'
 export {
   DEFAULT_MATCH_TURN_LIMIT,
   DEFAULT_TOURNAMENT_GAMES_PER_SIDE,

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import {
   THEME_DECK_BY_ID,
   THEME_DECKS,
+  type AiDifficulty,
   type CardColor,
   type ThemeDeck,
   type ThemeDeckId,
@@ -10,8 +11,22 @@ import {
 type GameSetupProps = {
   initialPlayerDeckId: ThemeDeckId
   initialComDeckId: ThemeDeckId
-  onStart: (playerDeckId: ThemeDeckId, comDeckId: ThemeDeckId) => void
+  initialDifficulty: AiDifficulty
+  onStart: (
+    playerDeckId: ThemeDeckId,
+    comDeckId: ThemeDeckId,
+    difficulty: AiDifficulty,
+  ) => void
 }
+
+const AI_DIFFICULTIES: readonly {
+  value: AiDifficulty
+  label: string
+}[] = [
+  { value: 'easy', label: 'Easy' },
+  { value: 'normal', label: 'Normal' },
+  { value: 'hard', label: 'Hard' },
+]
 
 const COLOR_LABELS: Record<CardColor, string> = {
   red: '赤',
@@ -80,10 +95,12 @@ const DeckSelector = ({
 const GameSetup = ({
   initialPlayerDeckId,
   initialComDeckId,
+  initialDifficulty,
   onStart,
 }: GameSetupProps) => {
   const [playerDeckId, setPlayerDeckId] = useState<ThemeDeckId>(initialPlayerDeckId)
   const [comDeckId, setComDeckId] = useState<ThemeDeckId>(initialComDeckId)
+  const [difficulty, setDifficulty] = useState<AiDifficulty>(initialDifficulty)
 
   return (
     <main className="setup-shell">
@@ -100,10 +117,27 @@ const GameSetup = ({
           />
           <DeckSelector label="COM" value={comDeckId} onChange={setComDeckId} />
         </div>
+        <fieldset className="setup-difficulty-fieldset">
+          <legend>COM難易度</legend>
+          <div className="setup-difficulty-options">
+            {AI_DIFFICULTIES.map((option) => (
+              <label key={option.value}>
+                <input
+                  type="radio"
+                  name="com-difficulty"
+                  value={option.value}
+                  checked={difficulty === option.value}
+                  onChange={() => setDifficulty(option.value)}
+                />
+                <span>{option.label}</span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
         <button
           className="setup-start-button"
           type="button"
-          onClick={() => onStart(playerDeckId, comDeckId)}
+          onClick={() => onStart(playerDeckId, comDeckId, difficulty)}
         >
           ゲーム開始
         </button>
