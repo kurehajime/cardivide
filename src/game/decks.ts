@@ -1,5 +1,13 @@
-import { CARD_BY_DEFINITION_ID } from './cards'
-import type { Card, CardInstance, CardInstanceId, PlayerId } from './types'
+import { CARD_BY_DEFINITION_ID, CARD_DEFINITION_IDS } from './cards'
+import type {
+  Card,
+  CardDefinitionId,
+  CardInstance,
+  CardInstanceId,
+  PlayerId,
+} from './types'
+
+const CARD_ID = CARD_DEFINITION_IDS
 
 export type DeckSummary = {
   total: number
@@ -11,59 +19,59 @@ export type DeckSummary = {
 }
 
 export const STANDARD_DECK_LIST = [
-  'red-cost2-attack3-defense2-march1',
-  'red-cost2-attack3-defense2-march1',
-  'red-cost2-attack3-defense2-march1',
-  'red-cost2-attack4-defense1-march0',
-  'red-cost2-attack4-defense1-march0',
-  'red-cost4-attack5-defense2-march2',
-  'red-cost5-attack7-defense4-march2-vanish',
-  'red-cost2-attack2-defense1-march1-lone-warrior-2-0',
-  'red-cost2-attack2-defense1-march1-lone-warrior-2-0',
-  'red-cost2-attack3-defense1-march1-withdraw',
-  'red-cost2-attack3-defense1-march1-withdraw',
-  'red-cost2-attack2-defense1-march1-assassin2',
-  'red-cost2-attack2-defense1-march1-assassin2',
-  'red-cost4-attack4-defense2-march2-lone-warrior-2-1',
-  'red-cost4-attack5-defense1-march2-withdraw',
-  'cost0-spell-return-fire',
+  CARD_ID.SPARK_SWORDSMAN,
+  CARD_ID.SPARK_SWORDSMAN,
+  CARD_ID.SPARK_SWORDSMAN,
+  CARD_ID.BURNING_VANGUARD,
+  CARD_ID.BURNING_VANGUARD,
+  CARD_ID.BEACON_HEAVY_CAVALRY,
+  CARD_ID.EXHAUSTED_VOLCANO_DRAGON,
+  CARD_ID.SOLITARY_PEAK_SWORDSMAN,
+  CARD_ID.SOLITARY_PEAK_SWORDSMAN,
+  CARD_ID.FORMATION_CLEARING_MERCENARY,
+  CARD_ID.FORMATION_CLEARING_MERCENARY,
+  CARD_ID.CRIMSON_BLADE_INFILTRATOR,
+  CARD_ID.CRIMSON_BLADE_INFILTRATOR,
+  CARD_ID.LONE_ARMY_GENERAL,
+  CARD_ID.ASH_DISMANTLER,
+  CARD_ID.RETURN_FIRE,
 
-  'blue-cost2-attack2-defense2-march2',
-  'blue-cost2-attack2-defense2-march2',
-  'blue-cost2-attack2-defense2-march2',
-  'blue-cost2-attack2-defense1-march3',
-  'blue-cost2-attack2-defense1-march3',
-  'blue-cost4-attack4-defense4-march3',
-  'blue-cost5-attack6-defense6-march4-vanish',
-  'blue-cost2-attack3-defense1-march1-counter',
-  'blue-cost2-attack3-defense1-march1-counter',
-  'blue-cost2-attack2-defense1-march2-return',
-  'blue-cost2-attack2-defense1-march2-return',
-  'blue-cost2-attack2-defense1-march2-beachhead1',
-  'blue-cost2-attack2-defense1-march2-beachhead1',
-  'blue-cost4-attack4-defense4-march2-counter',
-  'blue-cost4-attack4-defense2-march2-return',
-  'cost0-spell-bubble-wall',
+  CARD_ID.TIDEWAY_SCOUT,
+  CARD_ID.TIDEWAY_SCOUT,
+  CARD_ID.TIDEWAY_SCOUT,
+  CARD_ID.SPRAY_HERALD,
+  CARD_ID.SPRAY_HERALD,
+  CARD_ID.AZURE_WAVE_VOYAGER,
+  CARD_ID.EPHEMERAL_DEEP_WHALE,
+  CARD_ID.SURGING_DUELIST,
+  CARD_ID.SURGING_DUELIST,
+  CARD_ID.MIST_RETURNING_MESSENGER,
+  CARD_ID.MIST_RETURNING_MESSENGER,
+  CARD_ID.TIDEFRONT_FORTIFIER,
+  CARD_ID.TIDEFRONT_FORTIFIER,
+  CARD_ID.DEEP_TIDE_INTERCEPTOR,
+  CARD_ID.WAVE_RETURN_MAGE,
+  CARD_ID.BUBBLE_WALL,
 
-  'green-cost2-attack2-defense3-march1',
-  'green-cost2-attack2-defense3-march1',
-  'green-cost2-attack2-defense3-march1',
-  'green-cost2-attack1-defense4-march0',
-  'green-cost2-attack1-defense4-march0',
-  'green-cost4-attack4-defense6-march2',
-  'green-cost5-attack6-defense7-march2-vanish',
-  'green-cost2-attack2-defense3-march0-capture1',
-  'green-cost2-attack2-defense3-march0-capture1',
-  'green-cost2-attack2-defense2-march1-mining1',
-  'green-cost2-attack2-defense2-march1-mining1',
-  'green-cost2-attack2-defense2-march1-rearguard-0-2',
-  'green-cost2-attack2-defense2-march1-rearguard-0-2',
-  'green-cost4-attack4-defense5-march1-capture2',
-  'green-cost4-attack3-defense4-march1-mining1',
-  'cost0-spell-abundance',
-] satisfies string[]
+  CARD_ID.OAKBARK_SENTINEL,
+  CARD_ID.OAKBARK_SENTINEL,
+  CARD_ID.OAKBARK_SENTINEL,
+  CARD_ID.ROOTED_ANCIENT,
+  CARD_ID.ROOTED_ANCIENT,
+  CARD_ID.GREAT_TREE_GUARDIAN,
+  CARD_ID.DREAMWALKING_FOREST_GIANT,
+  CARD_ID.VINE_SNARE_HUNTER,
+  CARD_ID.VINE_SNARE_HUNTER,
+  CARD_ID.GEODE_MINER,
+  CARD_ID.GEODE_MINER,
+  CARD_ID.ROOT_FORT_REARGUARD,
+  CARD_ID.ROOT_FORT_REARGUARD,
+  CARD_ID.FOREST_CAGE_BEASTMASTER,
+  CARD_ID.LEYLINE_MINING_GIANT,
+  CARD_ID.ABUNDANCE,
+] satisfies CardDefinitionId[]
 
-const getCardDefinition = (definitionId: string): Card => {
+const getCardDefinition = (definitionId: CardDefinitionId): Card => {
   const card = CARD_BY_DEFINITION_ID[definitionId]
   if (!card) {
     throw new Error(`Unknown card definition: ${definitionId}`)
@@ -93,7 +101,7 @@ const summarizeDeck = (deck: CardInstance[]): DeckSummary =>
   )
 
 export const createDeck = (
-  definitionIds: readonly string[],
+  definitionIds: readonly CardDefinitionId[],
   ownerId: PlayerId,
   firstCardId: CardInstanceId,
 ): CardInstance[] =>

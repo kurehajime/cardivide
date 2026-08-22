@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
+import { CARD_DEFINITION_IDS } from './cards'
 import { GameManager, assertValidGameState } from './GameManager'
 import type { CardInstanceId, GameState } from './types'
 
 const KEEP_ORDER_RANDOM = () => 1 - Number.EPSILON
+const CARD_ID = CARD_DEFINITION_IDS
 
 const createTestManager = (): GameManager => GameManager.create(KEEP_ORDER_RANDOM)
 
@@ -47,9 +49,9 @@ describe('GameManager card instance tracking', () => {
       Array.from({ length: 96 }, (_, index) => index + 1),
     )
     expect(instances.slice(0, 3).map(({ card }) => card.definitionId)).toEqual([
-      'red-cost2-attack3-defense2-march1',
-      'red-cost2-attack3-defense2-march1',
-      'red-cost2-attack3-defense2-march1',
+      CARD_ID.SPARK_SWORDSMAN,
+      CARD_ID.SPARK_SWORDSMAN,
+      CARD_ID.SPARK_SWORDSMAN,
     ])
     expect(new Set(instances.slice(0, 3).map(({ id }) => id)).size).toBe(3)
     expectCardsConserved(manager)

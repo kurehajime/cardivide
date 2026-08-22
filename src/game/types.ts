@@ -10,6 +10,8 @@ export type Phase = 'keepUp' | 'main' | 'battle' | 'cleanup'
 
 export type CardInstanceId = number
 
+export type CardDefinitionId = `${string}-${string}-${string}-${string}-${string}`
+
 export type KeywordAbility =
   | { type: 'summoningSickness' }
   | { type: 'vanish' }
@@ -31,7 +33,7 @@ export type ActivatedAbilityType = Extract<
 >
 
 export type CardBase = {
-  definitionId: string
+  definitionId: CardDefinitionId
   name: string
   kind: CardKind
   cost: number
@@ -163,7 +165,7 @@ export type PlayerState = {
   placedSpell: PlacedSpell | null
 }
 
-export type GameDeckLists = Record<PlayerId, readonly string[]>
+export type GameDeckLists = Record<PlayerId, readonly CardDefinitionId[]>
 
 export type GameState = {
   turn: number

@@ -1,5 +1,5 @@
 import { GameManager } from '../GameManager'
-import type { PlayerId } from '../types'
+import type { CardDefinitionId, PlayerId } from '../types'
 import type { ThemeDeck, ThemeDeckId } from '../themeDecks'
 import { GameAI } from './GameAI'
 
@@ -83,7 +83,7 @@ const hashString = (value: string): number => {
   return hash >>> 0
 }
 
-const shuffleDeck = (deck: ThemeDeck, seed: number): string[] => {
+const shuffleDeck = (deck: ThemeDeck, seed: number): CardDefinitionId[] => {
   const shuffled = [...deck.cardDefinitionIds]
   const random = createSeededRandom(seed ^ hashString(deck.id))
 

@@ -1,25 +1,26 @@
 import { describe, expect, it } from 'vitest'
-import { CARD_BY_DEFINITION_ID } from './cards'
+import { CARD_BY_DEFINITION_ID, CARD_DEFINITION_IDS } from './cards'
 import { GameManager } from './GameManager'
 import { THEME_DECKS } from './themeDecks'
 
 const KEEP_ORDER_RANDOM = () => 1 - Number.EPSILON
+const CARD_ID = CARD_DEFINITION_IDS
 
 const EXPECTED_SPELLS_BY_DECK = {
   'red-blue-skirmish': [
-    'cost0-spell-return-fire',
-    'cost0-spell-return-fire',
-    'cost0-spell-bubble-wall',
+    CARD_ID.RETURN_FIRE,
+    CARD_ID.RETURN_FIRE,
+    CARD_ID.BUBBLE_WALL,
   ],
   'blue-green-intercept': [
-    'cost0-spell-bubble-wall',
-    'cost0-spell-abundance',
-    'cost0-spell-abundance',
+    CARD_ID.BUBBLE_WALL,
+    CARD_ID.ABUNDANCE,
+    CARD_ID.ABUNDANCE,
   ],
   'green-red-frontline': [
-    'cost0-spell-abundance',
-    'cost0-spell-abundance',
-    'cost0-spell-return-fire',
+    CARD_ID.ABUNDANCE,
+    CARD_ID.ABUNDANCE,
+    CARD_ID.RETURN_FIRE,
   ],
 } as const
 
@@ -35,14 +36,14 @@ const EXPECTED_CREATURE_COLORS_BY_DECK = {
   'green-red-frontline': { primary: 19, secondary: 18 },
 } as const
 
-const BURNING_VANGUARD_ID = 'red-cost2-attack4-defense1-march0'
-const DEEP_INTERCEPTOR_ID = 'blue-cost4-attack4-defense4-march2-counter'
-const DEEP_WHALE_ID = 'blue-cost5-attack6-defense6-march4-vanish'
-const MIST_RETURNER_ID = 'blue-cost2-attack2-defense1-march2-return'
-const WAVE_RETURNER_ID = 'blue-cost4-attack4-defense2-march2-return'
-const ROOTED_ANCIENT_ID = 'green-cost2-attack1-defense4-march0'
-const GEODE_MINER_ID = 'green-cost2-attack2-defense2-march1-mining1'
-const LEYLINE_MINER_ID = 'green-cost4-attack3-defense4-march1-mining1'
+const BURNING_VANGUARD_ID = CARD_ID.BURNING_VANGUARD
+const DEEP_INTERCEPTOR_ID = CARD_ID.DEEP_TIDE_INTERCEPTOR
+const DEEP_WHALE_ID = CARD_ID.EPHEMERAL_DEEP_WHALE
+const MIST_RETURNER_ID = CARD_ID.MIST_RETURNING_MESSENGER
+const WAVE_RETURNER_ID = CARD_ID.WAVE_RETURN_MAGE
+const ROOTED_ANCIENT_ID = CARD_ID.ROOTED_ANCIENT
+const GEODE_MINER_ID = CARD_ID.GEODE_MINER
+const LEYLINE_MINER_ID = CARD_ID.LEYLINE_MINING_GIANT
 
 describe('theme decks', () => {
   it.each(THEME_DECKS)('$name contains the documented 40-card cost structure', (deck) => {
@@ -50,7 +51,9 @@ describe('theme decks', () => {
     const expectedCreatureColors = EXPECTED_CREATURE_COLORS_BY_DECK[deck.id]
     const cards = deck.cardDefinitionIds.map((definitionId) => {
       const card = CARD_BY_DEFINITION_ID[definitionId]
-      expect(card, definitionId).toBeDefined()
+      if (!card) {
+        throw new Error(`Unknown card definition: ${definitionId}`)
+      }
       return card
     })
 
@@ -99,7 +102,7 @@ describe('theme decks', () => {
     ).toHaveLength(1)
     expect(
       deck.cardDefinitionIds.filter(
-        (definitionId) => definitionId === 'green-cost5-attack6-defense7-march2-vanish',
+        (definitionId) => definitionId === CARD_ID.DREAMWALKING_FOREST_GIANT,
       ),
     ).toHaveLength(2)
   })

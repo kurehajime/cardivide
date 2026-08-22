@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest'
+import { CARD_DEFINITION_IDS } from './cards'
 import { GameManager, assertValidGameState } from './GameManager'
 import type { CardInstanceId, GameState, PlayerId } from './types'
 
 const KEEP_ORDER_RANDOM = () => 1 - Number.EPSILON
+const CARD_ID = CARD_DEFINITION_IDS
 
 const findCardIds = (
   state: GameState,
@@ -95,7 +97,7 @@ describe('spell rules', () => {
     const returnFire = findDefinition(
       initial.state,
       'playerA',
-      'cost0-spell-return-fire',
+      CARD_ID.RETURN_FIRE,
     )
     let manager = configureState(initial, { hands: { playerA: [returnFire] } })
 
@@ -124,7 +126,7 @@ describe('spell rules', () => {
     const returnFire = findDefinition(
       initial.state,
       'playerA',
-      'cost0-spell-return-fire',
+      CARD_ID.RETURN_FIRE,
     )
     const redDiscards = findCardIds(
       initial.state,
@@ -149,7 +151,7 @@ describe('spell rules', () => {
       'playerA',
       (cardId) =>
         initial.state.cards[cardId].card.definitionId ===
-        'green-cost2-attack2-defense3-march1',
+        CARD_ID.OAKBARK_SENTINEL,
       2,
     )
     let manager = configureState(initial, {
@@ -197,7 +199,7 @@ describe('spell rules', () => {
     const bubbleWall = findDefinition(
       initial.state,
       'playerA',
-      'cost0-spell-bubble-wall',
+      CARD_ID.BUBBLE_WALL,
     )
     const blueDiscards = findCardIds(
       initial.state,
@@ -211,7 +213,7 @@ describe('spell rules', () => {
     const attacker = findDefinition(
       initial.state,
       'playerB',
-      'red-cost5-attack7-defense4-march2-vanish',
+      CARD_ID.EXHAUSTED_VOLCANO_DRAGON,
     )
     let manager = configureState(initial, {
       hands: { playerA: [bubbleWall] },
@@ -246,12 +248,12 @@ describe('spell rules', () => {
     const abundance = findDefinition(
       initial.state,
       'playerA',
-      'cost0-spell-abundance',
+      CARD_ID.ABUNDANCE,
     )
     const bubbleWall = findDefinition(
       initial.state,
       'playerA',
-      'cost0-spell-bubble-wall',
+      CARD_ID.BUBBLE_WALL,
     )
     const greenDiscards = findCardIds(
       initial.state,
@@ -310,7 +312,7 @@ describe('spell rules', () => {
     const abundance = findDefinition(
       initial.state,
       'playerA',
-      'cost0-spell-abundance',
+      CARD_ID.ABUNDANCE,
     )
     const [greenDiscard] = findCardIds(
       initial.state,

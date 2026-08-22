@@ -1,8 +1,41 @@
-import type { Card, CreatureCard, SpellCard } from './types'
+import type { Card, CardDefinitionId, CreatureCard, SpellCard } from './types'
+
+export const CARD_DEFINITION_IDS = {
+  SPARK_SWORDSMAN: '76bd5e86-4630-4f43-97d9-c63cfb3435d4',
+  TIDEWAY_SCOUT: 'd586b116-629c-46ff-bb00-4d21c68b6c48',
+  OAKBARK_SENTINEL: '42472077-8185-422c-b71c-7a4550cda508',
+  BURNING_VANGUARD: 'f6a28bee-9dfe-4686-ad11-ace2053d6bbd',
+  SPRAY_HERALD: '24112ba6-4b8e-4b78-971d-4af441ed6fcd',
+  ROOTED_ANCIENT: 'bdfacb0b-341d-4c0a-9ec8-fc9b8b627eb7',
+  BEACON_HEAVY_CAVALRY: '220d6546-8f8a-48bf-b50c-2351c61b69ef',
+  AZURE_WAVE_VOYAGER: '4b9a780b-c61a-437a-849e-72cd1b83b342',
+  GREAT_TREE_GUARDIAN: 'dc2f752b-bbf5-4f2d-8af6-c3277ef9e886',
+  EXHAUSTED_VOLCANO_DRAGON: 'aa7406ae-8466-4422-a427-5bb5bf62360c',
+  EPHEMERAL_DEEP_WHALE: 'f58f7a5c-9062-4bee-b480-3a8faab335ab',
+  DREAMWALKING_FOREST_GIANT: '87100751-7dc9-4d6e-8eff-b997b549efb7',
+  SOLITARY_PEAK_SWORDSMAN: '2ab6a395-f24a-46dd-8dc3-3de3c9662dcb',
+  FORMATION_CLEARING_MERCENARY: '226f2c8a-b3d3-4686-bb51-a8333a869684',
+  CRIMSON_BLADE_INFILTRATOR: '1ce68905-d722-4bc0-8fc9-54a23e49bb11',
+  SURGING_DUELIST: '404a833c-f5c7-46a5-8002-cd9ebf77d288',
+  MIST_RETURNING_MESSENGER: 'ec950f12-0b17-41a2-8313-dc7e371e9498',
+  TIDEFRONT_FORTIFIER: '8a1c867a-c5bf-4a85-8235-c803bf9c6636',
+  VINE_SNARE_HUNTER: 'd88ebb3e-dea6-44ba-8137-65c7d43c2e21',
+  GEODE_MINER: '558df3f0-8431-490f-bcb8-1ffbfd9f809d',
+  ROOT_FORT_REARGUARD: '9d13120c-af42-4177-a04e-3347e9db6112',
+  LONE_ARMY_GENERAL: '0f977549-313e-4012-8912-e562d1eda3c7',
+  ASH_DISMANTLER: '115cdda8-9b82-4335-8300-4fdc771b150a',
+  DEEP_TIDE_INTERCEPTOR: 'b9c266d6-7f89-4a3b-b1dc-7032c316241f',
+  WAVE_RETURN_MAGE: 'a2930f95-2867-4e28-bb74-133d4e66c7b1',
+  FOREST_CAGE_BEASTMASTER: '45fec150-1a32-4a7f-b7b4-be238484324e',
+  LEYLINE_MINING_GIANT: 'd0d92b6e-55f7-4f1b-8023-bc3b067400ae',
+  RETURN_FIRE: '747911c4-29db-4fbc-a056-fb97b29c275f',
+  BUBBLE_WALL: 'f76eb155-8b41-401d-aa94-83ebcdcaec73',
+  ABUNDANCE: 'f1f9c2ec-1db5-46e3-b6f0-5ca0ef958bdb',
+} as const satisfies Record<string, CardDefinitionId>
 
 export const CREATURE_CARDS = [
   {
-    definitionId: 'red-cost2-attack3-defense2-march1',
+    definitionId: CARD_DEFINITION_IDS.SPARK_SWORDSMAN,
     name: '火花の剣兵',
     kind: 'creature',
     color: 'red',
@@ -13,7 +46,7 @@ export const CREATURE_CARDS = [
     abilities: [],
   },
   {
-    definitionId: 'blue-cost2-attack2-defense2-march2',
+    definitionId: CARD_DEFINITION_IDS.TIDEWAY_SCOUT,
     name: '潮路の斥候',
     kind: 'creature',
     color: 'blue',
@@ -24,7 +57,7 @@ export const CREATURE_CARDS = [
     abilities: [],
   },
   {
-    definitionId: 'green-cost2-attack2-defense3-march1',
+    definitionId: CARD_DEFINITION_IDS.OAKBARK_SENTINEL,
     name: '樫皮の番兵',
     kind: 'creature',
     color: 'green',
@@ -35,7 +68,7 @@ export const CREATURE_CARDS = [
     abilities: [],
   },
   {
-    definitionId: 'red-cost2-attack4-defense1-march0',
+    definitionId: CARD_DEFINITION_IDS.BURNING_VANGUARD,
     name: '燃え立つ先陣',
     kind: 'creature',
     color: 'red',
@@ -46,7 +79,7 @@ export const CREATURE_CARDS = [
     abilities: [],
   },
   {
-    definitionId: 'blue-cost2-attack2-defense1-march3',
+    definitionId: CARD_DEFINITION_IDS.SPRAY_HERALD,
     name: '飛沫の伝令',
     kind: 'creature',
     color: 'blue',
@@ -57,7 +90,7 @@ export const CREATURE_CARDS = [
     abilities: [],
   },
   {
-    definitionId: 'green-cost2-attack1-defense4-march0',
+    definitionId: CARD_DEFINITION_IDS.ROOTED_ANCIENT,
     name: '根張りの古木',
     kind: 'creature',
     color: 'green',
@@ -68,7 +101,7 @@ export const CREATURE_CARDS = [
     abilities: [],
   },
   {
-    definitionId: 'red-cost4-attack5-defense2-march2',
+    definitionId: CARD_DEFINITION_IDS.BEACON_HEAVY_CAVALRY,
     name: '烽火の重騎兵',
     kind: 'creature',
     color: 'red',
@@ -79,7 +112,7 @@ export const CREATURE_CARDS = [
     abilities: [],
   },
   {
-    definitionId: 'blue-cost4-attack4-defense4-march3',
+    definitionId: CARD_DEFINITION_IDS.AZURE_WAVE_VOYAGER,
     name: '蒼波の航海士',
     kind: 'creature',
     color: 'blue',
@@ -90,7 +123,7 @@ export const CREATURE_CARDS = [
     abilities: [],
   },
   {
-    definitionId: 'green-cost4-attack4-defense6-march2',
+    definitionId: CARD_DEFINITION_IDS.GREAT_TREE_GUARDIAN,
     name: '巨樹の守護者',
     kind: 'creature',
     color: 'green',
@@ -101,7 +134,7 @@ export const CREATURE_CARDS = [
     abilities: [],
   },
   {
-    definitionId: 'red-cost5-attack7-defense4-march2-vanish',
+    definitionId: CARD_DEFINITION_IDS.EXHAUSTED_VOLCANO_DRAGON,
     name: '燃え尽きる火山竜',
     kind: 'creature',
     color: 'red',
@@ -112,7 +145,7 @@ export const CREATURE_CARDS = [
     abilities: [{ type: 'vanish' }],
   },
   {
-    definitionId: 'blue-cost5-attack6-defense6-march4-vanish',
+    definitionId: CARD_DEFINITION_IDS.EPHEMERAL_DEEP_WHALE,
     name: '泡沫の深海鯨',
     kind: 'creature',
     color: 'blue',
@@ -123,7 +156,7 @@ export const CREATURE_CARDS = [
     abilities: [{ type: 'vanish' }],
   },
   {
-    definitionId: 'green-cost5-attack6-defense7-march2-vanish',
+    definitionId: CARD_DEFINITION_IDS.DREAMWALKING_FOREST_GIANT,
     name: '夢渡りの森巨人',
     kind: 'creature',
     color: 'green',
@@ -134,7 +167,7 @@ export const CREATURE_CARDS = [
     abilities: [{ type: 'vanish' }],
   },
   {
-    definitionId: 'red-cost2-attack2-defense1-march1-lone-warrior-2-0',
+    definitionId: CARD_DEFINITION_IDS.SOLITARY_PEAK_SWORDSMAN,
     name: '孤峰の剣士',
     kind: 'creature',
     color: 'red',
@@ -145,7 +178,7 @@ export const CREATURE_CARDS = [
     abilities: [{ type: 'loneWarrior', attack: 2, defense: 0 }],
   },
   {
-    definitionId: 'red-cost2-attack3-defense1-march1-withdraw',
+    definitionId: CARD_DEFINITION_IDS.FORMATION_CLEARING_MERCENARY,
     name: '陣払いの傭兵',
     kind: 'creature',
     color: 'red',
@@ -156,7 +189,7 @@ export const CREATURE_CARDS = [
     abilities: [{ type: 'withdraw' }],
   },
   {
-    definitionId: 'red-cost2-attack2-defense1-march1-assassin2',
+    definitionId: CARD_DEFINITION_IDS.CRIMSON_BLADE_INFILTRATOR,
     name: '朱刃の潜入者',
     kind: 'creature',
     color: 'red',
@@ -167,7 +200,7 @@ export const CREATURE_CARDS = [
     abilities: [{ type: 'assassin', attack: 2 }],
   },
   {
-    definitionId: 'blue-cost2-attack3-defense1-march1-counter',
+    definitionId: CARD_DEFINITION_IDS.SURGING_DUELIST,
     name: '逆巻く決闘士',
     kind: 'creature',
     color: 'blue',
@@ -178,7 +211,7 @@ export const CREATURE_CARDS = [
     abilities: [{ type: 'counter' }],
   },
   {
-    definitionId: 'blue-cost2-attack2-defense1-march2-return',
+    definitionId: CARD_DEFINITION_IDS.MIST_RETURNING_MESSENGER,
     name: '霧渡りの使者',
     kind: 'creature',
     color: 'blue',
@@ -189,7 +222,7 @@ export const CREATURE_CARDS = [
     abilities: [{ type: 'return' }],
   },
   {
-    definitionId: 'blue-cost2-attack2-defense1-march2-beachhead1',
+    definitionId: CARD_DEFINITION_IDS.TIDEFRONT_FORTIFIER,
     name: '潮先の築城師',
     kind: 'creature',
     color: 'blue',
@@ -200,7 +233,7 @@ export const CREATURE_CARDS = [
     abilities: [{ type: 'beachhead', costReduction: 1 }],
   },
   {
-    definitionId: 'green-cost2-attack2-defense3-march0-capture1',
+    definitionId: CARD_DEFINITION_IDS.VINE_SNARE_HUNTER,
     name: '蔦罠の狩人',
     kind: 'creature',
     color: 'green',
@@ -211,7 +244,7 @@ export const CREATURE_CARDS = [
     abilities: [{ type: 'capture', marchTax: 1 }],
   },
   {
-    definitionId: 'green-cost2-attack2-defense2-march1-mining1',
+    definitionId: CARD_DEFINITION_IDS.GEODE_MINER,
     name: '晶洞の坑夫',
     kind: 'creature',
     color: 'green',
@@ -222,7 +255,7 @@ export const CREATURE_CARDS = [
     abilities: [{ type: 'mining', mana: 1 }],
   },
   {
-    definitionId: 'green-cost2-attack2-defense2-march1-rearguard-0-2',
+    definitionId: CARD_DEFINITION_IDS.ROOT_FORT_REARGUARD,
     name: '根砦の殿軍',
     kind: 'creature',
     color: 'green',
@@ -233,7 +266,7 @@ export const CREATURE_CARDS = [
     abilities: [{ type: 'rearguard', attack: 0, defense: 2 }],
   },
   {
-    definitionId: 'red-cost4-attack4-defense2-march2-lone-warrior-2-1',
+    definitionId: CARD_DEFINITION_IDS.LONE_ARMY_GENERAL,
     name: '孤軍の猛将',
     kind: 'creature',
     color: 'red',
@@ -244,7 +277,7 @@ export const CREATURE_CARDS = [
     abilities: [{ type: 'loneWarrior', attack: 2, defense: 1 }],
   },
   {
-    definitionId: 'red-cost4-attack5-defense1-march2-withdraw',
+    definitionId: CARD_DEFINITION_IDS.ASH_DISMANTLER,
     name: '灰燼の解体者',
     kind: 'creature',
     color: 'red',
@@ -255,7 +288,7 @@ export const CREATURE_CARDS = [
     abilities: [{ type: 'withdraw' }],
   },
   {
-    definitionId: 'blue-cost4-attack4-defense4-march2-counter',
+    definitionId: CARD_DEFINITION_IDS.DEEP_TIDE_INTERCEPTOR,
     name: '深潮の迎撃者',
     kind: 'creature',
     color: 'blue',
@@ -266,7 +299,7 @@ export const CREATURE_CARDS = [
     abilities: [{ type: 'counter' }],
   },
   {
-    definitionId: 'blue-cost4-attack4-defense2-march2-return',
+    definitionId: CARD_DEFINITION_IDS.WAVE_RETURN_MAGE,
     name: '波間の帰還術師',
     kind: 'creature',
     color: 'blue',
@@ -277,7 +310,7 @@ export const CREATURE_CARDS = [
     abilities: [{ type: 'return' }],
   },
   {
-    definitionId: 'green-cost4-attack4-defense5-march1-capture2',
+    definitionId: CARD_DEFINITION_IDS.FOREST_CAGE_BEASTMASTER,
     name: '森檻の獣使い',
     kind: 'creature',
     color: 'green',
@@ -288,7 +321,7 @@ export const CREATURE_CARDS = [
     abilities: [{ type: 'capture', marchTax: 2 }],
   },
   {
-    definitionId: 'green-cost4-attack3-defense4-march1-mining1',
+    definitionId: CARD_DEFINITION_IDS.LEYLINE_MINING_GIANT,
     name: '地脈掘りの巨人',
     kind: 'creature',
     color: 'green',
@@ -302,7 +335,7 @@ export const CREATURE_CARDS = [
 
 export const SPELL_CARDS = [
   {
-    definitionId: 'cost0-spell-return-fire',
+    definitionId: CARD_DEFINITION_IDS.RETURN_FIRE,
     name: '返り火',
     kind: 'spell',
     cost: 0,
@@ -311,7 +344,7 @@ export const SPELL_CARDS = [
     text: '自分の捨て札にあるすべての赤クリーチャーを除外する。自プレイヤーに隣接するグループへ、除外した枚数に等しいダメージを与える。このダメージは通常攻撃と同じように伝播・減衰する。',
   },
   {
-    definitionId: 'cost0-spell-bubble-wall',
+    definitionId: CARD_DEFINITION_IDS.BUBBLE_WALL,
     name: '泡の壁',
     kind: 'spell',
     cost: 0,
@@ -320,7 +353,7 @@ export const SPELL_CARDS = [
     text: '自分の捨て札にあるすべての青クリーチャーを除外する。次の自分のターン開始まで、自プレイヤーのバリアを除外した枚数だけ増やす。',
   },
   {
-    definitionId: 'cost0-spell-abundance',
+    definitionId: CARD_DEFINITION_IDS.ABUNDANCE,
     name: '豊穣',
     kind: 'spell',
     cost: 0,
@@ -337,4 +370,4 @@ export const CARD_LIST = [
 
 export const CARD_BY_DEFINITION_ID = Object.fromEntries(
   CARD_LIST.map((card) => [card.definitionId, card]),
-) as Record<string, Card>
+) as Partial<Record<CardDefinitionId, Card>>

@@ -18,6 +18,7 @@ export { GameManager, assertValidGameState } from './GameManager'
 export { CreatureRules, describeAbility, formatAbility } from './CreatureRules'
 export {
   CARD_BY_DEFINITION_ID,
+  CARD_DEFINITION_IDS,
   CARD_LIST,
   CREATURE_CARDS,
   SPELL_CARDS,
@@ -42,6 +43,7 @@ export type {
   Card,
   CardBase,
   CardColor,
+  CardDefinitionId,
   CardInstance,
   CardInstanceId,
   CardKind,

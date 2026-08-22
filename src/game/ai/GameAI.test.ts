@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { CARD_DEFINITION_IDS } from '../cards'
 import { GameManager } from '../GameManager'
 import type { CardInstanceId, GameState, PlayerId } from '../types'
 import { AiTurnActionMemory, GameAI } from './GameAI'
@@ -17,6 +18,7 @@ import {
 } from './scoreComparison'
 
 const KEEP_ORDER_RANDOM = () => 1 - Number.EPSILON
+const CARD_ID = CARD_DEFINITION_IDS
 
 const createTestManager = (): GameManager => GameManager.create(KEEP_ORDER_RANDOM)
 
@@ -46,12 +48,12 @@ const createDeferredAttackDecisionManager = (): GameManager => {
   const assassin = findCardId(
     initial.state,
     'playerA',
-    'red-cost2-attack2-defense1-march1-assassin2',
+    CARD_ID.CRIMSON_BLADE_INFILTRATOR,
   )
   const capturer = findCardId(
     initial.state,
     'playerB',
-    'green-cost2-attack2-defense3-march0-capture1',
+    CARD_ID.VINE_SNARE_HUNTER,
   )
   const boardCardIds = new Set([assassin, capturer])
   const preparePlayer = (playerId: PlayerId) => {
@@ -93,17 +95,17 @@ const createMiningDilemmaManager = (): GameManager => {
   const playerAttacker = findCardId(
     manager.state,
     'playerB',
-    'red-cost4-attack5-defense2-march2',
+    CARD_ID.BEACON_HEAVY_CAVALRY,
   )
   const miner = findCardId(
     manager.state,
     'playerA',
-    'green-cost2-attack2-defense2-march1-mining1',
+    CARD_ID.GEODE_MINER,
   )
   const minerAttacker = findCardId(
     manager.state,
     'playerB',
-    'red-cost2-attack3-defense2-march1',
+    CARD_ID.SPARK_SWORDSMAN,
   )
   const boardCardIds = new Set([playerAttacker, miner, minerAttacker])
   const preparePlayer = (playerId: PlayerId) => {
@@ -144,13 +146,13 @@ const createDuplicateLethalDefenseManager = (): {
   const attackerId = findCardId(
     initial.state,
     'playerB',
-    'red-cost5-attack7-defense4-march2-vanish',
+    CARD_ID.EXHAUSTED_VOLCANO_DRAGON,
   )
   const defenderIds = Object.values(initial.state.cards)
     .filter(
       ({ ownerId, card }) =>
         ownerId === 'playerA' &&
-        card.definitionId === 'green-cost2-attack1-defense4-march0',
+        card.definitionId === CARD_ID.ROOTED_ANCIENT,
     )
     .map(({ id }) => id)
   if (defenderIds.length < 2) {
@@ -213,12 +215,12 @@ const createReturnFireDecisionManager = (
   const returnFire = findCardId(
     initial.state,
     'playerA',
-    'cost0-spell-return-fire',
+    CARD_ID.RETURN_FIRE,
   )
   const adjacentCreature = findCardId(
     initial.state,
     adjacentGroupOwnerId,
-    'red-cost5-attack7-defense4-march2-vanish',
+    CARD_ID.EXHAUSTED_VOLCANO_DRAGON,
   )
   const redDiscards = Object.values(initial.state.cards)
     .filter(
@@ -409,7 +411,7 @@ describe('AI evaluation', () => {
     const returnFire = findCardId(
       manager.state,
       'playerA',
-      'cost0-spell-return-fire',
+      CARD_ID.RETURN_FIRE,
     )
     const playerACardIds = Object.values(manager.state.cards)
       .filter(({ ownerId }) => ownerId === 'playerA')

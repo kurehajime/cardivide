@@ -5,7 +5,7 @@ import {
   isAdjacentInsertToAnchor,
   isForwardInsertFromAnchor,
 } from './boardQueries'
-import { CREATURE_CARDS } from './cards'
+import { CARD_DEFINITION_IDS, CREATURE_CARDS } from './cards'
 import type {
   CardInstanceId,
   CreatureCard,
@@ -15,6 +15,7 @@ import type {
 } from './types'
 
 const KEEP_ORDER_RANDOM = () => 1 - Number.EPSILON
+const CARD_ID = CARD_DEFINITION_IDS
 
 type BoardSpec = {
   cardId: CardInstanceId
@@ -124,12 +125,12 @@ describe('CreatureRules position modifiers', () => {
     const [loneWarrior] = findCardIds(
       initial.state,
       'playerA',
-      'red-cost2-attack2-defense1-march1-lone-warrior-2-0',
+      CARD_ID.SOLITARY_PEAK_SWORDSMAN,
     )
     const [enemyLeft, enemyRight] = findCardIds(
       initial.state,
       'playerB',
-      'red-cost2-attack3-defense2-march1',
+      CARD_ID.SPARK_SWORDSMAN,
       2,
     )
     let manager = configureManager(initial, {
@@ -152,7 +153,7 @@ describe('CreatureRules position modifiers', () => {
     const [assassin] = findCardIds(
       initial.state,
       'playerA',
-      'red-cost2-attack2-defense1-march1-assassin2',
+      CARD_ID.CRIMSON_BLADE_INFILTRATOR,
     )
     manager = configureManager(initial, { board: [{ cardId: assassin }] })
     expect(GameManager.getCreatureStats(manager, assassin).attack).toBe(4)
@@ -160,7 +161,7 @@ describe('CreatureRules position modifiers', () => {
     const [rearguardA] = findCardIds(
       initial.state,
       'playerA',
-      'green-cost2-attack2-defense2-march1-rearguard-0-2',
+      CARD_ID.ROOT_FORT_REARGUARD,
     )
     manager = configureManager(initial, {
       board: [{ cardId: enemyLeft }, { cardId: rearguardA }],
@@ -170,12 +171,12 @@ describe('CreatureRules position modifiers', () => {
     const [rearguardB] = findCardIds(
       initial.state,
       'playerB',
-      'green-cost2-attack2-defense2-march1-rearguard-0-2',
+      CARD_ID.ROOT_FORT_REARGUARD,
     )
     const [allyA] = findCardIds(
       initial.state,
       'playerA',
-      'green-cost2-attack2-defense3-march1',
+      CARD_ID.OAKBARK_SENTINEL,
     )
     manager = configureManager(initial, {
       board: [{ cardId: rearguardB }, { cardId: allyA }],
@@ -222,12 +223,12 @@ describe('CreatureRules position modifiers', () => {
     const [source] = findCardIds(
       initial.state,
       'playerA',
-      'red-cost2-attack2-defense1-march1-lone-warrior-2-0',
+      CARD_ID.SOLITARY_PEAK_SWORDSMAN,
     )
     const [enemyLeft, enemyRight] = findCardIds(
       initial.state,
       'playerB',
-      'red-cost2-attack3-defense2-march1',
+      CARD_ID.SPARK_SWORDSMAN,
       2,
     )
     let manager = configureManager(initial, {
@@ -271,12 +272,12 @@ describe('summon modifiers', () => {
     const [enemy] = findCardIds(
       initial.state,
       'playerB',
-      'red-cost2-attack3-defense2-march1',
+      CARD_ID.SPARK_SWORDSMAN,
     )
     const [rootedCreature] = findCardIds(
       initial.state,
       'playerA',
-      'green-cost2-attack1-defense4-march0',
+      CARD_ID.ROOTED_ANCIENT,
     )
     const manager = configureManager(initial, {
       board: [{ cardId: enemy }],
@@ -299,18 +300,18 @@ describe('summon modifiers', () => {
     const enemies = findCardIds(
       initial.state,
       'playerB',
-      'red-cost2-attack3-defense2-march1',
+      CARD_ID.SPARK_SWORDSMAN,
       3,
     )
     const [advancedAlly] = findCardIds(
       initial.state,
       'playerA',
-      'green-cost2-attack2-defense3-march1',
+      CARD_ID.OAKBARK_SENTINEL,
     )
     const [summonCard] = findCardIds(
       initial.state,
       'playerA',
-      'red-cost2-attack3-defense2-march1',
+      CARD_ID.SPARK_SWORDSMAN,
     )
     let manager = configureManager(initial, {
       board: [
@@ -341,18 +342,18 @@ describe('summon modifiers', () => {
     const mirroredEnemies = findCardIds(
       initial.state,
       'playerA',
-      'red-cost2-attack3-defense2-march1',
+      CARD_ID.SPARK_SWORDSMAN,
       3,
     )
     const [advancedAllyB] = findCardIds(
       initial.state,
       'playerB',
-      'green-cost2-attack2-defense3-march1',
+      CARD_ID.OAKBARK_SENTINEL,
     )
     const [summonCardB] = findCardIds(
       initial.state,
       'playerB',
-      'red-cost2-attack3-defense2-march1',
+      CARD_ID.SPARK_SWORDSMAN,
     )
     manager = configureManager(initial, {
       board: [
@@ -385,12 +386,12 @@ describe('summon modifiers', () => {
     const [captureB] = findCardIds(
       initial.state,
       'playerB',
-      'green-cost4-attack4-defense5-march1-capture2',
+      CARD_ID.FOREST_CAGE_BEASTMASTER,
     )
     const [summonA] = findCardIds(
       initial.state,
       'playerA',
-      'red-cost2-attack3-defense2-march1',
+      CARD_ID.SPARK_SWORDSMAN,
     )
     let manager = configureManager(initial, {
       board: [{ cardId: captureB }],
@@ -404,12 +405,12 @@ describe('summon modifiers', () => {
     const [captureA] = findCardIds(
       initial.state,
       'playerA',
-      'green-cost2-attack2-defense3-march0-capture1',
+      CARD_ID.VINE_SNARE_HUNTER,
     )
     const [summonB] = findCardIds(
       initial.state,
       'playerB',
-      'red-cost2-attack3-defense2-march1',
+      CARD_ID.SPARK_SWORDSMAN,
     )
     manager = configureManager(initial, {
       board: [{ cardId: captureA }],
@@ -428,17 +429,17 @@ describe('summon modifiers', () => {
     const [enemy] = findCardIds(
       initial.state,
       'playerB',
-      'red-cost2-attack3-defense2-march1',
+      CARD_ID.SPARK_SWORDSMAN,
     )
     const [beachhead] = findCardIds(
       initial.state,
       'playerA',
-      'blue-cost2-attack2-defense1-march2-beachhead1',
+      CARD_ID.TIDEFRONT_FORTIFIER,
     )
     const [summonCard] = findCardIds(
       initial.state,
       'playerA',
-      'red-cost2-attack3-defense2-march1',
+      CARD_ID.SPARK_SWORDSMAN,
     )
     let manager = configureManager(initial, {
       board: [{ cardId: enemy }, { cardId: beachhead }],
@@ -472,13 +473,13 @@ describe('keep-up mana abilities', () => {
     const [enemyLeft, enemyRight] = findCardIds(
       initial.state,
       'playerB',
-      'red-cost2-attack3-defense2-march1',
+      CARD_ID.SPARK_SWORDSMAN,
       2,
     )
     const [minerA, minerB] = findCardIds(
       initial.state,
       'playerA',
-      'green-cost2-attack2-defense2-march1-mining1',
+      CARD_ID.GEODE_MINER,
       2,
     )
     let manager = configureManager(initial, {
@@ -504,13 +505,13 @@ describe('combat abilities', () => {
     const [attackingRear, attackingFront] = findCardIds(
       initial.state,
       'playerA',
-      'red-cost2-attack3-defense2-march1',
+      CARD_ID.SPARK_SWORDSMAN,
       2,
     )
     const [counter] = findCardIds(
       initial.state,
       'playerB',
-      'blue-cost2-attack3-defense1-march1-counter',
+      CARD_ID.SURGING_DUELIST,
     )
     let manager = configureManager(initial, {
       board: [
@@ -549,12 +550,12 @@ describe('combat abilities', () => {
     const [attacker] = findCardIds(
       initial.state,
       'playerA',
-      'red-cost5-attack7-defense4-march2-vanish',
+      CARD_ID.EXHAUSTED_VOLCANO_DRAGON,
     )
     const [vanishingDefender] = findCardIds(
       initial.state,
       'playerB',
-      'blue-cost5-attack6-defense6-march4-vanish',
+      CARD_ID.EPHEMERAL_DEEP_WHALE,
     )
     let manager = configureManager(initial, {
       board: [{ cardId: attacker }, { cardId: vanishingDefender }],
@@ -575,7 +576,7 @@ describe('activated abilities', () => {
     const [source] = findCardIds(
       initial.state,
       'playerA',
-      'red-cost2-attack3-defense1-march1-withdraw',
+      CARD_ID.FORMATION_CLEARING_MERCENARY,
     )
     let manager = configureManager(initial, {
       board: [{ cardId: source }],
@@ -604,7 +605,7 @@ describe('activated abilities', () => {
     const [source] = findCardIds(
       initial.state,
       'playerA',
-      'blue-cost2-attack2-defense1-march2-return',
+      CARD_ID.MIST_RETURNING_MESSENGER,
     )
     let manager = configureManager(initial, {
       board: [{ cardId: source }],
@@ -622,7 +623,7 @@ describe('activated abilities', () => {
     const [fullHandSource] = findCardIds(
       initial.state,
       'playerA',
-      'blue-cost4-attack4-defense2-march2-return',
+      CARD_ID.WAVE_RETURN_MAGE,
     )
     const extraHandCard = initial.state.players.playerA.deck[0]
     manager = configureManager(initial, {
@@ -644,7 +645,7 @@ describe('activated abilities', () => {
     const [source] = findCardIds(
       initial.state,
       'playerA',
-      'blue-cost2-attack2-defense1-march2-return',
+      CARD_ID.MIST_RETURNING_MESSENGER,
     )
     let manager = configureManager(initial, {
       board: [{ cardId: source }],
