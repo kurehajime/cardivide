@@ -257,7 +257,7 @@
 .board-lane-grid::-webkit-scrollbar,
 .hand-panel::-webkit-scrollbar {
   width: 16px;
-  height: 16px;
+  height: 48px;
 }
 
 .board-panel::-webkit-scrollbar-track,
@@ -493,6 +493,7 @@
 }
 
 .board-spell {
+  position: relative;
   min-width: 0;
   display: grid;
   place-items: center;
@@ -507,6 +508,38 @@
   border: 2px dashed rgb(255 255 255 / 45%);
   background: transparent;
   box-shadow: none;
+}
+
+.spell-exile-token {
+  position: absolute;
+  z-index: 2;
+  top: 8px;
+  right: 4px;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 2px solid rgb(255 255 255 / 82%);
+  border-radius: 50%;
+  box-shadow: 0 4px 9px rgb(31 19 12 / 46%);
+  color: #fff;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 17px;
+  font-weight: 900;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.spell-exile-token-red {
+  background: #b84c3e;
+}
+
+.spell-exile-token-blue {
+  background: #3f73b8;
+}
+
+.spell-exile-token-green {
+  background: #43815b;
 }
 
 .board-lane-scroll {

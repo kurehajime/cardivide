@@ -55,6 +55,12 @@ const DAMAGE_MARKER_STYLE = {
   '--damage-marker-icon': `url("${import.meta.env.BASE_URL}damage.svg")`,
 } as CSSProperties
 
+const CARD_COLOR_LABELS = {
+  red: '赤',
+  blue: '青',
+  green: '緑',
+} as const
+
 const getSummonSlotState = (option?: SummonOption): SummonSlotState | null => {
   if (!option) {
     return null
@@ -89,60 +95,72 @@ const getSummonSlotTitle = (option?: SummonOption): string | undefined => {
   return `進軍可能 / コスト ${option.effectiveCost}`
 }
 
-const BoardPlayer = ({ player, cards, damage }: BoardPlayerProps) => (
-  <section className="board-player" aria-label={`${player.name} field`}>
-    <dl className="board-player-stats">
-      <div>
-        <dt>HP</dt>
-        <dd>{player.hp}</dd>
-      </div>
-      <div>
-        <dt>Mana</dt>
-        <dd>{player.mana}</dd>
-      </div>
-    </dl>
-    <motion.div
-      className="board-endpoint"
-      data-player-id={player.id}
-      initial={false}
-      animate={
-        damage !== null && damage >= 1
-          ? {
-              x: [0, -8, 7, -5, 4, -2, 0],
-              y: [0, 1, -1, 1, -1, 0, 0],
-            }
-          : { x: 0, y: 0 }
-      }
-      transition={{ duration: 0.34, ease: 'easeInOut' }}
-    >
-      {player.name}
-      {damage !== null && (
-        <span
-          className="damage-marker player-damage-marker"
-          role="status"
-          aria-label={`プレイヤーに${damage}ダメージ`}
-          style={DAMAGE_MARKER_STYLE}
-        >
-          {damage}
-        </span>
-      )}
-    </motion.div>
-    <GraveyardSummary player={player} cards={cards} />
-    <div
-      className={`board-spell ${player.placedSpell === null ? 'board-spell-empty' : ''}`}
-      aria-label={`${player.name} spell`}
-    >
-      <CardView
-        card={
-          player.placedSpell === null
-            ? null
-            : cards[player.placedSpell.cardId].card
+const BoardPlayer = ({ player, cards, damage }: BoardPlayerProps) => {
+  const placedSpell = player.placedSpell
+  const placedSpellCard =
+    placedSpell === null ? null : cards[placedSpell.cardId].card
+  const exileColor =
+    placedSpellCard?.kind === 'spell'
+      ? placedSpellCard.effect.exileColor
+      : null
+
+  return (
+    <section className="board-player" aria-label={`${player.name} field`}>
+      <dl className="board-player-stats">
+        <div>
+          <dt>HP</dt>
+          <dd>{player.hp}</dd>
+        </div>
+        <div>
+          <dt>Mana</dt>
+          <dd>{player.mana}</dd>
+        </div>
+      </dl>
+      <motion.div
+        className="board-endpoint"
+        data-player-id={player.id}
+        initial={false}
+        animate={
+          damage !== null && damage >= 1
+            ? {
+                x: [0, -8, 7, -5, 4, -2, 0],
+                y: [0, 1, -1, 1, -1, 0, 0],
+              }
+            : { x: 0, y: 0 }
         }
-        compact
-      />
-    </div>
-  </section>
-)
+        transition={{ duration: 0.34, ease: 'easeInOut' }}
+      >
+        {player.name}
+        {damage !== null && (
+          <span
+            className="damage-marker player-damage-marker"
+            role="status"
+            aria-label={`プレイヤーに${damage}ダメージ`}
+            style={DAMAGE_MARKER_STYLE}
+          >
+            {damage}
+          </span>
+        )}
+      </motion.div>
+      <GraveyardSummary player={player} cards={cards} />
+      <div
+        className={`board-spell ${placedSpell === null ? 'board-spell-empty' : ''}`}
+        aria-label={`${player.name} spell`}
+      >
+        <CardView card={placedSpellCard} compact />
+        {placedSpell !== null && exileColor !== null && (
+          <span
+            className={`spell-exile-token spell-exile-token-${exileColor}`}
+            role="status"
+            aria-label={`${CARD_COLOR_LABELS[exileColor]}のクリーチャーを${placedSpell.effectAmount}枚除外`}
+          >
+            {placedSpell.effectAmount}
+          </span>
+        )}
+      </div>
+    </section>
+  )
+}
 
 type BoardGroupButtonProps = {
   group: EffectiveBoardGroup
