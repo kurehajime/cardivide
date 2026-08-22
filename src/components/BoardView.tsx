@@ -13,6 +13,7 @@ import type {
   SummonOption,
 } from '../game'
 import CardView from './CardView'
+import GraveyardSummary from './GraveyardSummary'
 
 export type BoardAttackAnimation = {
   id: number
@@ -124,6 +125,7 @@ const BoardPlayer = ({ player, cards, damage }: BoardPlayerProps) => (
         </span>
       )}
     </motion.div>
+    <GraveyardSummary player={player} cards={cards} />
     <div className="board-spell" aria-label={`${player.name} spell`}>
       <CardView
         card={

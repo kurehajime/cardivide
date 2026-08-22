@@ -443,6 +443,55 @@
   text-align: center;
 }
 
+.graveyard-summary {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 1px 0;
+}
+
+.graveyard-icon {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 2px rgb(31 19 12 / 55%));
+}
+
+.graveyard-counts {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.graveyard-count {
+  width: 23px;
+  height: 23px;
+  display: grid;
+  flex: 0 0 23px;
+  place-items: center;
+  border-radius: 50%;
+  box-shadow: 0 2px 4px rgb(31 19 12 / 38%);
+  color: #fff;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.graveyard-count-red {
+  background: #b84c3e;
+}
+
+.graveyard-count-blue {
+  background: #3f73b8;
+}
+
+.graveyard-count-green {
+  background: #43815b;
+}
+
 .board-spell {
   min-width: 0;
   display: grid;
