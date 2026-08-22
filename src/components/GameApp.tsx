@@ -14,7 +14,7 @@ import HandView from './HandView'
 import PhaseBar from './PhaseBar'
 
 const COMBAT_EFFECT_DURATION_MS = 500
-const AI_ACTION_DELAY_MS = 300
+const AI_ACTION_DELAY_MS = 700
 const AI_PLAYER_ID = 'playerB'
 
 type GameUiState = {
