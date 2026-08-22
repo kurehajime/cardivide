@@ -386,8 +386,13 @@ const getPlayerBarrierForState = (state: GameState, playerId: PlayerId): number 
       : 0)
 }
 
-const isAttackPreventedForState = (state: GameState, playerId: PlayerId): boolean =>
+const getManaRetainedAfterTurnEndForState = (
+  state: GameState,
+  playerId: PlayerId,
+): number =>
   getPlacedSpellCard(state, playerId)?.effect.type === 'abundance'
+    ? 0
+    : state.players[playerId].mana
 
 const exileDiscardedCreatures = (
   state: GameState,
@@ -572,8 +577,13 @@ const resolvePendingCombatState = (state: GameState): GameState => {
 }
 
 const endTurnState = (state: GameState): GameState => {
+  const endingPlayer = state.players[state.activePlayerId]
+  const afterEndTurnManaEffect = replacePlayer(state, {
+    ...endingPlayer,
+    mana: getManaRetainedAfterTurnEndForState(state, state.activePlayerId),
+  })
   const afterImmediateExpiration = expirePlacedSpell(
-    state,
+    afterEndTurnManaEffect,
     state.activePlayerId,
     'immediate',
   )
@@ -809,6 +819,13 @@ export class GameManager {
     return getPlayerBarrierForState(manager.state, playerId)
   }
 
+  static getManaRetainedAfterTurnEnd(
+    manager: GameManager,
+    playerId: PlayerId,
+  ): number {
+    return getManaRetainedAfterTurnEndForState(manager.state, playerId)
+  }
+
   static getDestructionManaRefund(
     manager: GameManager,
     cardId: CardInstanceId,
@@ -816,8 +833,8 @@ export class GameManager {
     return getDestructionManaRefundForState(manager.state, cardId)
   }
 
-  static canCurrentPlayerAttack(manager: GameManager): boolean {
-    return !isAttackPreventedForState(manager.state, manager.state.activePlayerId)
+  static canCurrentPlayerAttack(_manager: GameManager): boolean {
+    return true
   }
 
   static countReachableSummonPositions(

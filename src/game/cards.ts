@@ -359,7 +359,7 @@ export const SPELL_CARDS = [
     cost: 0,
     duration: 'untilTurnEnd',
     effect: { type: 'abundance', exileColor: 'green' },
-    text: '自分の捨て札にあるすべての緑クリーチャーを除外し、その枚数に等しいマナを得る。ターン終了時まで攻撃できない。',
+    text: '自分の捨て札にあるすべての緑クリーチャーを除外し、その枚数に等しいマナを得る。ターン終了時にすべてのマナを失う。',
   },
 ] satisfies SpellCard[]
 

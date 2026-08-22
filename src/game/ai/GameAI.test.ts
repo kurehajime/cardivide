@@ -440,6 +440,51 @@ describe('AI evaluation', () => {
     )
   })
 
+  it('does not value mana that abundance removes at turn end', () => {
+    const initial = createTestManager()
+    const abundance = findCardId(
+      initial.state,
+      'playerA',
+      CARD_ID.ABUNDANCE,
+    )
+    const withAbundance = withState(initial, (state) => {
+      const player = state.players.playerA
+      return {
+        ...state,
+        players: {
+          ...state.players,
+          playerA: {
+            ...player,
+            mana: 4,
+            deck: player.deck.filter((cardId) => cardId !== abundance),
+            hand: player.hand.filter((cardId) => cardId !== abundance),
+            discard: player.discard.filter((cardId) => cardId !== abundance),
+            exile: player.exile.filter((cardId) => cardId !== abundance),
+            placedSpell: { cardId: abundance, effectAmount: 2 },
+          },
+          playerB: {
+            ...state.players.playerB,
+            mana: 0,
+          },
+        },
+      }
+    })
+    const withoutAbundance = withState(withAbundance, (state) => ({
+      ...state,
+      players: {
+        ...state.players,
+        playerA: {
+          ...state.players.playerA,
+          discard: [...state.players.playerA.discard, abundance],
+          placedSpell: null,
+        },
+      },
+    }))
+
+    expect(evaluateBase(withAbundance, 'playerA').mana).toBe(0)
+    expect(evaluateBase(withoutAbundance, 'playerA').mana).toBe(4)
+  })
+
   it('excludes ignored cards from hand reserve and deployable hand value', () => {
     const manager = createTestManager()
     const hand = manager.state.players.playerA.hand

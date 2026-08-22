@@ -64,7 +64,10 @@ export const evaluateBase = (
   const aiPlayer = manager.state.players[aiPlayerId]
   const opponent = manager.state.players[opponentId]
   const hp = (aiPlayer.hp - opponent.hp) * AI_EVALUATION_PARAMETERS.hp
-  const mana = (aiPlayer.mana - opponent.mana) * AI_EVALUATION_PARAMETERS.mana
+  const mana =
+    (GameManager.getManaRetainedAfterTurnEnd(manager, aiPlayerId) -
+      GameManager.getManaRetainedAfterTurnEnd(manager, opponentId)) *
+    AI_EVALUATION_PARAMETERS.mana
   const boardMaterial = manager.state.board.creatures.reduce((total, creature) => {
     const instance = manager.state.cards[creature.cardId]
     const direction = instance.ownerId === aiPlayerId ? 1 : -1

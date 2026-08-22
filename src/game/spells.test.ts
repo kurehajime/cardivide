@@ -243,7 +243,7 @@ describe('spell rules', () => {
     expect(GameManager.getPlayerBarrier(manager, 'playerA')).toBe(2)
   })
 
-  it('gains abundance mana, prevents attacks, and can be overwritten by another duration spell', () => {
+  it('gains abundance mana, allows attacks, and can be overwritten by another duration spell', () => {
     const initial = GameManager.create(KEEP_ORDER_RANDOM)
     const abundance = findDefinition(
       initial.state,
@@ -284,8 +284,7 @@ describe('spell rules', () => {
     expect(manager.state.players.playerA.mana).toBe(3)
     expect(manager.state.players.playerA.exile).toEqual(greenDiscards)
     expect(manager.state.players.playerA.discard).toEqual([redDiscard])
-    expect(GameManager.canCurrentPlayerAttack(manager)).toBe(false)
-    expect(() => GameManager.attackGroup(manager, 0, 0)).toThrow(/cannot attack/)
+    expect(GameManager.canCurrentPlayerAttack(manager)).toBe(true)
 
     manager = GameManager.playSpell(manager, bubbleWall)
     expect(manager.state.players.playerA.placedSpell).toEqual({
@@ -303,11 +302,12 @@ describe('spell rules', () => {
     manager = GameManager.passPhase(manager)
 
     expect(manager.state.activePlayerId).toBe('playerB')
+    expect(manager.state.players.playerA.mana).toBe(3)
     expect(manager.state.players.playerA.placedSpell?.cardId).toBe(bubbleWall)
     expect(() => assertValidGameState(manager.state)).not.toThrow()
   })
 
-  it('expires abundance at the end of its caster turn', () => {
+  it('expires abundance and removes all remaining mana at the end of its caster turn', () => {
     const initial = GameManager.create(KEEP_ORDER_RANDOM)
     const abundance = findDefinition(
       initial.state,
@@ -326,14 +326,18 @@ describe('spell rules', () => {
     let manager = configureState(initial, {
       hands: { playerA: [abundance] },
       discards: { playerA: [greenDiscard] },
+      mana: { playerA: 2 },
     })
 
     manager = GameManager.playSpell(manager, abundance)
+    expect(manager.state.players.playerA.mana).toBe(3)
+    expect(GameManager.canCurrentPlayerAttack(manager)).toBe(true)
     manager = GameManager.passPhase(manager)
     manager = GameManager.passPhase(manager)
     manager = GameManager.passPhase(manager)
 
     expect(manager.state.activePlayerId).toBe('playerB')
+    expect(manager.state.players.playerA.mana).toBe(0)
     expect(manager.state.players.playerA.placedSpell).toBeNull()
     expect(manager.state.players.playerA.discard).toContain(abundance)
     expect(manager.state.players.playerA.exile).toContain(greenDiscard)
