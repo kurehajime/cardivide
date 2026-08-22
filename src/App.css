@@ -503,6 +503,12 @@
   box-shadow: 0 9px 20px rgb(18 22 19 / 48%);
 }
 
+.board-spell-empty > .card-empty {
+  border: 2px dashed rgb(255 255 255 / 45%);
+  background: transparent;
+  box-shadow: none;
+}
+
 .board-lane-scroll {
   min-width: 0;
   overflow-x: auto;

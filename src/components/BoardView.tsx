@@ -126,7 +126,10 @@ const BoardPlayer = ({ player, cards, damage }: BoardPlayerProps) => (
       )}
     </motion.div>
     <GraveyardSummary player={player} cards={cards} />
-    <div className="board-spell" aria-label={`${player.name} spell`}>
+    <div
+      className={`board-spell ${player.placedSpell === null ? 'board-spell-empty' : ''}`}
+      aria-label={`${player.name} spell`}
+    >
       <CardView
         card={
           player.placedSpell === null
@@ -134,7 +137,6 @@ const BoardPlayer = ({ player, cards, damage }: BoardPlayerProps) => (
             : cards[player.placedSpell.cardId].card
         }
         compact
-        label="魔法"
       />
     </div>
   </section>
