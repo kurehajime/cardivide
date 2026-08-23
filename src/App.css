@@ -247,13 +247,13 @@
   font-weight: 800;
 }
 
-.setup-difficulty-options input:checked + span {
+.setup-difficulty-options input:checked+span {
   background: #26342f;
   box-shadow: 0 2px 6px rgb(28 39 34 / 28%);
   color: #f8fbf5;
 }
 
-.setup-difficulty-options input:focus-visible + span {
+.setup-difficulty-options input:focus-visible+span {
   outline: 3px solid #276fbf;
   outline-offset: 2px;
 }
@@ -299,7 +299,7 @@
   pointer-events: none;
 }
 
-.game-shell > * {
+.game-shell>* {
   position: relative;
   z-index: 1;
 }
@@ -565,13 +565,40 @@
   font-size: 13px;
   font-weight: 700;
   text-align: center;
+  overflow: hidden;
+}
+
+.board-player-icon {
+  position: absolute;
+  z-index: 0;
+  top: 50%;
+  left: 50%;
+  width: 80px;
+  height: 80px;
+  opacity: 0.22;
+  object-fit: contain;
+  pointer-events: none;
+  transform-origin: center;
+}
+
+.board-player-icon-playerA {
+  transform: translate(-50%, -50%) rotate(8deg);
+}
+
+.board-player-icon-playerB {
+  transform: translate(-50%, -50%) rotate(-8deg) scaleX(-1);
 }
 
 .board-player-identity {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
+  text-shadow:
+    0 1px 3px rgb(10 16 14 / 95%),
+    0 0 9px rgb(10 16 14 / 82%);
 }
 
 .board-player-barrier {
@@ -637,12 +664,12 @@
   place-items: center;
 }
 
-.board-spell > .card-view {
+.board-spell>.card-view {
   width: min(140px, 100%);
   box-shadow: 0 9px 20px rgb(18 22 19 / 48%);
 }
 
-.board-spell-empty > .card-empty {
+.board-spell-empty>.card-empty {
   border: 2px dashed rgb(255 255 255 / 45%);
   background: transparent;
   box-shadow: none;
@@ -728,7 +755,7 @@
   will-change: transform;
 }
 
-.board-card-content > .card-view {
+.board-card-content>.card-view {
   width: 100%;
   box-shadow: 0 9px 20px rgb(18 22 19 / 48%);
 }
@@ -840,13 +867,11 @@
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgb(255 255 255 / 100%) 0 12%,
-    rgb(255 255 255 / 88%) 24%,
-    rgb(255 255 255 / 42%) 48%,
-    rgb(255 255 255 / 0%) 74%
-  );
+  background: radial-gradient(circle,
+      rgb(255 255 255 / 100%) 0 12%,
+      rgb(255 255 255 / 88%) 24%,
+      rgb(255 255 255 / 42%) 48%,
+      rgb(255 255 255 / 0%) 74%);
   filter: drop-shadow(0 0 8px rgb(255 255 255 / 90%));
   will-change: transform, opacity;
 }
@@ -1079,7 +1104,7 @@
   min-width: 0;
 }
 
-.hand-card-main > .hand-card-button {
+.hand-card-main>.hand-card-button {
   width: 100%;
 }
 
@@ -1162,7 +1187,7 @@
   transition: top 140ms ease;
 }
 
-.hand-card-button > .card-view {
+.hand-card-button>.card-view {
   width: 100%;
   height: 100%;
 }
@@ -1206,7 +1231,7 @@
   cursor: not-allowed;
 }
 
-.hand-card-unavailable > .card-view {
+.hand-card-unavailable>.card-view {
   filter: grayscale(0.85);
   opacity: 0.42;
 }

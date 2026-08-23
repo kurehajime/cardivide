@@ -58,6 +58,8 @@ const DAMAGE_MARKER_STYLE = {
   '--damage-marker-icon': `url("${import.meta.env.BASE_URL}damage.svg")`,
 } as CSSProperties
 
+const PLAYER_ICON_URL = `${import.meta.env.BASE_URL}player.svg`
+
 const CARD_COLOR_LABELS = {
   red: '赤',
   blue: '青',
@@ -160,6 +162,12 @@ const BoardPlayer = ({ player, cards, barrier, damage }: BoardPlayerProps) => {
         }
         transition={{ duration: shakeDuration, ease: 'easeInOut' }}
       >
+        <img
+          className={`board-player-icon board-player-icon-${player.id}`}
+          src={PLAYER_ICON_URL}
+          alt=""
+          aria-hidden="true"
+        />
         <span className="board-player-identity">
           <span>{player.name}</span>
           <small className="board-player-barrier">(シールド:{barrier})</small>
