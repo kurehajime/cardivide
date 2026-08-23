@@ -52,7 +52,7 @@ export type SpellDuration = 'immediate' | 'untilTurnEnd' | 'untilNextTurnStart'
 
 export type SpellEffect =
   | { type: 'returnFire'; exileColor: 'red' }
-  | { type: 'bubbleWall'; exileColor: 'blue' }
+  | { type: 'lifeDroplet'; exileColor: 'blue' }
   | { type: 'abundance'; exileColor: 'green' }
 
 export type SpellCard = CardBase & {

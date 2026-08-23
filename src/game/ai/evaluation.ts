@@ -18,6 +18,7 @@ export const AI_EVALUATION_PARAMETERS = {
   boardMaterial: 1,
   creatureHandReserve: 0.3,
   spellHandReserve: 2,
+  lifeDropletHoldMultiplier: 0.5,
   upkeepManaMultiplier: 1.2,
   captureMarch: 1,
   capturePosition: 0.5,
@@ -73,11 +74,11 @@ export const evaluateBase = (
     const direction = instance.ownerId === aiPlayerId ? 1 : -1
     return total + direction * instance.card.cost * AI_EVALUATION_PARAMETERS.boardMaterial
   }, 0)
-  const handReserve = aiPlayer.hand.reduce(
+  const evaluatedHand = aiPlayer.hand.filter(
+    (cardId) => !ignoredHandCardIds.has(cardId),
+  )
+  const baseHandReserve = evaluatedHand.reduce(
     (total, cardId) => {
-      if (ignoredHandCardIds.has(cardId)) {
-        return total
-      }
       const card = manager.state.cards[cardId].card
       return (
         total +
@@ -88,6 +89,19 @@ export const evaluateBase = (
     },
     0,
   )
+  const hasLifeDroplet = evaluatedHand.some((cardId) => {
+    const card = manager.state.cards[cardId].card
+    return card.kind === 'spell' && card.effect.type === 'lifeDroplet'
+  })
+  const lifeDropletHoldValue = hasLifeDroplet
+    ? aiPlayer.discard.reduce((total, cardId) => {
+        const card = manager.state.cards[cardId].card
+        return total + Number(card.kind === 'creature' && card.color === 'blue')
+      }, 0) *
+      AI_EVALUATION_PARAMETERS.hp *
+      AI_EVALUATION_PARAMETERS.lifeDropletHoldMultiplier
+    : 0
+  const handReserve = baseHandReserve + lifeDropletHoldValue
   const upkeepMana =
     (GameManager.getKeepUpManaBonus(manager, aiPlayerId) -
       GameManager.getKeepUpManaBonus(manager, opponentId)) *

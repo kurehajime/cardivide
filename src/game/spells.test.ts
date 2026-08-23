@@ -28,6 +28,7 @@ type ConfiguredState = {
   hands?: Partial<Record<PlayerId, CardInstanceId[]>>
   discards?: Partial<Record<PlayerId, CardInstanceId[]>>
   board?: CardInstanceId[]
+  hp?: Partial<Record<PlayerId, number>>
   mana?: Partial<Record<PlayerId, number>>
 }
 
@@ -37,6 +38,7 @@ const configureState = (
     hands = {},
     discards = {},
     board = [],
+    hp = {},
     mana = {},
   }: ConfiguredState,
 ): GameManager => {
@@ -52,6 +54,7 @@ const configureState = (
       .map(({ id }) => id)
     return {
       ...player,
+      hp: hp[playerId] ?? player.hp,
       mana: mana[playerId] ?? 0,
       deck: ownedUnmovedCards,
       hand: hands[playerId] ?? [],
@@ -194,13 +197,18 @@ describe('spell rules', () => {
     expect(() => assertValidGameState(manager.state)).not.toThrow()
   })
 
-  it('keeps bubble wall through the opponent turn and expires it at the next own turn', () => {
+  it('heals with life droplet, keeps its barrier through the opponent turn, and expires it at the next own turn', () => {
     const initial = GameManager.create(KEEP_ORDER_RANDOM)
-    const bubbleWall = findDefinition(
+    const lifeDroplet = findDefinition(
       initial.state,
       'playerA',
-      CARD_ID.BUBBLE_WALL,
+      CARD_ID.LIFE_DROPLET,
     )
+    expect(initial.state.cards[lifeDroplet].card).toMatchObject({
+      name: '生命の雫',
+      kind: 'spell',
+      effect: { type: 'lifeDroplet', exileColor: 'blue' },
+    })
     const blueDiscards = findCardIds(
       initial.state,
       'playerA',
@@ -216,14 +224,16 @@ describe('spell rules', () => {
       CARD_ID.EXHAUSTED_VOLCANO_DRAGON,
     )
     let manager = configureState(initial, {
-      hands: { playerA: [bubbleWall] },
+      hands: { playerA: [lifeDroplet] },
       discards: { playerA: blueDiscards },
       board: [attacker],
+      hp: { playerA: 10 },
     })
 
-    manager = GameManager.playSpell(manager, bubbleWall)
+    manager = GameManager.playSpell(manager, lifeDroplet)
+    expect(manager.state.players.playerA.hp).toBe(12)
     expect(manager.state.players.playerA.placedSpell).toEqual({
-      cardId: bubbleWall,
+      cardId: lifeDroplet,
       effectAmount: 2,
     })
     expect(GameManager.getPlayerBarrier(manager, 'playerA')).toBe(4)
@@ -239,7 +249,7 @@ describe('spell rules', () => {
 
     expect(manager.state.activePlayerId).toBe('playerA')
     expect(manager.state.players.playerA.placedSpell).toBeNull()
-    expect(manager.state.players.playerA.discard).toContain(bubbleWall)
+    expect(manager.state.players.playerA.discard).toContain(lifeDroplet)
     expect(GameManager.getPlayerBarrier(manager, 'playerA')).toBe(2)
   })
 
@@ -250,10 +260,10 @@ describe('spell rules', () => {
       'playerA',
       CARD_ID.ABUNDANCE,
     )
-    const bubbleWall = findDefinition(
+    const lifeDroplet = findDefinition(
       initial.state,
       'playerA',
-      CARD_ID.BUBBLE_WALL,
+      CARD_ID.LIFE_DROPLET,
     )
     const greenDiscards = findCardIds(
       initial.state,
@@ -274,7 +284,7 @@ describe('spell rules', () => {
       2,
     )
     let manager = configureState(initial, {
-      hands: { playerA: [abundance, bubbleWall] },
+      hands: { playerA: [abundance, lifeDroplet] },
       discards: { playerA: [...greenDiscards, redDiscard] },
       board: [attacker],
     })
@@ -286,9 +296,9 @@ describe('spell rules', () => {
     expect(manager.state.players.playerA.discard).toEqual([redDiscard])
     expect(GameManager.canCurrentPlayerAttack(manager)).toBe(true)
 
-    manager = GameManager.playSpell(manager, bubbleWall)
+    manager = GameManager.playSpell(manager, lifeDroplet)
     expect(manager.state.players.playerA.placedSpell).toEqual({
-      cardId: bubbleWall,
+      cardId: lifeDroplet,
       effectAmount: 0,
     })
     expect(manager.state.players.playerA.discard).toEqual([redDiscard, abundance])
@@ -303,7 +313,7 @@ describe('spell rules', () => {
 
     expect(manager.state.activePlayerId).toBe('playerB')
     expect(manager.state.players.playerA.mana).toBe(3)
-    expect(manager.state.players.playerA.placedSpell?.cardId).toBe(bubbleWall)
+    expect(manager.state.players.playerA.placedSpell?.cardId).toBe(lifeDroplet)
     expect(() => assertValidGameState(manager.state)).not.toThrow()
   })
 

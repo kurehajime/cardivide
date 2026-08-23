@@ -29,7 +29,7 @@ export const CARD_DEFINITION_IDS = {
   FOREST_CAGE_BEASTMASTER: '45fec150-1a32-4a7f-b7b4-be238484324e',
   LEYLINE_MINING_GIANT: 'd0d92b6e-55f7-4f1b-8023-bc3b067400ae',
   RETURN_FIRE: '747911c4-29db-4fbc-a056-fb97b29c275f',
-  BUBBLE_WALL: 'f76eb155-8b41-401d-aa94-83ebcdcaec73',
+  LIFE_DROPLET: 'f76eb155-8b41-401d-aa94-83ebcdcaec73',
   ABUNDANCE: 'f1f9c2ec-1db5-46e3-b6f0-5ca0ef958bdb',
 } as const satisfies Record<string, CardDefinitionId>
 
@@ -344,13 +344,13 @@ export const SPELL_CARDS = [
     text: '自分の捨て札にあるすべての赤クリーチャーを除外する。自プレイヤーに隣接するグループへ、除外した枚数に等しいダメージを与える。このダメージは通常攻撃と同じように伝播・減衰する。',
   },
   {
-    definitionId: CARD_DEFINITION_IDS.BUBBLE_WALL,
-    name: '泡の壁',
+    definitionId: CARD_DEFINITION_IDS.LIFE_DROPLET,
+    name: '生命の雫',
     kind: 'spell',
     cost: 0,
     duration: 'untilNextTurnStart',
-    effect: { type: 'bubbleWall', exileColor: 'blue' },
-    text: '自分の捨て札にあるすべての青クリーチャーを除外する。次の自分のターン開始まで、自プレイヤーのバリアを除外した枚数だけ増やす。',
+    effect: { type: 'lifeDroplet', exileColor: 'blue' },
+    text: '自分の捨て札にあるすべての青クリーチャーを除外する。除外した枚数に等しいHPを回復する。次の自分のターン開始まで、自プレイヤーのバリアを除外した枚数だけ増やす。',
   },
   {
     definitionId: CARD_DEFINITION_IDS.ABUNDANCE,

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { CARD_DEFINITION_IDS } from '../cards'
 import { GameManager } from '../GameManager'
+import { THEME_DECK_BY_ID } from '../themeDecks'
 import type { CardInstanceId, GameState, PlayerId } from '../types'
 import {
   AI_DIFFICULTY_IGNORED_HAND_COUNT,
@@ -379,10 +380,11 @@ describe('AI evaluation', () => {
     )
   })
 
-  it('values AI creatures by printed cost and keeps a higher flat spell reserve', () => {
+  it('values AI creatures by printed cost and keeps a higher base spell reserve', () => {
     const manager = createTestManager()
     expect(AI_EVALUATION_PARAMETERS.creatureHandReserve).toBe(0.3)
     expect(AI_EVALUATION_PARAMETERS.spellHandReserve).toBe(2)
+    expect(AI_EVALUATION_PARAMETERS.lifeDropletHoldMultiplier).toBe(0.5)
     const expectedReserve = manager.state.players.playerA.hand.reduce(
       (total, cardId) => {
         const card = manager.state.cards[cardId].card
@@ -438,6 +440,60 @@ describe('AI evaluation', () => {
     expect(evaluateBase(spellOnlyHand, 'playerA').handReserve).toBeCloseTo(
       AI_EVALUATION_PARAMETERS.spellHandReserve,
     )
+  })
+
+  it('adds life droplet hold value once for its accumulated blue discards', () => {
+    const deck = THEME_DECK_BY_ID['blue-green-intercept'].cardDefinitionIds
+    const initial = GameManager.create(KEEP_ORDER_RANDOM, {
+      playerA: deck,
+      playerB: deck,
+    })
+    const ownedCards = Object.values(initial.state.cards).filter(
+      ({ ownerId }) => ownerId === 'playerA',
+    )
+    const lifeDroplets = ownedCards
+      .filter(({ card }) => card.definitionId === CARD_ID.LIFE_DROPLET)
+      .slice(0, 2)
+      .map(({ id }) => id)
+    const blueDiscards = ownedCards
+      .filter(
+        ({ card }) => card.kind === 'creature' && card.color === 'blue',
+      )
+      .slice(0, 2)
+      .map(({ id }) => id)
+    const movedCardIds = new Set([...lifeDroplets, ...blueDiscards])
+    const manager = withState(initial, (state) => ({
+      ...state,
+      players: {
+        ...state.players,
+        playerA: {
+          ...state.players.playerA,
+          deck: ownedCards
+            .filter(({ id }) => !movedCardIds.has(id))
+            .map(({ id }) => id),
+          hand: lifeDroplets,
+          discard: blueDiscards,
+          exile: [],
+          placedSpell: null,
+        },
+      },
+    }))
+    const baseSpellReserve =
+      lifeDroplets.length * AI_EVALUATION_PARAMETERS.spellHandReserve
+    const holdValue =
+      blueDiscards.length *
+      AI_EVALUATION_PARAMETERS.hp *
+      AI_EVALUATION_PARAMETERS.lifeDropletHoldMultiplier
+
+    expect(evaluateBase(manager, 'playerA').handReserve).toBe(
+      baseSpellReserve + holdValue,
+    )
+    expect(
+      evaluateBase(manager, 'playerA', new Set([lifeDroplets[0]])).handReserve,
+    ).toBe(AI_EVALUATION_PARAMETERS.spellHandReserve + holdValue)
+    expect(
+      evaluateBase(manager, 'playerA', new Set(lifeDroplets)).handReserve,
+    ).toBe(0)
   })
 
   it('does not value mana that abundance removes at turn end', () => {

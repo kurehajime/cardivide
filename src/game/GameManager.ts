@@ -381,7 +381,7 @@ const getPlayerBarrierForState = (state: GameState, playerId: PlayerId): number 
   const player = state.players[playerId]
   const spell = getPlacedSpellCard(state, playerId)
   return PLAYER_BARRIER +
-    (spell?.effect.type === 'bubbleWall'
+    (spell?.effect.type === 'lifeDroplet'
       ? player.placedSpell?.effectAmount ?? 0
       : 0)
 }
@@ -1186,6 +1186,9 @@ export class GameManager {
 
     const nextPlayer = {
       ...playerAfterExile,
+      hp:
+        playerAfterExile.hp +
+        (instance.card.effect.type === 'lifeDroplet' ? effectAmount : 0),
       mana:
         playerAfterExile.mana +
         (instance.card.effect.type === 'abundance' ? effectAmount : 0),
