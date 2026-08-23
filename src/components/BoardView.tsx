@@ -162,7 +162,7 @@ const BoardPlayer = ({ player, cards, barrier, damage }: BoardPlayerProps) => {
       >
         <span className="board-player-identity">
           <span>{player.name}</span>
-          <small className="board-player-barrier">(バリア:{barrier})</small>
+          <small className="board-player-barrier">(シールド:{barrier})</small>
         </span>
         {damage !== null && (
           <span

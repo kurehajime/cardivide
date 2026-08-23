@@ -350,7 +350,7 @@ export const SPELL_CARDS = [
     cost: 0,
     duration: 'untilNextTurnStart',
     effect: { type: 'lifeDroplet', exileColor: 'blue' },
-    text: '自分の捨て札にあるすべての青クリーチャーを除外する。除外した枚数に等しいHPを回復する。次の自分のターン開始まで、自プレイヤーのバリアを除外した枚数だけ増やす。',
+    text: '自分の捨て札にあるすべての青クリーチャーを除外する。除外した枚数に等しいHPを回復する。次の自分のターン開始まで、自プレイヤーのシールドを除外した枚数だけ増やす。',
   },
   {
     definitionId: CARD_DEFINITION_IDS.ABUNDANCE,
