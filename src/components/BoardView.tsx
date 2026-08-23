@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, type CSSProperties } from 'react'
+import { Fragment, useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
 import { motion, useAnimationControls } from 'motion/react'
 import type {
   ActivatedAbilityOption,
@@ -203,6 +203,45 @@ type BoardGroupButtonProps = {
   onAttack?: (startIndex: number, endIndex: number) => void
 }
 
+type SummonImpactProps = {
+  enabled: boolean
+  children: ReactNode
+}
+
+const SummonImpact = ({ enabled, children }: SummonImpactProps) => {
+  const animationControls = useAnimationControls()
+
+  useEffect(() => {
+    if (!enabled) {
+      return
+    }
+
+    void animationControls.start({
+      scale: [1.32, 1.18, 1, 0.985, 1],
+      y: [0, 0, 0, 3, 0],
+      filter: [
+        'blur(1.5px) drop-shadow(0 28px 24px rgb(18 12 8 / 18%))',
+        'blur(0.5px) drop-shadow(0 16px 16px rgb(18 12 8 / 28%))',
+        'blur(0) drop-shadow(0 2px 3px rgb(18 12 8 / 72%))',
+        'blur(0) drop-shadow(0 1px 5px rgb(18 12 8 / 48%))',
+        'blur(0) drop-shadow(0 0 0 rgb(18 12 8 / 0%))',
+      ],
+      transition: {
+        delay: 0.04,
+        duration: 0.46,
+        times: [0, 0.4, 0.64, 0.72, 1],
+        ease: 'linear',
+      },
+    })
+  }, [animationControls, enabled])
+
+  return (
+    <motion.div className="board-summon-impact" animate={animationControls}>
+      {children}
+    </motion.div>
+  )
+}
+
 const BoardGroupButton = ({
   group,
   activePlayerId,
@@ -335,22 +374,24 @@ const BoardView = ({
                   className="board-slot"
                   style={{ gridColumn: index * 2 + 2, gridRow: 2 }}
                 >
-                  <motion.div
-                    className="board-card-content"
-                    initial={false}
-                    animate={{ scale: destroyedCardIdSet.has(creature.cardId) ? 0 : 1 }}
-                    transition={
-                      destroyedCardIdSet.has(creature.cardId)
-                        ? { delay: 0.12, duration: 0.3, ease: [0.4, 0, 0.6, 1] }
-                        : { duration: 0.15 }
-                    }
-                  >
-                    <CardView
-                      card={cards[creature.cardId].card}
-                      compact
-                      statModifier={creatureStatModifiers[creature.cardId]}
-                    />
-                  </motion.div>
+                  <SummonImpact enabled={cards[creature.cardId].card.cost >= 4}>
+                    <motion.div
+                      className="board-card-content"
+                      initial={false}
+                      animate={{ scale: destroyedCardIdSet.has(creature.cardId) ? 0 : 1 }}
+                      transition={
+                        destroyedCardIdSet.has(creature.cardId)
+                          ? { delay: 0.12, duration: 0.3, ease: [0.4, 0, 0.6, 1] }
+                          : { duration: 0.15 }
+                      }
+                    >
+                      <CardView
+                        card={cards[creature.cardId].card}
+                        compact
+                        statModifier={creatureStatModifiers[creature.cardId]}
+                      />
+                    </motion.div>
+                  </SummonImpact>
                   {(abilitiesByCardId.get(creature.cardId) ?? []).length > 0 && (
                     <div className="board-ability-actions">
                       {(abilitiesByCardId.get(creature.cardId) ?? []).map((ability) => (

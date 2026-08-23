@@ -637,6 +637,12 @@
   min-width: 0;
 }
 
+.board-summon-impact {
+  width: 100%;
+  transform-origin: center;
+  will-change: transform;
+}
+
 .board-card-content {
   width: 100%;
   transform-origin: center;
