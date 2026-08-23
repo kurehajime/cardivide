@@ -1,5 +1,5 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
-import { LayoutGroup, MotionConfig } from 'motion/react'
+import { LayoutGroup, motion, MotionConfig } from 'motion/react'
 import {
   GameAI,
   GameManager,
@@ -276,9 +276,9 @@ const GameSession = ({
               </button>
             </div>
           </header>
-          {(winnerMessage ?? message) && (
+          {message && winnerMessage === null && (
             <div className="game-message" role="status">
-              {winnerMessage ?? message}
+              {message}
             </div>
           )}
           <HandView
@@ -362,6 +362,25 @@ const GameSession = ({
               終了
             </button>
           </div>
+          {winnerMessage !== null && (
+            <motion.div
+              className="game-result-overlay"
+              role="status"
+              aria-live="assertive"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3, ease: 'easeOut' }}
+            >
+              <motion.p
+                className="game-result-message"
+                initial={{ opacity: 0, scale: 0.88 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.08, duration: 0.38, ease: 'easeOut' }}
+              >
+                {winnerMessage}
+              </motion.p>
+            </motion.div>
+          )}
         </main>
       </LayoutGroup>
     </MotionConfig>

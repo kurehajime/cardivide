@@ -433,6 +433,34 @@
   font-weight: 700;
 }
 
+.game-result-overlay {
+  position: fixed;
+  z-index: 100;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.game-result-message {
+  width: 100%;
+  margin: 0;
+  padding: 30px 24px 34px;
+  border-block: 1px solid rgb(255 250 241 / 28%);
+  background: rgb(24 16 12 / 68%);
+  box-shadow: 0 12px 36px rgb(20 10 6 / 38%);
+  backdrop-filter: blur(4px) saturate(0.72);
+  color: #fffaf1;
+  font-family: 'Shippori Mincho', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
+  font-size: 72px;
+  font-weight: 800;
+  line-height: 1.15;
+  text-align: center;
+  text-shadow:
+    0 3px 3px rgb(20 10 6 / 82%),
+    0 10px 28px rgb(20 10 6 / 68%);
+}
+
 .board-panel,
 .hand-panel {
   border: 0;
@@ -1609,6 +1637,11 @@
 
   .game-shell {
     padding: 12px;
+  }
+
+  .game-result-message {
+    padding: 22px 16px 25px;
+    font-size: 44px;
   }
 
   .game-header {

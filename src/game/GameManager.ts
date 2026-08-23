@@ -167,12 +167,12 @@ const createInitialState = (
     players: {
       playerA: createPlayer(
         'playerA',
-        'Player A',
+        'あなた',
         playerADeck,
       ),
       playerB: createPlayer(
         'playerB',
-        'Player B',
+        'COM',
         playerBDeck,
         SECOND_PLAYER_STARTING_MANA,
       ),

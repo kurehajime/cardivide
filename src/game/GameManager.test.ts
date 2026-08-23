@@ -87,7 +87,7 @@ describe('GameManager card instance tracking', () => {
     expect(nextManager.state.board.creatures.map(({ cardId }) => cardId)).toEqual([selectedCopy])
     expect(nextManager.state.players.playerA.hand).toHaveLength(3)
     expect(() => GameManager.summonCreature(nextManager, selectedCopy, 0)).toThrow(
-      /is not in Player A's hand/,
+      /is not in あなた's hand/,
     )
     expectCardsConserved(nextManager)
   })
