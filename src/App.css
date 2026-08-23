@@ -442,14 +442,22 @@
   pointer-events: none;
 }
 
-.game-result-message {
+.game-result-band {
   width: 100%;
-  margin: 0;
+  display: grid;
+  grid-template-columns: minmax(150px, 1fr) auto minmax(150px, 1fr);
+  align-items: center;
   padding: 30px 24px 34px;
   border-block: 1px solid rgb(255 250 241 / 28%);
   background: rgb(24 16 12 / 68%);
   box-shadow: 0 12px 36px rgb(20 10 6 / 38%);
   backdrop-filter: blur(4px) saturate(0.72);
+  pointer-events: auto;
+}
+
+.game-result-message {
+  grid-column: 2;
+  margin: 0;
   color: #fffaf1;
   font-family: 'Shippori Mincho', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
   font-size: 72px;
@@ -459,6 +467,34 @@
   text-shadow:
     0 3px 3px rgb(20 10 6 / 82%),
     0 10px 28px rgb(20 10 6 / 68%);
+}
+
+.game-result-rematch {
+  grid-column: 3;
+  justify-self: end;
+  min-width: 148px;
+  min-height: 60px;
+  margin-right: 20px;
+  padding: 10px 26px;
+  border: 2px solid #fffaf1;
+  border-radius: 6px;
+  background: #f4eee5;
+  box-shadow: 0 8px 20px rgb(20 10 6 / 46%);
+  color: #26342f;
+  font-size: 20px;
+  font-weight: 900;
+  transition: background-color 120ms ease, transform 120ms ease;
+}
+
+.game-result-rematch:hover {
+  background: #fffaf1;
+  cursor: pointer;
+  transform: translateY(-2px);
+}
+
+.game-result-rematch:focus-visible {
+  outline: 3px solid #fffaf1;
+  outline-offset: 4px;
 }
 
 .board-panel,
@@ -1639,9 +1675,22 @@
     padding: 12px;
   }
 
-  .game-result-message {
+  .game-result-band {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
     padding: 22px 16px 25px;
+  }
+
+  .game-result-message {
+    grid-column: 1;
     font-size: 44px;
+  }
+
+  .game-result-rematch {
+    grid-column: 1;
+    justify-self: center;
+    min-width: 160px;
+    margin-right: 0;
   }
 
   .game-header {

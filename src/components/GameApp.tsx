@@ -36,6 +36,7 @@ type GameSelection = {
 
 type GameSessionProps = GameSelection & {
   onChangeDecks: () => void
+  onRematch: () => void
 }
 
 const createGameUiState = ({
@@ -78,6 +79,7 @@ const GameSession = ({
   comDeckId,
   difficulty,
   onChangeDecks,
+  onRematch,
 }: GameSessionProps) => {
   const aiRef = useRef<GameAI | null>(null)
   const attackAnimationIdRef = useRef(0)
@@ -365,20 +367,28 @@ const GameSession = ({
           {winnerMessage !== null && (
             <motion.div
               className="game-result-overlay"
-              role="status"
-              aria-live="assertive"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.3, ease: 'easeOut' }}
             >
-              <motion.p
-                className="game-result-message"
+              <motion.div
+                className="game-result-band"
                 initial={{ opacity: 0, scale: 0.88 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.08, duration: 0.38, ease: 'easeOut' }}
               >
-                {winnerMessage}
-              </motion.p>
+                <p className="game-result-message" role="status" aria-live="assertive">
+                  {winnerMessage}
+                </p>
+                <button
+                  className="game-result-rematch"
+                  type="button"
+                  autoFocus
+                  onClick={onRematch}
+                >
+                  再戦
+                </button>
+              </motion.div>
             </motion.div>
           )}
         </main>
@@ -394,6 +404,7 @@ const GameApp = () => {
     difficulty: 'hard',
   })
   const [gameStarted, setGameStarted] = useState(false)
+  const [gameSessionId, setGameSessionId] = useState(0)
 
   if (!gameStarted) {
     return (
@@ -411,9 +422,10 @@ const GameApp = () => {
 
   return (
     <GameSession
-      key={`${selection.playerDeckId}-${selection.comDeckId}-${selection.difficulty}`}
+      key={`${selection.playerDeckId}-${selection.comDeckId}-${selection.difficulty}-${gameSessionId}`}
       {...selection}
       onChangeDecks={() => setGameStarted(false)}
+      onRematch={() => setGameSessionId((current) => current + 1)}
     />
   )
 }
