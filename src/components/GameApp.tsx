@@ -300,6 +300,10 @@ const GameSession = ({
             manaRefundCardIds={manaRefundCardIds}
             playerDamageMarker={playerDamageMarker}
             players={state.players}
+            playerBarriers={{
+              playerA: GameManager.getPlayerBarrier(manager, 'playerA'),
+              playerB: GameManager.getPlayerBarrier(manager, 'playerB'),
+            }}
             activePlayerId={state.activePlayerId}
             groups={boardGroups}
             creatureStatModifiers={creatureStatModifiers}

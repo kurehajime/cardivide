@@ -503,6 +503,20 @@
   text-align: center;
 }
 
+.board-player-identity {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.board-player-barrier {
+  color: rgb(248 251 245 / 78%);
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
 .graveyard-summary {
   min-width: 0;
   display: flex;
@@ -694,6 +708,18 @@
 .player-damage-marker {
   top: 50%;
   left: 50%;
+}
+
+.player-damage-marker-large {
+  width: 50px;
+  height: 50px;
+  font-size: 23px;
+}
+
+.player-damage-marker-critical {
+  width: 64px;
+  height: 64px;
+  font-size: 29px;
 }
 
 @keyframes damage-marker-pop {

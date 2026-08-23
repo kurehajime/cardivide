@@ -31,6 +31,7 @@ type BoardViewProps = {
   manaRefundCardIds?: CardInstanceId[]
   playerDamageMarker?: { playerId: PlayerId; damage: number } | null
   players: Record<PlayerState['id'], PlayerState>
+  playerBarriers: Record<PlayerId, number>
   activePlayerId: PlayerId
   groups: EffectiveBoardGroup[]
   creatureStatModifiers: Record<CardInstanceId, CreatureStatModifier>
@@ -46,10 +47,12 @@ type BoardViewProps = {
 type BoardPlayerProps = {
   player: PlayerState
   cards: Record<CardInstanceId, CardInstance>
+  barrier: number
   damage: number | null
 }
 
 type SummonSlotState = 'available' | 'reachable' | 'unreachable'
+type PlayerDamageLevel = 'normal' | 'large' | 'critical'
 
 const DAMAGE_MARKER_STYLE = {
   '--damage-marker-icon': `url("${import.meta.env.BASE_URL}damage.svg")`,
@@ -60,6 +63,13 @@ const CARD_COLOR_LABELS = {
   blue: '青',
   green: '緑',
 } as const
+
+const getPlayerDamageLevel = (damage: number): PlayerDamageLevel => {
+  if (damage >= 10) {
+    return 'critical'
+  }
+  return damage >= 5 ? 'large' : 'normal'
+}
 
 const getSummonSlotState = (option?: SummonOption): SummonSlotState | null => {
   if (!option) {
@@ -95,7 +105,7 @@ const getSummonSlotTitle = (option?: SummonOption): string | undefined => {
   return `進軍可能 / コスト ${option.effectiveCost}`
 }
 
-const BoardPlayer = ({ player, cards, damage }: BoardPlayerProps) => {
+const BoardPlayer = ({ player, cards, barrier, damage }: BoardPlayerProps) => {
   const placedSpell = player.placedSpell
   const placedSpellCard =
     placedSpell === null ? null : cards[placedSpell.cardId].card
@@ -103,6 +113,10 @@ const BoardPlayer = ({ player, cards, damage }: BoardPlayerProps) => {
     placedSpellCard?.kind === 'spell'
       ? placedSpellCard.effect.exileColor
       : null
+  const damageLevel = damage === null ? 'normal' : getPlayerDamageLevel(damage)
+  const shakeDistance = damageLevel === 'critical' ? 20 : damageLevel === 'large' ? 13 : 8
+  const verticalShake = damageLevel === 'critical' ? 4 : damageLevel === 'large' ? 2 : 1
+  const shakeDuration = damageLevel === 'critical' ? 0.48 : damageLevel === 'large' ? 0.4 : 0.34
 
   return (
     <section className="board-player" aria-label={`${player.name} field`}>
@@ -123,17 +137,36 @@ const BoardPlayer = ({ player, cards, damage }: BoardPlayerProps) => {
         animate={
           damage !== null && damage >= 1
             ? {
-                x: [0, -8, 7, -5, 4, -2, 0],
-                y: [0, 1, -1, 1, -1, 0, 0],
+                x: [
+                  0,
+                  -shakeDistance,
+                  shakeDistance * 0.88,
+                  -shakeDistance * 0.63,
+                  shakeDistance * 0.5,
+                  -shakeDistance * 0.25,
+                  0,
+                ],
+                y: [
+                  0,
+                  verticalShake,
+                  -verticalShake,
+                  verticalShake,
+                  -verticalShake,
+                  0,
+                  0,
+                ],
               }
             : { x: 0, y: 0 }
         }
-        transition={{ duration: 0.34, ease: 'easeInOut' }}
+        transition={{ duration: shakeDuration, ease: 'easeInOut' }}
       >
-        {player.name}
+        <span className="board-player-identity">
+          <span>{player.name}</span>
+          <small className="board-player-barrier">(バリア:{barrier})</small>
+        </span>
         {damage !== null && (
           <span
-            className="damage-marker player-damage-marker"
+            className={`damage-marker player-damage-marker player-damage-marker-${damageLevel}`}
             role="status"
             aria-label={`プレイヤーに${damage}ダメージ`}
             style={DAMAGE_MARKER_STYLE}
@@ -216,6 +249,7 @@ const BoardView = ({
   manaRefundCardIds = [],
   playerDamageMarker = null,
   players,
+  playerBarriers,
   activePlayerId,
   groups,
   creatureStatModifiers,
@@ -259,6 +293,7 @@ const BoardView = ({
       <BoardPlayer
         player={players.playerA}
         cards={cards}
+        barrier={playerBarriers.playerA}
         damage={playerDamageMarker?.playerId === 'playerA' ? playerDamageMarker.damage : null}
       />
       <motion.div className="board-lane-scroll" layoutScroll>
@@ -378,6 +413,7 @@ const BoardView = ({
       <BoardPlayer
         player={players.playerB}
         cards={cards}
+        barrier={playerBarriers.playerB}
         damage={playerDamageMarker?.playerId === 'playerB' ? playerDamageMarker.damage : null}
       />
     </section>
