@@ -306,6 +306,10 @@ const GameSession = ({
               playerA: GameManager.getPlayerBarrier(manager, 'playerA'),
               playerB: GameManager.getPlayerBarrier(manager, 'playerB'),
             }}
+            playerDeckColors={{
+              playerA: THEME_DECK_BY_ID[playerDeckId].colors,
+              playerB: THEME_DECK_BY_ID[comDeckId].colors,
+            }}
             activePlayerId={state.activePlayerId}
             groups={boardGroups}
             creatureStatModifiers={creatureStatModifiers}

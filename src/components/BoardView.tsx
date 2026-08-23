@@ -5,6 +5,7 @@ import type {
   Board,
   CardInstance,
   CardInstanceId,
+  CardColor,
   DamageMarker,
   EffectiveBoardGroup,
   CreatureStatModifier,
@@ -32,6 +33,7 @@ type BoardViewProps = {
   playerDamageMarker?: { playerId: PlayerId; damage: number } | null
   players: Record<PlayerState['id'], PlayerState>
   playerBarriers: Record<PlayerId, number>
+  playerDeckColors: Record<PlayerId, readonly [CardColor, CardColor]>
   activePlayerId: PlayerId
   groups: EffectiveBoardGroup[]
   creatureStatModifiers: Record<CardInstanceId, CreatureStatModifier>
@@ -48,6 +50,7 @@ type BoardPlayerProps = {
   player: PlayerState
   cards: Record<CardInstanceId, CardInstance>
   barrier: number
+  deckColors: readonly [CardColor, CardColor]
   damage: number | null
 }
 
@@ -59,6 +62,12 @@ const DAMAGE_MARKER_STYLE = {
 } as CSSProperties
 
 const PLAYER_ICON_URL = `${import.meta.env.BASE_URL}player.svg`
+
+const PLAYER_COLOR_VALUES = {
+  red: '#6f3028',
+  blue: '#2b5278',
+  green: '#315d42',
+} satisfies Record<CardColor, string>
 
 const CARD_COLOR_LABELS = {
   red: '赤',
@@ -107,7 +116,7 @@ const getSummonSlotTitle = (option?: SummonOption): string | undefined => {
   return `進軍可能 / コスト ${option.effectiveCost}`
 }
 
-const BoardPlayer = ({ player, cards, barrier, damage }: BoardPlayerProps) => {
+const BoardPlayer = ({ player, cards, barrier, deckColors, damage }: BoardPlayerProps) => {
   const placedSpell = player.placedSpell
   const placedSpellCard =
     placedSpell === null ? null : cards[placedSpell.cardId].card
@@ -135,6 +144,14 @@ const BoardPlayer = ({ player, cards, barrier, damage }: BoardPlayerProps) => {
       <motion.div
         className="board-endpoint"
         data-player-id={player.id}
+        data-main-color={deckColors[0]}
+        data-sub-color={deckColors[1]}
+        style={
+          {
+            '--player-main-color': PLAYER_COLOR_VALUES[deckColors[0]],
+            '--player-sub-color': PLAYER_COLOR_VALUES[deckColors[1]],
+          } as CSSProperties
+        }
         initial={false}
         animate={
           damage !== null && damage >= 1
@@ -314,6 +331,7 @@ const BoardView = ({
   playerDamageMarker = null,
   players,
   playerBarriers,
+  playerDeckColors,
   activePlayerId,
   groups,
   creatureStatModifiers,
@@ -358,6 +376,7 @@ const BoardView = ({
         player={players.playerA}
         cards={cards}
         barrier={playerBarriers.playerA}
+        deckColors={playerDeckColors.playerA}
         damage={playerDamageMarker?.playerId === 'playerA' ? playerDamageMarker.damage : null}
       />
       <motion.div className="board-lane-scroll" layoutScroll>
@@ -480,6 +499,7 @@ const BoardView = ({
         player={players.playerB}
         cards={cards}
         barrier={playerBarriers.playerB}
+        deckColors={playerDeckColors.playerB}
         damage={playerDamageMarker?.playerId === 'playerB' ? playerDamageMarker.damage : null}
       />
     </section>

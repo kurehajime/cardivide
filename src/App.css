@@ -560,7 +560,13 @@
   place-items: center;
   border: 2px solid #2d3f38;
   border-radius: 8px;
-  background: #26342f;
+  background: linear-gradient(
+    112deg,
+    var(--player-main-color) 0%,
+    var(--player-main-color) 66.667%,
+    var(--player-sub-color) 66.667%,
+    var(--player-sub-color) 100%
+  );
   color: #f8fbf5;
   font-size: 13px;
   font-weight: 700;
