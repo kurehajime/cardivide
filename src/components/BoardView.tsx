@@ -210,6 +210,7 @@ type SummonImpactProps = {
 
 const SummonImpact = ({ enabled, children }: SummonImpactProps) => {
   const animationControls = useAnimationControls()
+  const flashControls = useAnimationControls()
 
   useEffect(() => {
     if (!enabled) {
@@ -217,26 +218,42 @@ const SummonImpact = ({ enabled, children }: SummonImpactProps) => {
     }
 
     void animationControls.start({
-      scale: [1.32, 1.18, 1, 0.985, 1],
-      y: [0, 0, 0, 3, 0],
+      scale: [1.48, 1.24, 1, 0.975, 1],
+      y: [0, 0, 0, 4, 0],
+      opacity: [0.78, 0.94, 1, 1, 1],
       filter: [
-        'blur(1.5px) drop-shadow(0 28px 24px rgb(18 12 8 / 18%))',
-        'blur(0.5px) drop-shadow(0 16px 16px rgb(18 12 8 / 28%))',
-        'blur(0) drop-shadow(0 2px 3px rgb(18 12 8 / 72%))',
-        'blur(0) drop-shadow(0 1px 5px rgb(18 12 8 / 48%))',
-        'blur(0) drop-shadow(0 0 0 rgb(18 12 8 / 0%))',
+        'brightness(0.88) blur(2.5px) drop-shadow(0 36px 30px rgb(18 12 8 / 22%))',
+        'brightness(1) blur(0.8px) drop-shadow(0 20px 18px rgb(18 12 8 / 36%))',
+        'brightness(1.28) blur(0) drop-shadow(0 2px 3px rgb(18 12 8 / 82%))',
+        'brightness(1.08) blur(0) drop-shadow(0 1px 6px rgb(18 12 8 / 56%))',
+        'brightness(1) blur(0) drop-shadow(0 0 0 rgb(18 12 8 / 0%))',
       ],
       transition: {
         delay: 0.04,
-        duration: 0.46,
+        duration: 0.52,
         times: [0, 0.4, 0.64, 0.72, 1],
         ease: 'linear',
       },
     })
-  }, [animationControls, enabled])
+    void flashControls.start({
+      opacity: [0, 0, 0.9, 0],
+      scale: [0.82, 0.82, 1.04, 1.38],
+      transition: {
+        delay: 0.04,
+        duration: 0.52,
+        times: [0, 0.57, 0.64, 1],
+        ease: 'easeOut',
+      },
+    })
+  }, [animationControls, enabled, flashControls])
 
   return (
     <motion.div className="board-summon-impact" animate={animationControls}>
+      <motion.span
+        className="board-summon-impact-flash"
+        aria-hidden="true"
+        animate={flashControls}
+      />
       {children}
     </motion.div>
   )

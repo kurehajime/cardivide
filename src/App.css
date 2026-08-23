@@ -638,9 +638,24 @@
 }
 
 .board-summon-impact {
+  position: relative;
   width: 100%;
   transform-origin: center;
   will-change: transform;
+  isolation: isolate;
+}
+
+.board-summon-impact-flash {
+  position: absolute;
+  z-index: -1;
+  inset: -7px;
+  border: 3px solid rgb(255 244 207 / 90%);
+  border-radius: 10px;
+  box-shadow:
+    0 0 12px rgb(255 247 218 / 72%),
+    0 0 28px rgb(255 221 142 / 52%);
+  opacity: 0;
+  pointer-events: none;
 }
 
 .board-card-content {
