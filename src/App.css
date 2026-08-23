@@ -469,7 +469,7 @@
     0 10px 28px rgb(20 10 6 / 68%);
 }
 
-.game-result-rematch {
+.game-result-confirm {
   grid-column: 3;
   justify-self: end;
   min-width: 148px;
@@ -486,13 +486,13 @@
   transition: background-color 120ms ease, transform 120ms ease;
 }
 
-.game-result-rematch:hover {
+.game-result-confirm:hover {
   background: #fffaf1;
   cursor: pointer;
   transform: translateY(-2px);
 }
 
-.game-result-rematch:focus-visible {
+.game-result-confirm:focus-visible {
   outline: 3px solid #fffaf1;
   outline-offset: 4px;
 }
@@ -1717,7 +1717,7 @@
     font-size: 44px;
   }
 
-  .game-result-rematch {
+  .game-result-confirm {
     grid-column: 1;
     justify-self: center;
     min-width: 160px;

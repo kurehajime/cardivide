@@ -36,7 +36,6 @@ type GameSelection = {
 
 type GameSessionProps = GameSelection & {
   onChangeDecks: () => void
-  onRematch: () => void
 }
 
 const createGameUiState = ({
@@ -79,7 +78,6 @@ const GameSession = ({
   comDeckId,
   difficulty,
   onChangeDecks,
-  onRematch,
 }: GameSessionProps) => {
   const aiRef = useRef<GameAI | null>(null)
   const attackAnimationIdRef = useRef(0)
@@ -385,12 +383,12 @@ const GameSession = ({
                   {winnerMessage}
                 </p>
                 <button
-                  className="game-result-rematch"
+                  className="game-result-confirm"
                   type="button"
                   autoFocus
-                  onClick={onRematch}
+                  onClick={onChangeDecks}
                 >
-                  再戦
+                  OK
                 </button>
               </motion.div>
             </motion.div>
@@ -408,7 +406,6 @@ const GameApp = () => {
     difficulty: 'hard',
   })
   const [gameStarted, setGameStarted] = useState(false)
-  const [gameSessionId, setGameSessionId] = useState(0)
 
   if (!gameStarted) {
     return (
@@ -426,10 +423,8 @@ const GameApp = () => {
 
   return (
     <GameSession
-      key={`${selection.playerDeckId}-${selection.comDeckId}-${selection.difficulty}-${gameSessionId}`}
       {...selection}
       onChangeDecks={() => setGameStarted(false)}
-      onRematch={() => setGameSessionId((current) => current + 1)}
     />
   )
 }
