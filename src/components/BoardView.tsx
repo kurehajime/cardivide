@@ -1,4 +1,11 @@
-import { Fragment, useEffect, useRef, type CSSProperties, type ReactNode } from 'react'
+import {
+  Fragment,
+  useCallback,
+  useEffect,
+  useRef,
+  type CSSProperties,
+  type ReactNode,
+} from 'react'
 import { motion, useAnimationControls } from 'motion/react'
 import type {
   ActivatedAbilityOption,
@@ -56,6 +63,8 @@ type BoardPlayerProps = {
 
 type SummonSlotState = 'available' | 'reachable' | 'unreachable'
 type PlayerDamageLevel = 'normal' | 'large' | 'critical'
+
+const BOARD_SCROLL_PADDING = 12
 
 const DAMAGE_MARKER_STYLE = {
   '--damage-marker-icon': `url("${import.meta.env.BASE_URL}damage.svg")`,
@@ -344,6 +353,83 @@ const BoardView = ({
   onActivateAbility,
 }: BoardViewProps) => {
   const boardRef = useRef<HTMLElement>(null)
+  const laneScrollRef = useRef<HTMLDivElement>(null)
+  const laneGridRef = useRef<HTMLDivElement>(null)
+  const previousBoardCardIdsRef = useRef(
+    new Set(board.creatures.map(({ cardId }) => cardId)),
+  )
+  const scrollBoardRangeIntoView = useCallback((startIndex: number, endIndex: number) => {
+    const grid = laneGridRef.current
+    const laneScroll = laneScrollRef.current
+    if (!grid || !laneScroll) {
+      return
+    }
+
+    const startMarker = grid.querySelector<HTMLElement>(
+      `[data-insert-index="${startIndex}"]`,
+    )
+    const endMarker = grid.querySelector<HTMLElement>(
+      `[data-insert-index="${endIndex + 1}"]`,
+    )
+    if (!startMarker || !endMarker) {
+      return
+    }
+
+    const scroller = [grid, laneScroll].find(
+      (element) => element.scrollWidth > element.clientWidth + 1,
+    )
+    if (!scroller) {
+      return
+    }
+
+    const scrollerRect = scroller.getBoundingClientRect()
+    const startRect = startMarker.getBoundingClientRect()
+    const endRect = endMarker.getBoundingClientRect()
+    const targetLeft = startRect.right
+    const targetRight = endRect.left
+    const visibleLeft = scrollerRect.left + BOARD_SCROLL_PADDING
+    const visibleRight = scrollerRect.right - BOARD_SCROLL_PADDING
+    if (targetLeft >= visibleLeft && targetRight <= visibleRight) {
+      return
+    }
+
+    const targetCenter = (targetLeft + targetRight) / 2
+    const viewportCenter = (scrollerRect.left + scrollerRect.right) / 2
+    scroller.scrollTo({
+      left: scroller.scrollLeft + targetCenter - viewportCenter,
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 'auto'
+        : 'smooth',
+    })
+  }, [])
+
+  useEffect(() => {
+    const currentCardIds = board.creatures.map(({ cardId }) => cardId)
+    const previousCardIds = previousBoardCardIdsRef.current
+    const summonedIndex = currentCardIds.findIndex((cardId) => !previousCardIds.has(cardId))
+    previousBoardCardIdsRef.current = new Set(currentCardIds)
+
+    if (summonedIndex < 0) {
+      return
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      scrollBoardRangeIntoView(summonedIndex, summonedIndex)
+    })
+    return () => window.cancelAnimationFrame(frameId)
+  }, [board.creatures, scrollBoardRangeIntoView])
+
+  useEffect(() => {
+    if (attackAnimation === null) {
+      return
+    }
+
+    const frameId = window.requestAnimationFrame(() => {
+      scrollBoardRangeIntoView(attackAnimation.startIndex, attackAnimation.endIndex)
+    })
+    return () => window.cancelAnimationFrame(frameId)
+  }, [attackAnimation, scrollBoardRangeIntoView])
+
   const damageByCardId = new Map(
     damageMarkers.map(({ cardId, damage }) => [cardId, damage]),
   )
@@ -379,11 +465,16 @@ const BoardView = ({
         deckColors={playerDeckColors.playerA}
         damage={playerDamageMarker?.playerId === 'playerA' ? playerDamageMarker.damage : null}
       />
-      <motion.div className="board-lane-scroll" layoutScroll>
+      <motion.div ref={laneScrollRef} className="board-lane-scroll" layoutScroll>
         {board.creatures.length === 0 ? (
-          <div className="board-lane-grid" style={{ gridTemplateColumns }}>
+          <div
+            ref={laneGridRef}
+            className="board-lane-grid"
+            style={{ gridTemplateColumns }}
+          >
             <button
               className={getSummonSlotClassName(firstSummonOption, true)}
+              data-insert-index={0}
               data-summon-state={getSummonSlotState(firstSummonOption) ?? undefined}
               type="button"
               disabled={!firstSummonOption?.canSummon}
@@ -394,7 +485,11 @@ const BoardView = ({
             </button>
           </div>
         ) : (
-          <div className="board-lane-grid" style={{ gridTemplateColumns }}>
+          <div
+            ref={laneGridRef}
+            className="board-lane-grid"
+            style={{ gridTemplateColumns }}
+          >
             {board.creatures.map((creature, index) => {
               const summonOption = summonOptionByIndex.get(index)
               return (
@@ -402,6 +497,7 @@ const BoardView = ({
                 <button
                   key={`insert-${index}`}
                   className={getSummonSlotClassName(summonOption)}
+                  data-insert-index={index}
                   data-summon-state={getSummonSlotState(summonOption) ?? undefined}
                   style={{ gridColumn: index * 2 + 1, gridRow: 2 }}
                   type="button"
@@ -467,6 +563,7 @@ const BoardView = ({
             })}
             <button
               className={getSummonSlotClassName(lastSummonOption)}
+              data-insert-index={board.creatures.length}
               data-summon-state={getSummonSlotState(lastSummonOption) ?? undefined}
               style={{ gridColumn: board.creatures.length * 2 + 1, gridRow: 2 }}
               type="button"
