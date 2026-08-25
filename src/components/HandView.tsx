@@ -8,6 +8,7 @@ type HandViewProps = {
   playerName: string
   position: 'top' | 'bottom'
   playableCardIds?: ReadonlySet<CardInstanceId>
+  directlyPlayableSpellIds?: ReadonlySet<CardInstanceId>
   discardableCardIds?: ReadonlySet<CardInstanceId>
   active?: boolean
   disabled?: boolean
@@ -26,6 +27,7 @@ const HandView = ({
   playerName,
   position,
   playableCardIds,
+  directlyPlayableSpellIds,
   discardableCardIds,
   active = false,
   disabled = false,
@@ -83,7 +85,7 @@ const HandView = ({
           card !== null &&
           card.card.kind === 'spell' &&
           selectedCardId === card.id &&
-          playableCardIds?.has(card.id) === true
+          directlyPlayableSpellIds?.has(card.id) === true
         return (
           <div className="hand-card-slot" key={card?.id ?? `empty-${index}`}>
             <div className="hand-card-main">

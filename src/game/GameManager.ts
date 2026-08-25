@@ -23,10 +23,12 @@ import type {
   GameDeckLists,
   GameState,
   Phase,
+  PlaySpellAction,
   PlayerId,
   PlayerState,
   SpellCard,
   SpellDuration,
+  SpellTarget,
   SummonOption,
 } from './types'
 
@@ -131,6 +133,9 @@ const cloneGameState = (state: GameState): GameState => ({
         ...state.pendingCombat,
         damageMarkers: state.pendingCombat.damageMarkers.map((marker) => ({ ...marker })),
         destroyedCardIds: [...state.pendingCombat.destroyedCardIds],
+        destructionManaRefunds: state.pendingCombat.destructionManaRefunds
+          ? { ...state.pendingCombat.destructionManaRefunds }
+          : undefined,
       }
     : null,
 })
@@ -348,6 +353,10 @@ const getDestructionManaRefundForState = (
   state: GameState,
   cardId: CardInstanceId,
 ): number => {
+  const spellRefund = state.pendingCombat?.destructionManaRefunds?.[cardId]
+  if (spellRefund !== undefined) {
+    return spellRefund
+  }
   const instance = getCardInstance(state, cardId)
   return CreatureRules.fromCardId(state, cardId).preventsDestructionRefund()
     ? 0
@@ -471,6 +480,123 @@ const applyReturnFire = (
       endsTurnAfterResolution: false,
     },
   }
+}
+
+const applyFireballAssault = (
+  state: GameState,
+  casterId: PlayerId,
+  target: Extract<SpellTarget, { kind: 'group' }>,
+): GameState => {
+  const targetCreatures = state.board.creatures.slice(
+    target.startIndex,
+    target.endIndex + 1,
+  )
+  const destroyedCardIds = targetCreatures
+    .filter(({ cardId }) => {
+      const instance = getCardInstance(state, cardId)
+      return instance.ownerId === casterId &&
+        instance.card.kind === 'creature' &&
+        instance.card.color === 'red'
+    })
+    .map(({ cardId }) => cardId)
+  const playerDamage = destroyedCardIds.reduce(
+    (total, cardId) => total + getCardInstance(state, cardId).card.cost,
+    0,
+  )
+
+  if (destroyedCardIds.length === 0) {
+    return state
+  }
+
+  return {
+    ...state,
+    pendingCombat: {
+      damageMarkers: [],
+      destroyedCardIds,
+      defendingPlayerId: getOpponentId(casterId),
+      playerWasHit: playerDamage > 0,
+      playerDamage,
+      endsTurnAfterResolution: false,
+    },
+  }
+}
+
+const applyTransfer = (
+  state: GameState,
+  target: Extract<SpellTarget, { kind: 'creature' }>,
+): GameState => {
+  const { playerA, playerB } = state.players
+  if (playerA.hp === playerB.hp) {
+    return state
+  }
+
+  const targetIndex = state.board.creatures.findIndex(
+    ({ cardId }) => cardId === target.cardId,
+  )
+  if (targetIndex < 0) {
+    throw new Error('The transfer target is not on the board.')
+  }
+  const targetCreature = state.board.creatures[targetIndex]
+  const remainingCreatures = state.board.creatures.filter(
+    ({ cardId }) => cardId !== target.cardId,
+  )
+  const creatures = playerA.hp < playerB.hp
+    ? [targetCreature, ...remainingCreatures]
+    : [...remainingCreatures, targetCreature]
+
+  return {
+    ...state,
+    board: { creatures },
+  }
+}
+
+const applyLifeCycle = (state: GameState, casterId: PlayerId): GameState => {
+  const destroyedCardIds = state.board.creatures.flatMap(({ cardId }) => {
+    const instance = getCardInstance(state, cardId)
+    return instance.ownerId === casterId &&
+      instance.card.kind === 'creature' &&
+      instance.card.color === 'green'
+      ? [cardId]
+      : []
+  })
+  if (destroyedCardIds.length === 0) {
+    return state
+  }
+
+  const destructionManaRefunds = Object.fromEntries(
+    destroyedCardIds.map((cardId) => [
+      cardId,
+      getCardInstance(state, cardId).card.cost,
+    ]),
+  )
+
+  return {
+    ...state,
+    pendingCombat: {
+      damageMarkers: [],
+      destroyedCardIds,
+      destructionManaRefunds,
+      defendingPlayerId: casterId,
+      playerWasHit: false,
+      playerDamage: 0,
+      endsTurnAfterResolution: false,
+    },
+  }
+}
+
+const areSpellTargetsEqual = (
+  left: SpellTarget | undefined,
+  right: SpellTarget | undefined,
+): boolean => {
+  if (left === undefined || right === undefined) {
+    return left === right
+  }
+  if (left.kind !== right.kind) {
+    return false
+  }
+  return left.kind === 'group' && right.kind === 'group'
+    ? left.startIndex === right.startIndex && left.endIndex === right.endIndex
+    : left.kind === 'creature' && right.kind === 'creature' && left.cardId === right.cardId
 }
 
 const getKeepUpManaBonusForState = (
@@ -749,10 +875,6 @@ export const assertValidGameState = (state: GameState): void => {
     if (!state.pendingCombat.playerWasHit && state.pendingCombat.playerDamage !== 0) {
       throw new Error('Combat cannot damage a player it did not reach.')
     }
-    if (!endsTurnAfterResolution && state.pendingCombat.playerWasHit) {
-      throw new Error('Spell group damage cannot reach a player.')
-    }
-
     const combatFlags = new Uint8Array(registeredCardCount + 1)
     state.pendingCombat.damageMarkers.forEach(({ cardId, damage }) => {
       if (locations[cardId] !== CARD_LOCATION_BOARD) {
@@ -768,7 +890,13 @@ export const assertValidGameState = (state: GameState): void => {
     })
 
     state.pendingCombat.destroyedCardIds.forEach((cardId) => {
-      if ((combatFlags[cardId] & COMBAT_FLAG_DAMAGE_MARKED) === 0) {
+      if (locations[cardId] !== CARD_LOCATION_BOARD) {
+        throw new Error(`Destroyed card ${cardId} is outside the board.`)
+      }
+      if (
+        endsTurnAfterResolution &&
+        (combatFlags[cardId] & COMBAT_FLAG_DAMAGE_MARKED) === 0
+      ) {
         throw new Error(`Destroyed card ${cardId} does not have a damage marker.`)
       }
       if ((combatFlags[cardId] & COMBAT_FLAG_DESTROYED) !== 0) {
@@ -776,6 +904,17 @@ export const assertValidGameState = (state: GameState): void => {
       }
       combatFlags[cardId] |= COMBAT_FLAG_DESTROYED
     })
+    Object.entries(state.pendingCombat.destructionManaRefunds ?? {}).forEach(
+      ([cardIdText, refund]) => {
+        const cardId = Number(cardIdText)
+        if ((combatFlags[cardId] & COMBAT_FLAG_DESTROYED) === 0) {
+          throw new Error(`Mana refund references card ${cardId} that is not destroyed.`)
+        }
+        if (refund === undefined || !Number.isInteger(refund) || refund < 0) {
+          throw new Error(`Mana refund for card ${cardId} must be a non-negative integer.`)
+        }
+      },
+    )
   } else if (state.hasAttackedThisTurn && state.phase !== 'battle') {
     throw new Error('A resolved attack must remain in the battle phase.')
   }
@@ -939,7 +1078,58 @@ export class GameManager {
     if (card.kind === 'creature') {
       return GameManager.getSummonOptions(manager, cardId).some(({ canSummon }) => canSummon)
     }
-    return activePlayer.mana >= card.cost
+    return GameManager.getSpellPlayActions(manager, cardId).length > 0
+  }
+
+  static getSpellPlayActions(
+    manager: GameManager,
+    cardId: CardInstanceId,
+  ): PlaySpellAction[] {
+    const activePlayer = GameManager.getCurrentPlayer(manager)
+    if (
+      manager.state.phase !== 'main' ||
+      manager.state.pendingCombat !== null ||
+      GameManager.getWinner(manager) !== null ||
+      !activePlayer.hand.includes(cardId)
+    ) {
+      return []
+    }
+    const card = getCardInstance(manager.state, cardId).card
+    if (card.kind !== 'spell' || activePlayer.mana < card.cost) {
+      return []
+    }
+
+    switch (card.effect.type) {
+      case 'fireballAssault':
+        return collectBoardGroups(manager.state).flatMap((group) =>
+          group.ownerId === activePlayer.id
+            ? [{
+                type: 'playSpell',
+                cardId,
+                target: {
+                  kind: 'group',
+                  startIndex: group.startIndex,
+                  endIndex: group.endIndex,
+                },
+              }]
+            : [],
+        )
+      case 'transfer':
+        return manager.state.board.creatures.flatMap(({ cardId: targetCardId }) => {
+          const targetInstance = getCardInstance(manager.state, targetCardId)
+          return targetInstance.ownerId === activePlayer.id &&
+            targetInstance.card.kind === 'creature' &&
+            targetInstance.card.color === 'blue'
+            ? [{
+                type: 'playSpell',
+                cardId,
+                target: { kind: 'creature', cardId: targetCardId },
+              }]
+            : []
+        })
+      default:
+        return [{ type: 'playSpell', cardId }]
+    }
   }
 
   static getActivatedAbilities(manager: GameManager): ActivatedAbilityOption[] {
@@ -965,10 +1155,7 @@ export class GameManager {
           .filter(({ canSummon }) => canSummon)
           .map(({ insertIndex }) => ({ type: 'summonCreature', cardId, insertIndex }))
       }
-      if (!GameManager.isCardPlayable(manager, cardId)) {
-        return []
-      }
-      return [{ type: 'playSpell', cardId }]
+      return GameManager.getSpellPlayActions(manager, cardId)
     })
     const abilityActions = GameManager.getActivatedAbilities(manager).flatMap(
       (option): GameAction[] =>
@@ -1038,7 +1225,7 @@ export class GameManager {
       case 'summonCreature':
         return GameManager.summonCreature(manager, action.cardId, action.insertIndex)
       case 'playSpell':
-        return GameManager.playSpell(manager, action.cardId)
+        return GameManager.playSpell(manager, action.cardId, action.target)
       case 'attackGroup':
         return GameManager.attackGroup(manager, action.startIndex, action.endIndex)
       case 'finishCombat':
@@ -1136,7 +1323,11 @@ export class GameManager {
     })
   }
 
-  static playSpell(manager: GameManager, cardId: CardInstanceId): GameManager {
+  static playSpell(
+    manager: GameManager,
+    cardId: CardInstanceId,
+    target?: SpellTarget,
+  ): GameManager {
     assertGameInProgress(manager.state)
     if (manager.state.phase !== 'main') {
       throw new Error('Spells can only be played during the main phase.')
@@ -1156,33 +1347,25 @@ export class GameManager {
     if (activePlayer.mana < instance.card.cost) {
       throw new Error('Not enough mana to play this spell.')
     }
+    const isLegalTarget = GameManager.getSpellPlayActions(manager, cardId).some(
+      (action) => areSpellTargetsEqual(action.target, target),
+    )
+    if (!isLegalTarget) {
+      throw new Error('The selected spell target is not valid.')
+    }
     const playerWithoutCard = removeHandCard(activePlayer, cardId)
     const paidPlayer = {
       ...playerWithoutCard,
       mana: playerWithoutCard.mana - instance.card.cost,
     }
-    const { player: playerAfterExile, count: effectAmount } =
-      exileDiscardedCreatures(
-        manager.state,
-        paidPlayer,
-        instance.card.effect.exileColor,
-      )
-
-    if (instance.card.duration === 'immediate') {
-      const stateAfterSpell = replacePlayer(manager.state, {
-        ...playerAfterExile,
-        discard:
-          activePlayer.placedSpell === null
-            ? playerAfterExile.discard
-            : [...playerAfterExile.discard, activePlayer.placedSpell.cardId],
-        placedSpell: { cardId, effectAmount },
-      })
-      return GameManager.from(
-        instance.card.effect.type === 'returnFire'
-          ? applyReturnFire(stateAfterSpell, activePlayer.id, effectAmount)
-          : stateAfterSpell,
-      )
-    }
+    const exileResult = 'exileColor' in instance.card.effect
+      ? exileDiscardedCreatures(
+          manager.state,
+          paidPlayer,
+          instance.card.effect.exileColor,
+        )
+      : { player: paidPlayer, count: 0 }
+    const { player: playerAfterExile, count: effectAmount } = exileResult
 
     const nextPlayer = {
       ...playerAfterExile,
@@ -1198,8 +1381,30 @@ export class GameManager {
           : [...playerAfterExile.discard, activePlayer.placedSpell.cardId],
       placedSpell: { cardId, effectAmount },
     }
+    const stateAfterSpell = replacePlayer(manager.state, nextPlayer)
 
-    return GameManager.from(replacePlayer(manager.state, nextPlayer))
+    switch (instance.card.effect.type) {
+      case 'returnFire':
+        return GameManager.from(
+          applyReturnFire(stateAfterSpell, activePlayer.id, effectAmount),
+        )
+      case 'fireballAssault':
+        if (target?.kind !== 'group') {
+          throw new Error('Fireball assault requires a group target.')
+        }
+        return GameManager.from(
+          applyFireballAssault(stateAfterSpell, activePlayer.id, target),
+        )
+      case 'transfer':
+        if (target?.kind !== 'creature') {
+          throw new Error('Transfer requires a creature target.')
+        }
+        return GameManager.from(applyTransfer(stateAfterSpell, target))
+      case 'lifeCycle':
+        return GameManager.from(applyLifeCycle(stateAfterSpell, activePlayer.id))
+      default:
+        return GameManager.from(stateAfterSpell)
+    }
   }
 
   static attackGroup(manager: GameManager, startIndex: number, endIndex: number): GameManager {

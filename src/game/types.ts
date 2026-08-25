@@ -54,6 +54,9 @@ export type SpellEffect =
   | { type: 'returnFire'; exileColor: 'red' }
   | { type: 'lifeDroplet'; exileColor: 'blue' }
   | { type: 'abundance'; exileColor: 'green' }
+  | { type: 'fireballAssault' }
+  | { type: 'transfer' }
+  | { type: 'lifeCycle' }
 
 export type SpellCard = CardBase & {
   kind: 'spell'
@@ -129,6 +132,7 @@ export type EffectiveBoardGroup = {
 export type PendingCombat = {
   damageMarkers: DamageMarker[]
   destroyedCardIds: CardInstanceId[]
+  destructionManaRefunds?: Partial<Record<CardInstanceId, number>>
   defendingPlayerId: PlayerId
   playerWasHit: boolean
   playerDamage: number
@@ -179,11 +183,21 @@ export type GameState = {
   board: Board
 }
 
+export type SpellTarget =
+  | { kind: 'group'; startIndex: number; endIndex: number }
+  | { kind: 'creature'; cardId: CardInstanceId }
+
+export type PlaySpellAction = {
+  type: 'playSpell'
+  cardId: CardInstanceId
+  target?: SpellTarget
+}
+
 export type GameAction =
   | { type: 'resolveKeepUp' }
   | { type: 'passPhase' }
   | { type: 'summonCreature'; cardId: CardInstanceId; insertIndex: number }
-  | { type: 'playSpell'; cardId: CardInstanceId }
+  | PlaySpellAction
   | { type: 'attackGroup'; startIndex: number; endIndex: number }
   | { type: 'finishCombat' }
   | {

@@ -64,12 +64,14 @@ export type {
   KeywordAbilityType,
   Phase,
   PendingCombat,
+  PlaySpellAction,
   PlayerId,
   PlayerState,
   PlacedSpell,
   SpellCard,
   SpellDuration,
   SpellEffect,
+  SpellTarget,
   SummonOption,
 } from './types'
 export type { DeckSummary } from './decks'

@@ -31,6 +31,9 @@ export const CARD_DEFINITION_IDS = {
   RETURN_FIRE: '747911c4-29db-4fbc-a056-fb97b29c275f',
   LIFE_DROPLET: 'f76eb155-8b41-401d-aa94-83ebcdcaec73',
   ABUNDANCE: 'f1f9c2ec-1db5-46e3-b6f0-5ca0ef958bdb',
+  FIREBALL_ASSAULT: 'aab9db3e-2214-4bf8-81e2-154b489c2c51',
+  TRANSFER: 'd802b528-da1b-4474-9acf-ddd9c3978f61',
+  LIFE_CYCLE: '71101851-b5aa-4f63-9071-60e470a49009',
 } as const satisfies Record<string, CardDefinitionId>
 
 export const CREATURE_CARDS = [
@@ -360,6 +363,33 @@ export const SPELL_CARDS = [
     duration: 'untilTurnEnd',
     effect: { type: 'abundance', exileColor: 'green' },
     text: '自分の捨て札にあるすべての緑クリーチャーを除外し、その枚数に等しいマナを得る。ターン終了時にすべてのマナを失う。',
+  },
+  {
+    definitionId: CARD_DEFINITION_IDS.FIREBALL_ASSAULT,
+    name: '火の玉特攻',
+    kind: 'spell',
+    cost: 0,
+    duration: 'immediate',
+    effect: { type: 'fireballAssault' },
+    text: '自分のグループを1つ選択する。そのグループの赤クリーチャーをすべて破壊する。敵プレイヤーのHPを、破壊されたクリーチャーのコストの合計だけ減少させる。この効果はシールドの影響を受けない。',
+  },
+  {
+    definitionId: CARD_DEFINITION_IDS.TRANSFER,
+    name: '転送',
+    kind: 'spell',
+    cost: 0,
+    duration: 'immediate',
+    effect: { type: 'transfer' },
+    text: '自分の青クリーチャー1体を選択する。そのクリーチャーを最もHPの少ないプレイヤーの隣に移動する。双方のHPが同じ場合は移動しない。',
+  },
+  {
+    definitionId: CARD_DEFINITION_IDS.LIFE_CYCLE,
+    name: '生命の循環',
+    kind: 'spell',
+    cost: 0,
+    duration: 'immediate',
+    effect: { type: 'lifeCycle' },
+    text: '自分のすべての緑クリーチャーを破壊する。この効果による破壊では半分ではなく全額のマナが返還される。',
   },
 ] satisfies SpellCard[]
 

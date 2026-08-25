@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { CARD_DEFINITION_IDS } from './cards'
 import { GameManager, assertValidGameState } from './GameManager'
+import { THEME_DECK_BY_ID } from './themeDecks'
 import type { CardInstanceId, GameState, PlayerId } from './types'
 
 const KEEP_ORDER_RANDOM = () => 1 - Number.EPSILON
@@ -93,6 +94,14 @@ const findDefinition = (
     (cardId) => state.cards[cardId].card.definitionId === definitionId,
     1,
   )[0]
+
+const createThemeManager = (
+  playerDeckId: keyof typeof THEME_DECK_BY_ID,
+): GameManager =>
+  GameManager.create(KEEP_ORDER_RANDOM, {
+    playerA: THEME_DECK_BY_ID[playerDeckId].cardDefinitionIds,
+    playerB: THEME_DECK_BY_ID['red-blue-skirmish'].cardDefinitionIds,
+  })
 
 describe('spell rules', () => {
   it('keeps return fire in the spell zone until the caster turn ends', () => {
@@ -351,5 +360,195 @@ describe('spell rules', () => {
     expect(manager.state.players.playerA.placedSpell).toBeNull()
     expect(manager.state.players.playerA.discard).toContain(abundance)
     expect(manager.state.players.playerA.exile).toContain(greenDiscard)
+  })
+
+  it('destroys the red creatures in a chosen group and bypasses the enemy shield with fireball assault', () => {
+    const initial = createThemeManager('red-blue-skirmish')
+    const fireballAssault = findDefinition(
+      initial.state,
+      'playerA',
+      CARD_ID.FIREBALL_ASSAULT,
+    )
+    const redCreature = findDefinition(
+      initial.state,
+      'playerA',
+      CARD_ID.SPARK_SWORDSMAN,
+    )
+    const vanishingRedCreature = findDefinition(
+      initial.state,
+      'playerA',
+      CARD_ID.EXHAUSTED_VOLCANO_DRAGON,
+    )
+    const blueCreature = findDefinition(
+      initial.state,
+      'playerA',
+      CARD_ID.TIDEWAY_SCOUT,
+    )
+    let manager = configureState(initial, {
+      hands: { playerA: [fireballAssault] },
+      board: [redCreature, vanishingRedCreature, blueCreature],
+    })
+
+    expect(GameManager.getSpellPlayActions(manager, fireballAssault)).toEqual([
+      {
+        type: 'playSpell',
+        cardId: fireballAssault,
+        target: { kind: 'group', startIndex: 0, endIndex: 2 },
+      },
+    ])
+    expect(() => GameManager.playSpell(manager, fireballAssault)).toThrow(
+      'The selected spell target is not valid.',
+    )
+
+    manager = GameManager.playSpell(manager, fireballAssault, {
+      kind: 'group',
+      startIndex: 0,
+      endIndex: 2,
+    })
+
+    expect(manager.state.pendingCombat).toMatchObject({
+      damageMarkers: [],
+      destroyedCardIds: [redCreature, vanishingRedCreature],
+      defendingPlayerId: 'playerB',
+      playerWasHit: true,
+      playerDamage: 7,
+      endsTurnAfterResolution: false,
+    })
+    expect(manager.state.players.playerB.hp).toBe(20)
+    expect(GameManager.getDestructionManaRefund(manager, redCreature)).toBe(1)
+    expect(GameManager.getDestructionManaRefund(manager, vanishingRedCreature)).toBe(0)
+
+    manager = GameManager.finishCombat(manager)
+
+    expect(manager.state.players.playerB.hp).toBe(13)
+    expect(manager.state.players.playerA.mana).toBe(1)
+    expect(manager.state.board.creatures.map(({ cardId }) => cardId)).toEqual([
+      blueCreature,
+    ])
+    expect(manager.state.players.playerA.placedSpell?.cardId).toBe(fireballAssault)
+  })
+
+  it('moves a chosen blue creature next to the player with less HP', () => {
+    const initial = createThemeManager('blue-green-intercept')
+    const transfer = findDefinition(initial.state, 'playerA', CARD_ID.TRANSFER)
+    const greenCreature = findDefinition(
+      initial.state,
+      'playerA',
+      CARD_ID.OAKBARK_SENTINEL,
+    )
+    const blueCreature = findDefinition(
+      initial.state,
+      'playerA',
+      CARD_ID.TIDEWAY_SCOUT,
+    )
+    const enemyCreature = findDefinition(
+      initial.state,
+      'playerB',
+      CARD_ID.SPARK_SWORDSMAN,
+    )
+    let manager = configureState(initial, {
+      hands: { playerA: [transfer] },
+      board: [greenCreature, blueCreature, enemyCreature],
+      hp: { playerA: 20, playerB: 12 },
+    })
+
+    expect(GameManager.getSpellPlayActions(manager, transfer)).toEqual([
+      {
+        type: 'playSpell',
+        cardId: transfer,
+        target: { kind: 'creature', cardId: blueCreature },
+      },
+    ])
+    manager = GameManager.playSpell(manager, transfer, {
+      kind: 'creature',
+      cardId: blueCreature,
+    })
+
+    expect(manager.state.board.creatures.map(({ cardId }) => cardId)).toEqual([
+      greenCreature,
+      enemyCreature,
+      blueCreature,
+    ])
+    expect(manager.state.board.creatures.at(-1)?.summonedTurn).toBe(9)
+    expect(manager.state.players.playerA.placedSpell?.cardId).toBe(transfer)
+  })
+
+  it('uses transfer without moving its target when both players have equal HP', () => {
+    const initial = createThemeManager('blue-green-intercept')
+    const transfer = findDefinition(initial.state, 'playerA', CARD_ID.TRANSFER)
+    const blueCreature = findDefinition(
+      initial.state,
+      'playerA',
+      CARD_ID.TIDEWAY_SCOUT,
+    )
+    let manager = configureState(initial, {
+      hands: { playerA: [transfer] },
+      board: [blueCreature],
+      hp: { playerA: 15, playerB: 15 },
+    })
+
+    manager = GameManager.playSpell(manager, transfer, {
+      kind: 'creature',
+      cardId: blueCreature,
+    })
+
+    expect(manager.state.board.creatures.map(({ cardId }) => cardId)).toEqual([
+      blueCreature,
+    ])
+    expect(manager.state.players.playerA.hand).toEqual([])
+    expect(manager.state.players.playerA.placedSpell?.cardId).toBe(transfer)
+  })
+
+  it('destroys every own green creature and refunds full cost with life cycle', () => {
+    const initial = createThemeManager('green-red-frontline')
+    const lifeCycle = findDefinition(initial.state, 'playerA', CARD_ID.LIFE_CYCLE)
+    const greenCreature = findDefinition(
+      initial.state,
+      'playerA',
+      CARD_ID.OAKBARK_SENTINEL,
+    )
+    const vanishingGreenCreature = findDefinition(
+      initial.state,
+      'playerA',
+      CARD_ID.DREAMWALKING_FOREST_GIANT,
+    )
+    const redCreature = findDefinition(
+      initial.state,
+      'playerA',
+      CARD_ID.SPARK_SWORDSMAN,
+    )
+    let manager = configureState(initial, {
+      hands: { playerA: [lifeCycle] },
+      board: [greenCreature, redCreature, vanishingGreenCreature],
+    })
+
+    manager = GameManager.playSpell(manager, lifeCycle)
+
+    expect(manager.state.pendingCombat).toMatchObject({
+      damageMarkers: [],
+      destroyedCardIds: [greenCreature, vanishingGreenCreature],
+      destructionManaRefunds: {
+        [greenCreature]: 2,
+        [vanishingGreenCreature]: 5,
+      },
+      defendingPlayerId: 'playerA',
+      playerWasHit: false,
+      playerDamage: 0,
+      endsTurnAfterResolution: false,
+    })
+    expect(GameManager.getDestructionManaRefund(manager, greenCreature)).toBe(2)
+    expect(GameManager.getDestructionManaRefund(manager, vanishingGreenCreature)).toBe(5)
+
+    manager = GameManager.finishCombat(manager)
+
+    expect(manager.state.players.playerA.mana).toBe(7)
+    expect(manager.state.board.creatures.map(({ cardId }) => cardId)).toEqual([
+      redCreature,
+    ])
+    expect(manager.state.players.playerA.discard).toEqual(
+      expect.arrayContaining([greenCreature, vanishingGreenCreature]),
+    )
+    expect(manager.state.players.playerA.placedSpell?.cardId).toBe(lifeCycle)
+    expect(() => assertValidGameState(manager.state)).not.toThrow()
   })
 })

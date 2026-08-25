@@ -18,6 +18,7 @@ import type {
   CreatureStatModifier,
   PlayerId,
   PlayerState,
+  PlaySpellAction,
   SummonOption,
 } from '../game'
 import CardView from './CardView'
@@ -46,11 +47,13 @@ type BoardViewProps = {
   creatureStatModifiers: Record<CardInstanceId, CreatureStatModifier>
   summonOptions?: SummonOption[]
   activatedAbilities?: ActivatedAbilityOption[]
+  spellTargetActions?: PlaySpellAction[]
   attackAnimation?: BoardAttackAnimation | null
   canAttack?: boolean
   onInsertClick?: (insertIndex: number) => void
   onGroupAttack?: (startIndex: number, endIndex: number) => void
   onActivateAbility?: (ability: ActivatedAbilityOption) => void
+  onPlaySpellTarget?: (action: PlaySpellAction) => void
 }
 
 type BoardPlayerProps = {
@@ -130,7 +133,7 @@ const BoardPlayer = ({ player, cards, barrier, deckColors, damage }: BoardPlayer
   const placedSpellCard =
     placedSpell === null ? null : cards[placedSpell.cardId].card
   const exileColor =
-    placedSpellCard?.kind === 'spell'
+    placedSpellCard?.kind === 'spell' && 'exileColor' in placedSpellCard.effect
       ? placedSpellCard.effect.exileColor
       : null
   const damageLevel = damage === null ? 'normal' : getPlayerDamageLevel(damage)
@@ -234,7 +237,10 @@ type BoardGroupButtonProps = {
   activePlayerId: PlayerId
   animationId: number | null
   canAttack: boolean
+  spellTargetAction?: PlaySpellAction
+  spellName?: string
   onAttack?: (startIndex: number, endIndex: number) => void
+  onPlaySpellTarget?: (action: PlaySpellAction) => void
 }
 
 type SummonImpactProps = {
@@ -298,7 +304,10 @@ const BoardGroupButton = ({
   activePlayerId,
   animationId,
   canAttack,
+  spellTargetAction,
+  spellName,
   onAttack,
+  onPlaySpellTarget,
 }: BoardGroupButtonProps) => {
   const animationControls = useAnimationControls()
   const pokeDistance = group.ownerId === 'playerA' ? 10 : -10
@@ -316,17 +325,31 @@ const BoardGroupButton = ({
 
   return (
     <motion.button
-      className={`board-group-button board-group-${group.ownerId}`}
+      className={`board-group-button board-group-${group.ownerId} ${spellTargetAction ? 'board-group-spell-target' : ''}`}
       style={{
         gridColumn: `${group.startIndex * 2 + 2} / ${group.endIndex * 2 + 3}`,
         gridRow: group.ownerId === 'playerB' ? 1 : 3,
       }}
       animate={animationControls}
       type="button"
-      disabled={!canAttack || activePlayerId !== group.ownerId}
-      onClick={() => onAttack?.(group.startIndex, group.endIndex)}
+      aria-label={
+        spellTargetAction
+          ? `${spellName ?? '魔法'}の対象に攻${group.attack}、防${group.defense}のグループを選ぶ`
+          : undefined
+      }
+      disabled={
+        spellTargetAction === undefined &&
+        (!canAttack || activePlayerId !== group.ownerId)
+      }
+      onClick={() => {
+        if (spellTargetAction) {
+          onPlaySpellTarget?.(spellTargetAction)
+          return
+        }
+        onAttack?.(group.startIndex, group.endIndex)
+      }}
     >
-      攻{group.attack} / 防{group.defense}
+      {spellTargetAction ? '対象 / ' : ''}攻{group.attack} / 防{group.defense}
     </motion.button>
   )
 }
@@ -346,11 +369,13 @@ const BoardView = ({
   creatureStatModifiers,
   summonOptions = [],
   activatedAbilities = [],
+  spellTargetActions = [],
   attackAnimation = null,
   canAttack = false,
   onInsertClick,
   onGroupAttack,
   onActivateAbility,
+  onPlaySpellTarget,
 }: BoardViewProps) => {
   const boardRef = useRef<HTMLElement>(null)
   const laneScrollRef = useRef<HTMLDivElement>(null)
@@ -446,6 +471,23 @@ const BoardView = ({
       ability,
     ])
   })
+  const groupSpellTargetActions = new Map(
+    spellTargetActions.flatMap((action) =>
+      action.target?.kind === 'group'
+        ? [[`${action.target.startIndex}-${action.target.endIndex}`, action] as const]
+        : [],
+    ),
+  )
+  const creatureSpellTargetActions = new Map(
+    spellTargetActions.flatMap((action) =>
+      action.target?.kind === 'creature'
+        ? [[action.target.cardId, action] as const]
+        : [],
+    ),
+  )
+  const selectedSpellName = spellTargetActions[0]
+    ? cards[spellTargetActions[0].cardId].card.name
+    : undefined
   const gridTemplateColumns =
     board.creatures.length === 0
       ? 'minmax(140px, 1fr)'
@@ -532,7 +574,10 @@ const BoardView = ({
                       />
                     </motion.div>
                   </SummonImpact>
-                  {(abilitiesByCardId.get(creature.cardId) ?? []).length > 0 && (
+                  {(
+                    (abilitiesByCardId.get(creature.cardId) ?? []).length > 0 ||
+                    creatureSpellTargetActions.has(creature.cardId)
+                  ) && (
                     <div className="board-ability-actions">
                       {(abilitiesByCardId.get(creature.cardId) ?? []).map((ability) => (
                         <button
@@ -545,6 +590,21 @@ const BoardView = ({
                           {ability.label}
                         </button>
                       ))}
+                      {creatureSpellTargetActions.has(creature.cardId) && (
+                        <button
+                          className="board-spell-target-button"
+                          type="button"
+                          aria-label={`${selectedSpellName ?? '魔法'}の対象に${cards[creature.cardId].card.name}を選ぶ`}
+                          onClick={() => {
+                            const action = creatureSpellTargetActions.get(creature.cardId)
+                            if (action) {
+                              onPlaySpellTarget?.(action)
+                            }
+                          }}
+                        >
+                          転送
+                        </button>
+                      )}
                     </div>
                   )}
                   {damageByCardId.has(creature.cardId) && (
@@ -586,7 +646,12 @@ const BoardView = ({
                     : null
                 }
                 canAttack={canAttack}
+                spellTargetAction={groupSpellTargetActions.get(
+                  `${group.startIndex}-${group.endIndex}`,
+                )}
+                spellName={selectedSpellName}
                 onAttack={onGroupAttack}
+                onPlaySpellTarget={onPlaySpellTarget}
               />
             ))}
           </div>

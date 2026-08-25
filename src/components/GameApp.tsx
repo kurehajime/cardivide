@@ -7,6 +7,7 @@ import {
   type AiDifficulty,
   type ActivatedAbilityOption,
   type CardInstanceId,
+  type PlaySpellAction,
   type ThemeDeckId,
 } from '../game'
 import BoardView, { type BoardAttackAnimation } from './BoardView'
@@ -111,8 +112,22 @@ const GameSession = ({
     selectedCard?.card.kind === 'creature'
       ? GameManager.getSummonOptions(manager, selectedCard.id)
       : []
+  const selectedSpellActions =
+    selectedCard?.card.kind === 'spell'
+      ? GameManager.getSpellPlayActions(manager, selectedCard.id)
+      : []
+  const selectedSpellTargetActions = selectedSpellActions.filter(
+    (action) => action.target !== undefined,
+  )
   const playableCardIds = new Set(
     currentPlayer.hand.filter((cardId) => GameManager.isCardPlayable(manager, cardId)),
+  )
+  const directlyPlayableSpellIds = new Set(
+    currentPlayer.hand.filter((cardId) =>
+      GameManager.getSpellPlayActions(manager, cardId).some(
+        (action) => action.target === undefined,
+      ),
+    ),
   )
   const discardableCardIds = new Set<CardInstanceId>(
     state.activePlayerId === 'playerA' &&
@@ -228,9 +243,18 @@ const GameSession = ({
   }
 
   const handlePlaySpell = (cardId: CardInstanceId) => {
-    applyGameUpdate((currentManager) =>
-      GameManager.playSpell(currentManager, cardId),
-    )
+    applyGameUpdate((currentManager) => {
+      const action = GameManager.getSpellPlayActions(currentManager, cardId).find(
+        (candidate) => candidate.target === undefined,
+      )
+      return action
+        ? GameManager.applyAction(currentManager, action)
+        : currentManager
+    })
+  }
+
+  const handlePlaySpellTarget = (action: PlaySpellAction) => {
+    applyGameUpdate((currentManager) => GameManager.applyAction(currentManager, action))
   }
 
   const handleGroupAttack = (startIndex: number, endIndex: number) => {
@@ -312,6 +336,7 @@ const GameSession = ({
             groups={boardGroups}
             creatureStatModifiers={creatureStatModifiers}
             summonOptions={selectedSummonOptions}
+            spellTargetActions={selectedSpellTargetActions}
             activatedAbilities={
               state.activePlayerId === 'playerA' && winnerId === null
                 ? activatedAbilities
@@ -329,6 +354,7 @@ const GameSession = ({
             onInsertClick={handleInsertClick}
             onGroupAttack={handleGroupAttack}
             onActivateAbility={handleActivateAbility}
+            onPlaySpellTarget={handlePlaySpellTarget}
           />
           <div className="player-hand-row">
             <div className="player-hand-row-spacer" aria-hidden="true" />
@@ -337,6 +363,11 @@ const GameSession = ({
               playerName={playerA.name}
               position="bottom"
               playableCardIds={state.activePlayerId === 'playerA' ? playableCardIds : undefined}
+              directlyPlayableSpellIds={
+                state.activePlayerId === 'playerA'
+                  ? directlyPlayableSpellIds
+                  : undefined
+              }
               discardableCardIds={discardableCardIds}
               active={state.activePlayerId === 'playerA'}
               disabled={
