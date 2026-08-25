@@ -443,7 +443,9 @@ describe('AI evaluation', () => {
   })
 
   it('adds life droplet hold value once for its accumulated blue discards', () => {
-    const deck = THEME_DECK_BY_ID['blue-green-intercept'].cardDefinitionIds
+    const deck = [...THEME_DECK_BY_ID['blue-green-intercept'].cardDefinitionIds]
+    const transferIndex = deck.indexOf(CARD_ID.TRANSFER)
+    deck[transferIndex] = CARD_ID.LIFE_DROPLET
     const initial = GameManager.create(KEEP_ORDER_RANDOM, {
       playerA: deck,
       playerB: deck,
