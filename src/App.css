@@ -1389,6 +1389,10 @@
   pointer-events: none;
 }
 
+.card-face-art-color {
+  flood-color: var(--card-accent);
+}
+
 .card-face-art-frame {
   fill: none;
   stroke: var(--card-accent-dark);

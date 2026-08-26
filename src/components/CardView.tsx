@@ -78,7 +78,9 @@ type CardFaceProps = {
 }
 
 const CardFace = ({ card, colorLabel, statModifier }: CardFaceProps) => {
-  const artClipId = `card-art-${useId().replaceAll(':', '')}`
+  const artId = useId().replaceAll(':', '')
+  const artClipId = `card-art-clip-${artId}`
+  const artColorFilterId = `card-art-color-${artId}`
   const artUrl = getCardArtUrl(card)
   const isSpell = card.kind === 'spell'
   const typeLabel = isSpell
@@ -117,6 +119,10 @@ const CardFace = ({ card, colorLabel, statModifier }: CardFaceProps) => {
         <clipPath id={artClipId}>
           <rect x="28" y="86" width="444" height="259" rx="9" />
         </clipPath>
+        <filter id={artColorFilterId} colorInterpolationFilters="sRGB">
+          <feFlood className="card-face-art-color" result="art-color" />
+          <feComposite in="art-color" in2="SourceAlpha" operator="in" />
+        </filter>
       </defs>
 
       <rect className="card-face-base" x="2" y="2" width="496" height="696" rx="18" />
@@ -132,6 +138,7 @@ const CardFace = ({ card, colorLabel, statModifier }: CardFaceProps) => {
           height="259"
           preserveAspectRatio="xMidYMid meet"
           clipPath={`url(#${artClipId})`}
+          filter={`url(#${artColorFilterId})`}
         />
       )}
       <rect className="card-face-art-frame" x="25" y="83" width="450" height="265" rx="12" />
