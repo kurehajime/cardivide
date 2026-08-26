@@ -446,7 +446,7 @@ describe('summon modifiers', () => {
       mana: { playerA: 1 },
     })
     expect(manager.state.cards[beachhead].card).toMatchObject({
-      name: '潮先の築城師',
+      name: '偵察者',
       attack: 2,
       defense: 1,
       march: 2,
@@ -616,7 +616,7 @@ describe('activated abilities', () => {
     expect(manager.state.players.playerA.hand).toContain(source)
     expect(manager.state.players.playerA.mana).toBe(1)
     expect(manager.state.cards[source].card).toMatchObject({
-      name: '霧渡りの使者',
+      name: '傭兵',
       attack: 2,
     })
 

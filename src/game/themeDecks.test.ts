@@ -8,11 +8,13 @@ const CARD_ID = CARD_DEFINITION_IDS
 
 const EXPECTED_SPELLS_BY_DECK = {
   'red-blue-skirmish': [
+    CARD_ID.FIREBALL_ASSAULT,
     CARD_ID.RETURN_FIRE,
     CARD_ID.FIREBALL_ASSAULT,
     CARD_ID.LIFE_DROPLET,
   ],
   'blue-green-intercept': [
+    CARD_ID.TRANSFER,
     CARD_ID.LIFE_DROPLET,
     CARD_ID.TRANSFER,
     CARD_ID.TRANSFER,
@@ -20,20 +22,21 @@ const EXPECTED_SPELLS_BY_DECK = {
   ],
   'green-red-frontline': [
     CARD_ID.LIFE_CYCLE,
+    CARD_ID.LIFE_CYCLE,
     CARD_ID.RETURN_FIRE,
   ],
 } as const
 
 const EXPECTED_CREATURE_COSTS_BY_DECK = {
-  'red-blue-skirmish': { 2: 25, 4: 9, 5: 3 },
-  'blue-green-intercept': { 2: 23, 4: 10, 5: 3 },
-  'green-red-frontline': { 2: 23, 4: 10, 5: 5 },
+  'red-blue-skirmish': { 2: 25, 4: 8, 5: 3 },
+  'blue-green-intercept': { 2: 22, 4: 10, 5: 3 },
+  'green-red-frontline': { 2: 22, 4: 10, 5: 5 },
 } as const
 
 const EXPECTED_CREATURE_COLORS_BY_DECK = {
-  'red-blue-skirmish': { primary: 23, secondary: 14 },
-  'blue-green-intercept': { primary: 22, secondary: 14 },
-  'green-red-frontline': { primary: 24, secondary: 14 },
+  'red-blue-skirmish': { primary: 22, secondary: 14 },
+  'blue-green-intercept': { primary: 21, secondary: 14 },
+  'green-red-frontline': { primary: 23, secondary: 14 },
 } as const
 
 const EXPECTED_CARD_COUNTS_BY_DECK = {
@@ -45,10 +48,10 @@ const EXPECTED_CARD_COUNTS_BY_DECK = {
     [CARD_ID.CRIMSON_BLADE_INFILTRATOR]: 3,
     [CARD_ID.BEACON_HEAVY_CAVALRY]: 2,
     [CARD_ID.LONE_ARMY_GENERAL]: 2,
-    [CARD_ID.ASH_DISMANTLER]: 2,
+    [CARD_ID.ASH_DISMANTLER]: 1,
     [CARD_ID.EXHAUSTED_VOLCANO_DRAGON]: 2,
     [CARD_ID.RETURN_FIRE]: 1,
-    [CARD_ID.FIREBALL_ASSAULT]: 1,
+    [CARD_ID.FIREBALL_ASSAULT]: 2,
     [CARD_ID.TIDEWAY_SCOUT]: 3,
     [CARD_ID.SPRAY_HERALD]: 2,
     [CARD_ID.MIST_RETURNING_MESSENGER]: 2,
@@ -60,7 +63,7 @@ const EXPECTED_CARD_COUNTS_BY_DECK = {
   },
   'blue-green-intercept': {
     [CARD_ID.TIDEWAY_SCOUT]: 3,
-    [CARD_ID.SPRAY_HERALD]: 3,
+    [CARD_ID.SPRAY_HERALD]: 2,
     [CARD_ID.SURGING_DUELIST]: 3,
     [CARD_ID.MIST_RETURNING_MESSENGER]: 2,
     [CARD_ID.TIDEFRONT_FORTIFIER]: 2,
@@ -69,7 +72,7 @@ const EXPECTED_CARD_COUNTS_BY_DECK = {
     [CARD_ID.WAVE_RETURN_MAGE]: 1,
     [CARD_ID.EPHEMERAL_DEEP_WHALE]: 2,
     [CARD_ID.LIFE_DROPLET]: 1,
-    [CARD_ID.TRANSFER]: 2,
+    [CARD_ID.TRANSFER]: 3,
     [CARD_ID.OAKBARK_SENTINEL]: 3,
     [CARD_ID.ROOTED_ANCIENT]: 1,
     [CARD_ID.VINE_SNARE_HUNTER]: 2,
@@ -84,13 +87,13 @@ const EXPECTED_CARD_COUNTS_BY_DECK = {
     [CARD_ID.OAKBARK_SENTINEL]: 3,
     [CARD_ID.ROOTED_ANCIENT]: 3,
     [CARD_ID.VINE_SNARE_HUNTER]: 3,
-    [CARD_ID.GEODE_MINER]: 2,
+    [CARD_ID.GEODE_MINER]: 1,
     [CARD_ID.ROOT_FORT_REARGUARD]: 3,
     [CARD_ID.GREAT_TREE_GUARDIAN]: 3,
     [CARD_ID.FOREST_CAGE_BEASTMASTER]: 2,
     [CARD_ID.LEYLINE_MINING_GIANT]: 2,
     [CARD_ID.DREAMWALKING_FOREST_GIANT]: 3,
-    [CARD_ID.LIFE_CYCLE]: 1,
+    [CARD_ID.LIFE_CYCLE]: 2,
     [CARD_ID.SPARK_SWORDSMAN]: 3,
     [CARD_ID.BURNING_VANGUARD]: 1,
     [CARD_ID.FORMATION_CLEARING_MERCENARY]: 3,

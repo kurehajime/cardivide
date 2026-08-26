@@ -39,7 +39,7 @@ export const CARD_DEFINITION_IDS = {
 export const CREATURE_CARDS = [
   {
     definitionId: CARD_DEFINITION_IDS.SPARK_SWORDSMAN,
-    name: '火花の剣兵',
+    name: '山賊',
     kind: 'creature',
     color: 'red',
     cost: 2,
@@ -50,7 +50,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.TIDEWAY_SCOUT,
-    name: '潮路の斥候',
+    name: '行商人',
     kind: 'creature',
     color: 'blue',
     cost: 2,
@@ -61,7 +61,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.OAKBARK_SENTINEL,
-    name: '樫皮の番兵',
+    name: '番兵',
     kind: 'creature',
     color: 'green',
     cost: 2,
@@ -72,7 +72,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.BURNING_VANGUARD,
-    name: '燃え立つ先陣',
+    name: '飢えた狼',
     kind: 'creature',
     color: 'red',
     cost: 2,
@@ -83,7 +83,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.SPRAY_HERALD,
-    name: '飛沫の伝令',
+    name: '渡り鳥',
     kind: 'creature',
     color: 'blue',
     cost: 2,
@@ -94,7 +94,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.ROOTED_ANCIENT,
-    name: '根張りの古木',
+    name: '重装兵',
     kind: 'creature',
     color: 'green',
     cost: 2,
@@ -105,7 +105,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.BEACON_HEAVY_CAVALRY,
-    name: '烽火の重騎兵',
+    name: '投石機',
     kind: 'creature',
     color: 'red',
     cost: 4,
@@ -116,7 +116,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.AZURE_WAVE_VOYAGER,
-    name: '蒼波の航海士',
+    name: '海賊船',
     kind: 'creature',
     color: 'blue',
     cost: 4,
@@ -127,7 +127,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.GREAT_TREE_GUARDIAN,
-    name: '巨樹の守護者',
+    name: '戦象',
     kind: 'creature',
     color: 'green',
     cost: 4,
@@ -138,7 +138,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.EXHAUSTED_VOLCANO_DRAGON,
-    name: '燃え尽きる火山竜',
+    name: 'ドラゴン',
     kind: 'creature',
     color: 'red',
     cost: 5,
@@ -149,7 +149,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.EPHEMERAL_DEEP_WHALE,
-    name: '泡沫の深海鯨',
+    name: '白鯨',
     kind: 'creature',
     color: 'blue',
     cost: 5,
@@ -160,7 +160,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.DREAMWALKING_FOREST_GIANT,
-    name: '夢渡りの森巨人',
+    name: 'ゴーレム',
     kind: 'creature',
     color: 'green',
     cost: 5,
@@ -171,7 +171,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.SOLITARY_PEAK_SWORDSMAN,
-    name: '孤峰の剣士',
+    name: 'ゴリラ',
     kind: 'creature',
     color: 'red',
     cost: 2,
@@ -182,7 +182,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.FORMATION_CLEARING_MERCENARY,
-    name: '陣払いの傭兵',
+    name: '荒くれ者',
     kind: 'creature',
     color: 'red',
     cost: 2,
@@ -193,7 +193,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.CRIMSON_BLADE_INFILTRATOR,
-    name: '朱刃の潜入者',
+    name: '暗殺者',
     kind: 'creature',
     color: 'red',
     cost: 2,
@@ -204,7 +204,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.SURGING_DUELIST,
-    name: '逆巻く決闘士',
+    name: 'ウニ',
     kind: 'creature',
     color: 'blue',
     cost: 2,
@@ -215,7 +215,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.MIST_RETURNING_MESSENGER,
-    name: '霧渡りの使者',
+    name: '傭兵',
     kind: 'creature',
     color: 'blue',
     cost: 2,
@@ -226,7 +226,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.TIDEFRONT_FORTIFIER,
-    name: '潮先の築城師',
+    name: '偵察者',
     kind: 'creature',
     color: 'blue',
     cost: 2,
@@ -237,7 +237,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.VINE_SNARE_HUNTER,
-    name: '蔦罠の狩人',
+    name: '狩人',
     kind: 'creature',
     color: 'green',
     cost: 2,
@@ -248,7 +248,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.GEODE_MINER,
-    name: '晶洞の坑夫',
+    name: '鉱夫',
     kind: 'creature',
     color: 'green',
     cost: 2,
@@ -259,7 +259,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.ROOT_FORT_REARGUARD,
-    name: '根砦の殿軍',
+    name: '墓守',
     kind: 'creature',
     color: 'green',
     cost: 2,
@@ -270,7 +270,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.LONE_ARMY_GENERAL,
-    name: '孤軍の猛将',
+    name: 'バーサーカー',
     kind: 'creature',
     color: 'red',
     cost: 4,
@@ -281,7 +281,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.ASH_DISMANTLER,
-    name: '灰燼の解体者',
+    name: '攻城砲',
     kind: 'creature',
     color: 'red',
     cost: 4,
@@ -292,7 +292,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.DEEP_TIDE_INTERCEPTOR,
-    name: '深潮の迎撃者',
+    name: 'クラーケン',
     kind: 'creature',
     color: 'blue',
     cost: 4,
@@ -303,7 +303,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.WAVE_RETURN_MAGE,
-    name: '波間の帰還術師',
+    name: '援軍',
     kind: 'creature',
     color: 'blue',
     cost: 4,
@@ -314,7 +314,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.FOREST_CAGE_BEASTMASTER,
-    name: '森檻の獣使い',
+    name: '大蜘蛛',
     kind: 'creature',
     color: 'green',
     cost: 4,
@@ -325,7 +325,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.LEYLINE_MINING_GIANT,
-    name: '地脈掘りの巨人',
+    name: '職人ギルド',
     kind: 'creature',
     color: 'green',
     cost: 4,
@@ -339,7 +339,7 @@ export const CREATURE_CARDS = [
 export const SPELL_CARDS = [
   {
     definitionId: CARD_DEFINITION_IDS.RETURN_FIRE,
-    name: '返り火',
+    name: 'バックドラフト',
     kind: 'spell',
     cost: 0,
     duration: 'immediate',
@@ -357,7 +357,7 @@ export const SPELL_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.ABUNDANCE,
-    name: '豊穣',
+    name: '収穫祭',
     kind: 'spell',
     cost: 0,
     duration: 'untilTurnEnd',
@@ -375,7 +375,7 @@ export const SPELL_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.TRANSFER,
-    name: '転送',
+    name: 'テレポート',
     kind: 'spell',
     cost: 0,
     duration: 'immediate',

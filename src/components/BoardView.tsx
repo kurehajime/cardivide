@@ -602,7 +602,7 @@ const BoardView = ({
                             }
                           }}
                         >
-                          転送
+                          テレポート
                         </button>
                       )}
                     </div>
