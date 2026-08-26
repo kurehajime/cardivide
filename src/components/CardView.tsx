@@ -39,6 +39,15 @@ const STAT_ICON_URLS = {
   march: `${import.meta.env.BASE_URL}attack.svg`,
 } as const
 
+const CARD_ART_URLS = import.meta.glob<string>('../assets/cards/*.png', {
+  eager: true,
+  query: '?url',
+  import: 'default',
+})
+
+const getCardArtUrl = (card: Card): string | undefined =>
+  CARD_ART_URLS[`../assets/cards/${card.definitionId}.png`]
+
 type DetailPlacement = 'top' | 'right' | 'bottom' | 'left'
 
 type DetailPosition = {
@@ -69,6 +78,8 @@ type CardFaceProps = {
 }
 
 const CardFace = ({ card, colorLabel, statModifier }: CardFaceProps) => {
+  const artClipId = `card-art-${useId().replaceAll(':', '')}`
+  const artUrl = getCardArtUrl(card)
   const isSpell = card.kind === 'spell'
   const typeLabel = isSpell
     ? `${KIND_LABELS.spell}・${SPELL_DURATION_LABELS[card.duration]}`
@@ -102,8 +113,27 @@ const CardFace = ({ card, colorLabel, statModifier }: CardFaceProps) => {
       preserveAspectRatio="xMidYMid meet"
       aria-hidden="true"
     >
+      <defs>
+        <clipPath id={artClipId}>
+          <rect x="28" y="86" width="444" height="259" rx="9" />
+        </clipPath>
+      </defs>
+
       <rect className="card-face-base" x="2" y="2" width="496" height="696" rx="18" />
 
+      <rect className="card-face-art-background" x="25" y="83" width="450" height="265" rx="12" />
+      {artUrl && (
+        <image
+          className="card-face-art-image"
+          href={artUrl}
+          x="28"
+          y="86"
+          width="444"
+          height="259"
+          preserveAspectRatio="xMidYMid meet"
+          clipPath={`url(#${artClipId})`}
+        />
+      )}
       <rect className="card-face-art-frame" x="25" y="83" width="450" height="265" rx="12" />
 
       <circle className="card-face-cost-circle" cx="55" cy="54" r="40" />

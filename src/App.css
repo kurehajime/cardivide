@@ -1381,8 +1381,16 @@
   text-overflow: ellipsis;
 }
 
-.card-face-art-frame {
+.card-face-art-background {
   fill: var(--card-tint);
+}
+
+.card-face-art-image {
+  pointer-events: none;
+}
+
+.card-face-art-frame {
+  fill: none;
   stroke: var(--card-accent-dark);
   stroke-width: 6;
 }
