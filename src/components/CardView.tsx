@@ -144,12 +144,12 @@ const CardFace = ({ card, colorLabel, jitterArt = false, statModifier }: CardFac
               <animate
                 attributeName="seed"
                 values="1;2;3;4;5;6;7;8;9;10"
-                dur="2s"
+                dur="0.8s"
                 repeatCount="indefinite"
                 calcMode="discrete"
               />
             </feTurbulence>
-            <feDisplacementMap in="colored-art" in2="noise" scale="5" />
+            <feDisplacementMap in="colored-art" in2="noise" scale="12" />
           </filter>
         )}
       </defs>
