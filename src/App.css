@@ -1326,9 +1326,9 @@
 }
 
 .card-neutral {
-  --card-accent: #6a6e73;
-  --card-accent-dark: #383b3f;
-  --card-tint: #e2e4e7;
+  --card-accent: #8254a3;
+  --card-accent-dark: #4e2c65;
+  --card-tint: #e7d7ee;
 }
 
 .card-view:focus-visible {
@@ -1543,7 +1543,7 @@
 }
 
 .card-detail-neutral {
-  background: linear-gradient(#fbfbfb, #ebedf0);
+  background: linear-gradient(#fcf8ff, #eadff1);
 }
 
 .card-empty {

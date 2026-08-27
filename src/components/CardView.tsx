@@ -11,6 +11,7 @@ type CardViewProps = {
   card: Card | null
   compact?: boolean
   faceDown?: boolean
+  jitterArt?: boolean
   label?: string
   nestedInButton?: boolean
   statModifier?: CreatureStatModifier
@@ -255,6 +256,7 @@ const CardView = ({
   card,
   compact = false,
   faceDown = false,
+  jitterArt = false,
   label,
   nestedInButton = false,
   statModifier,
@@ -263,7 +265,6 @@ const CardView = ({
   const detailRef = useRef<HTMLDivElement>(null)
   const detailId = useId()
   const [showDetail, setShowDetail] = useState(false)
-  const [jitterArt, setJitterArt] = useState(false)
   const [detailPosition, setDetailPosition] = useState<DetailPosition | null>(null)
 
   const openDetail = useCallback(() => {
@@ -274,16 +275,6 @@ const CardView = ({
   const closeDetail = useCallback(() => {
     setShowDetail(false)
   }, [])
-
-  const handlePointerEnter = useCallback(() => {
-    setJitterArt(true)
-    openDetail()
-  }, [openDetail])
-
-  const handlePointerLeave = useCallback(() => {
-    setJitterArt(false)
-    closeDetail()
-  }, [closeDetail])
 
   const updateDetailPosition = useCallback(() => {
     const cardElement = cardRef.current
@@ -421,8 +412,8 @@ const CardView = ({
       tabIndex={nestedInButton ? undefined : 0}
       onBlur={closeDetail}
       onFocus={openDetail}
-      onPointerEnter={handlePointerEnter}
-      onPointerLeave={handlePointerLeave}
+      onPointerEnter={openDetail}
+      onPointerLeave={closeDetail}
     >
       <CardFace
         card={card}

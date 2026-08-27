@@ -217,7 +217,7 @@ const BoardPlayer = ({ player, cards, barrier, deckColors, damage }: BoardPlayer
         className={`board-spell ${placedSpell === null ? 'board-spell-empty' : ''}`}
         aria-label={`${player.name} spell`}
       >
-        <CardView card={placedSpellCard} compact />
+        <CardView card={placedSpellCard} compact jitterArt />
         {placedSpell !== null && exileColor !== null && (
           <span
             className={`spell-exile-token spell-exile-token-${exileColor}`}
@@ -570,6 +570,7 @@ const BoardView = ({
                       <CardView
                         card={cards[creature.cardId].card}
                         compact
+                        jitterArt
                         statModifier={creatureStatModifiers[creature.cardId]}
                       />
                     </motion.div>
