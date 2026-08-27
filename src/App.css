@@ -1074,6 +1074,10 @@
   padding-top: 42px;
 }
 
+.hand-panel-empty .hand-card-button {
+  visibility: hidden;
+}
+
 .player-hand-row {
   min-width: 0;
   display: grid;

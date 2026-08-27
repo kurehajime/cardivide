@@ -36,11 +36,12 @@ const HandView = ({
   onDiscardCard,
   onPlaySpell,
 }: HandViewProps) => {
-  const visibleCards = cards.length > 0 ? cards : Array.from({ length: EMPTY_HAND_SLOTS }, () => null)
+  const isEmpty = cards.length === 0
+  const visibleCards = isEmpty ? Array.from({ length: EMPTY_HAND_SLOTS }, () => null) : cards
 
   return (
     <section
-      className={`hand-panel hand-panel-${position} ${active ? 'hand-panel-active' : ''}`}
+      className={`hand-panel hand-panel-${position} ${active ? 'hand-panel-active' : ''} ${isEmpty ? 'hand-panel-empty' : ''}`}
       aria-label={`${playerName} hand`}
     >
       {visibleCards.map((card, index) => {

@@ -74,13 +74,15 @@ const formatModifier = (value: number): string => `${value > 0 ? '+' : ''}${valu
 type CardFaceProps = {
   card: Card
   colorLabel: string
+  jitterArt?: boolean
   statModifier?: CreatureStatModifier
 }
 
-const CardFace = ({ card, colorLabel, statModifier }: CardFaceProps) => {
+const CardFace = ({ card, colorLabel, jitterArt = false, statModifier }: CardFaceProps) => {
   const artId = useId().replaceAll(':', '')
   const artClipId = `card-art-clip-${artId}`
   const artColorFilterId = `card-art-color-${artId}`
+  const artJitterFilterId = `card-art-jitter-${artId}`
   const artUrl = getCardArtUrl(card)
   const isSpell = card.kind === 'spell'
   const typeLabel = isSpell
@@ -123,6 +125,33 @@ const CardFace = ({ card, colorLabel, statModifier }: CardFaceProps) => {
           <feFlood className="card-face-art-color" result="art-color" />
           <feComposite in="art-color" in2="SourceAlpha" operator="in" />
         </filter>
+        {jitterArt && (
+          <filter id={artJitterFilterId} colorInterpolationFilters="sRGB">
+            <feFlood className="card-face-art-color" result="art-color" />
+            <feComposite
+              in="art-color"
+              in2="SourceAlpha"
+              operator="in"
+              result="colored-art"
+            />
+            <feTurbulence
+              type="fractalNoise"
+              baseFrequency="0.03"
+              numOctaves="2"
+              seed="1"
+              result="noise"
+            >
+              <animate
+                attributeName="seed"
+                values="1;2;3;4;5;6;7;8;9;10"
+                dur="2s"
+                repeatCount="indefinite"
+                calcMode="discrete"
+              />
+            </feTurbulence>
+            <feDisplacementMap in="colored-art" in2="noise" scale="5" />
+          </filter>
+        )}
       </defs>
 
       <rect className="card-face-base" x="2" y="2" width="496" height="696" rx="18" />
@@ -138,7 +167,7 @@ const CardFace = ({ card, colorLabel, statModifier }: CardFaceProps) => {
           height="259"
           preserveAspectRatio="xMidYMid meet"
           clipPath={`url(#${artClipId})`}
-          filter={`url(#${artColorFilterId})`}
+          filter={`url(#${jitterArt ? artJitterFilterId : artColorFilterId})`}
         />
       )}
       <rect className="card-face-art-frame" x="25" y="83" width="450" height="265" rx="12" />
@@ -234,6 +263,7 @@ const CardView = ({
   const detailRef = useRef<HTMLDivElement>(null)
   const detailId = useId()
   const [showDetail, setShowDetail] = useState(false)
+  const [jitterArt, setJitterArt] = useState(false)
   const [detailPosition, setDetailPosition] = useState<DetailPosition | null>(null)
 
   const openDetail = useCallback(() => {
@@ -244,6 +274,16 @@ const CardView = ({
   const closeDetail = useCallback(() => {
     setShowDetail(false)
   }, [])
+
+  const handlePointerEnter = useCallback(() => {
+    setJitterArt(true)
+    openDetail()
+  }, [openDetail])
+
+  const handlePointerLeave = useCallback(() => {
+    setJitterArt(false)
+    closeDetail()
+  }, [closeDetail])
 
   const updateDetailPosition = useCallback(() => {
     const cardElement = cardRef.current
@@ -381,10 +421,15 @@ const CardView = ({
       tabIndex={nestedInButton ? undefined : 0}
       onBlur={closeDetail}
       onFocus={openDetail}
-      onPointerEnter={openDetail}
-      onPointerLeave={closeDetail}
+      onPointerEnter={handlePointerEnter}
+      onPointerLeave={handlePointerLeave}
     >
-      <CardFace card={card} colorLabel={colorLabel} statModifier={statModifier} />
+      <CardFace
+        card={card}
+        colorLabel={colorLabel}
+        jitterArt={jitterArt}
+        statModifier={statModifier}
+      />
       {showDetail &&
         createPortal(
           <div
