@@ -617,7 +617,9 @@ describe('activated abilities', () => {
     expect(manager.state.players.playerA.mana).toBe(1)
     expect(manager.state.cards[source].card).toMatchObject({
       name: '傭兵',
-      attack: 2,
+      attack: 3,
+      defense: 1,
+      march: 1,
     })
 
     const [fullHandSource] = findCardIds(

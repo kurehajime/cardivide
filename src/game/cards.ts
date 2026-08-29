@@ -219,9 +219,9 @@ export const CREATURE_CARDS = [
     kind: 'creature',
     color: 'blue',
     cost: 2,
-    attack: 2,
+    attack: 3,
     defense: 1,
-    march: 2,
+    march: 1,
     abilities: [{ type: 'return' }],
   },
   {
