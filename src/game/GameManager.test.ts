@@ -41,6 +41,16 @@ const passTurnWithoutAttack = (manager: GameManager): GameManager => {
 }
 
 describe('GameManager card instance tracking', () => {
+  it('adds one mana to the selected player for local debugging', () => {
+    const initial = createTestManager()
+    const initialPlayerAMana = initial.state.players.playerA.mana
+    const initialPlayerBMana = initial.state.players.playerB.mana
+    const updated = GameManager.addDebugMana(initial, 'playerA')
+
+    expect(updated.state.players.playerA.mana).toBe(initialPlayerAMana + 1)
+    expect(updated.state.players.playerB.mana).toBe(initialPlayerBMana)
+  })
+
   it('assigns one globally unique sequential id to every physical deck card', () => {
     const manager = createTestManager()
     const instances = Object.values(manager.state.cards)

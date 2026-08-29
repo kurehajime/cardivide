@@ -5,14 +5,20 @@ import {
   GameManager,
   THEME_DECK_BY_ID,
   THEME_DECK_IDS,
+  getScenarioOpponentDeckIds,
+  resolveScenarioBattle,
   type AiDifficulty,
   type ActivatedAbilityOption,
   type CardInstanceId,
   type PlaySpellAction,
+  type PlayerId,
   type ThemeDeckId,
 } from '../game'
 import BoardView, { type BoardAttackAnimation } from './BoardView'
-import GameSetup from './GameSetup'
+import GameSetup, {
+  type BattleMode,
+  type GameSetupSelection,
+} from './GameSetup'
 import HandView from './HandView'
 import PhaseBar from './PhaseBar'
 
@@ -36,8 +42,15 @@ type GameSelection = {
   difficulty: AiDifficulty
 }
 
+type ScenarioRun = {
+  opponentDeckIds: ThemeDeckId[]
+  currentBattleIndex: number
+}
+
 type GameSessionProps = GameSelection & {
-  onChangeDecks: () => void
+  scenarioProgress: { current: number; total: number } | null
+  onExit: () => void
+  onResultConfirm: (winnerId: PlayerId) => void
 }
 
 const createGameUiState = ({
@@ -79,7 +92,9 @@ const GameSession = ({
   playerDeckId,
   comDeckId,
   difficulty,
-  onChangeDecks,
+  scenarioProgress,
+  onExit,
+  onResultConfirm,
 }: GameSessionProps) => {
   const aiRef = useRef<GameAI | null>(null)
   const attackAnimationIdRef = useRef(0)
@@ -97,7 +112,13 @@ const GameSession = ({
   const playerA = state.players.playerA
   const playerB = state.players.playerB
   const winnerId = GameManager.getWinner(manager)
-  const winnerMessage = winnerId === null ? null : `${state.players[winnerId].name}の勝利`
+  const winnerMessage =
+    winnerId === null
+      ? null
+      : winnerId === 'playerA' &&
+          scenarioProgress?.current === scenarioProgress?.total
+        ? 'シナリオクリア'
+        : `${state.players[winnerId].name}の勝利`
   const currentPlayer = GameManager.getCurrentPlayer(manager)
   const selectedCard = selectedCardId === null ? null : state.cards[selectedCardId] ?? null
   const playerAHand = playerA.hand.map((cardId) => state.cards[cardId])
@@ -166,6 +187,37 @@ const GameSession = ({
 
     return () => window.clearTimeout(timeoutId)
   }, [state.pendingCombat])
+
+  useEffect(() => {
+    if (!import.meta.env.DEV) {
+      return
+    }
+
+    const handleDebugKeyDown = (event: KeyboardEvent) => {
+      const target = event.target
+      if (
+        event.key.toLowerCase() !== 'm' ||
+        event.repeat ||
+        event.metaKey ||
+        event.ctrlKey ||
+        event.altKey ||
+        (target instanceof HTMLElement &&
+          (target.isContentEditable ||
+            ['INPUT', 'SELECT', 'TEXTAREA'].includes(target.tagName)))
+      ) {
+        return
+      }
+
+      dispatch({
+        type: 'applyGameUpdate',
+        update: (currentManager) =>
+          GameManager.addDebugMana(currentManager, 'playerA'),
+      })
+    }
+
+    window.addEventListener('keydown', handleDebugKeyDown)
+    return () => window.removeEventListener('keydown', handleDebugKeyDown)
+  }, [])
 
   useEffect(() => {
     if (
@@ -291,11 +343,16 @@ const GameSession = ({
           <header className="game-header">
             <h1>Card Line</h1>
             <div className="game-header-controls">
+              {scenarioProgress && (
+                <div className="scenario-progress" aria-label="シナリオ進行状況">
+                  Battle {scenarioProgress.current} / {scenarioProgress.total}
+                </div>
+              )}
               <PhaseBar phase={state.phase} turn={state.turn} activePlayer={currentPlayer.name} />
               <button
                 className="game-action-button game-action-secondary"
                 type="button"
-                onClick={onChangeDecks}
+                onClick={onExit}
               >
                 デッキ変更
               </button>
@@ -418,7 +475,11 @@ const GameSession = ({
                   className="game-result-confirm"
                   type="button"
                   autoFocus
-                  onClick={onChangeDecks}
+                  onClick={() => {
+                    if (winnerId !== null) {
+                      onResultConfirm(winnerId)
+                    }
+                  }}
                 >
                   OK
                 </button>
@@ -432,31 +493,100 @@ const GameSession = ({
 }
 
 const GameApp = () => {
+  const [setupMode, setSetupMode] = useState<BattleMode>('scenario')
   const [selection, setSelection] = useState<GameSelection>({
     playerDeckId: THEME_DECK_IDS.GREEN_RED_FRONTLINE,
     comDeckId: THEME_DECK_IDS.RED_BLUE_SKIRMISH,
     difficulty: 'hard',
   })
+  const [scenarioRun, setScenarioRun] = useState<ScenarioRun | null>(null)
   const [gameStarted, setGameStarted] = useState(false)
+
+  const returnToSetup = () => {
+    setScenarioRun(null)
+    setGameStarted(false)
+  }
+
+  const startGame = (nextSelection: GameSetupSelection) => {
+    setSetupMode(nextSelection.mode)
+    if (nextSelection.mode === 'scenario') {
+      const opponentDeckIds = getScenarioOpponentDeckIds(nextSelection.playerDeckId)
+      const firstOpponentDeckId = opponentDeckIds[0]
+      if (!firstOpponentDeckId) {
+        return
+      }
+      setSelection({
+        playerDeckId: nextSelection.playerDeckId,
+        comDeckId: firstOpponentDeckId,
+        difficulty: nextSelection.difficulty,
+      })
+      setScenarioRun({ opponentDeckIds, currentBattleIndex: 0 })
+    } else {
+      setSelection({
+        playerDeckId: nextSelection.playerDeckId,
+        comDeckId: nextSelection.comDeckId,
+        difficulty: nextSelection.difficulty,
+      })
+      setScenarioRun(null)
+    }
+    setGameStarted(true)
+  }
+
+  const handleResultConfirm = (winnerId: PlayerId) => {
+    if (scenarioRun === null) {
+      returnToSetup()
+      return
+    }
+
+    const resolution = resolveScenarioBattle(
+      scenarioRun.currentBattleIndex,
+      scenarioRun.opponentDeckIds.length,
+      winnerId === 'playerA',
+    )
+    if (resolution.type !== 'advance') {
+      returnToSetup()
+      return
+    }
+
+    const nextOpponentDeckId =
+      scenarioRun.opponentDeckIds[resolution.nextBattleIndex]
+    setSelection((current) => ({ ...current, comDeckId: nextOpponentDeckId }))
+    setScenarioRun({
+      ...scenarioRun,
+      currentBattleIndex: resolution.nextBattleIndex,
+    })
+  }
 
   if (!gameStarted) {
     return (
       <GameSetup
+        initialMode={setupMode}
         initialPlayerDeckId={selection.playerDeckId}
         initialComDeckId={selection.comDeckId}
         initialDifficulty={selection.difficulty}
-        onStart={(playerDeckId, comDeckId, difficulty) => {
-          setSelection({ playerDeckId, comDeckId, difficulty })
-          setGameStarted(true)
-        }}
+        onStart={startGame}
       />
     )
   }
 
   return (
     <GameSession
+      key={
+        scenarioRun
+          ? `scenario-${selection.playerDeckId}-${scenarioRun.currentBattleIndex}`
+          : `free-${selection.playerDeckId}-${selection.comDeckId}`
+      }
       {...selection}
-      onChangeDecks={() => setGameStarted(false)}
+      scenarioProgress={
+        scenarioRun
+          ? {
+              current: scenarioRun.currentBattleIndex + 1,
+              total: scenarioRun.opponentDeckIds.length,
+            }
+          : null
+      }
+      onExit={returnToSetup}
+      onResultConfirm={handleResultConfirm}
     />
   )
 }

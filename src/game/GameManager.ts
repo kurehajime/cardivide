@@ -1013,6 +1013,16 @@ export class GameManager {
     return manager.state.players[manager.state.activePlayerId]
   }
 
+  static addDebugMana(manager: GameManager, playerId: PlayerId): GameManager {
+    const player = manager.state.players[playerId]
+    return GameManager.from(
+      replacePlayer(manager.state, {
+        ...player,
+        mana: player.mana + 1,
+      }),
+    )
+  }
+
   static getOpponent(manager: GameManager): PlayerState {
     const opponentId = getOpponentId(manager.state.activePlayerId)
     return manager.state.players[opponentId]
