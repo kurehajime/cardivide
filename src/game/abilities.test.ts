@@ -448,7 +448,7 @@ describe('summon modifiers', () => {
     expect(manager.state.cards[beachhead].card).toMatchObject({
       name: '偵察者',
       attack: 2,
-      defense: 1,
+      defense: 2,
       march: 2,
     })
 
