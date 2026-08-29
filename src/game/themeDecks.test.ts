@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { CARD_BY_DEFINITION_ID, CARD_DEFINITION_IDS, CARD_LIST } from './cards'
 import { GameManager } from './GameManager'
-import { THEME_DECKS } from './themeDecks'
+import { THEME_DECKS, type ThemeDeckId } from './themeDecks'
+import type { CardColor } from './types'
 
 const KEEP_ORDER_RANDOM = () => 1 - Number.EPSILON
 const CARD_ID = CARD_DEFINITION_IDS
@@ -25,19 +26,46 @@ const EXPECTED_SPELLS_BY_DECK = {
     CARD_ID.LIFE_CYCLE,
     CARD_ID.RETURN_FIRE,
   ],
+  'red-total-assault': [
+    CARD_ID.RETURN_FIRE,
+    CARD_ID.RETURN_FIRE,
+    CARD_ID.RETURN_FIRE,
+    CARD_ID.FIREBALL_ASSAULT,
+    CARD_ID.FIREBALL_ASSAULT,
+  ],
+  'blue-mobile-intercept': [
+    CARD_ID.LIFE_DROPLET,
+    CARD_ID.LIFE_DROPLET,
+    CARD_ID.TRANSFER,
+    CARD_ID.TRANSFER,
+    CARD_ID.TRANSFER,
+  ],
+  'green-fortress-cycle': [
+    CARD_ID.ABUNDANCE,
+    CARD_ID.ABUNDANCE,
+    CARD_ID.ABUNDANCE,
+    CARD_ID.LIFE_CYCLE,
+    CARD_ID.LIFE_CYCLE,
+  ],
 } as const
 
 const EXPECTED_CREATURE_COSTS_BY_DECK = {
   'red-blue-skirmish': { 2: 25, 4: 8, 5: 3 },
   'blue-green-intercept': { 2: 22, 4: 10, 5: 3 },
   'green-red-frontline': { 2: 22, 4: 10, 5: 5 },
+  'red-total-assault': { 2: 20, 4: 12, 5: 3 },
+  'blue-mobile-intercept': { 2: 20, 4: 12, 5: 3 },
+  'green-fortress-cycle': { 2: 20, 4: 12, 5: 3 },
 } as const
 
 const EXPECTED_CREATURE_COLORS_BY_DECK = {
-  'red-blue-skirmish': { primary: 22, secondary: 14 },
-  'blue-green-intercept': { primary: 21, secondary: 14 },
-  'green-red-frontline': { primary: 23, secondary: 14 },
-} as const
+  'red-blue-skirmish': { red: 22, blue: 14, green: 0 },
+  'blue-green-intercept': { red: 0, blue: 21, green: 14 },
+  'green-red-frontline': { red: 14, blue: 0, green: 23 },
+  'red-total-assault': { red: 35, blue: 0, green: 0 },
+  'blue-mobile-intercept': { red: 0, blue: 35, green: 0 },
+  'green-fortress-cycle': { red: 0, blue: 0, green: 35 },
+} as const satisfies Record<ThemeDeckId, Record<CardColor, number>>
 
 const EXPECTED_CARD_COUNTS_BY_DECK = {
   'red-blue-skirmish': {
@@ -103,6 +131,45 @@ const EXPECTED_CARD_COUNTS_BY_DECK = {
     [CARD_ID.EXHAUSTED_VOLCANO_DRAGON]: 2,
     [CARD_ID.RETURN_FIRE]: 1,
   },
+  'red-total-assault': {
+    [CARD_ID.SPARK_SWORDSMAN]: 4,
+    [CARD_ID.BURNING_VANGUARD]: 4,
+    [CARD_ID.SOLITARY_PEAK_SWORDSMAN]: 4,
+    [CARD_ID.FORMATION_CLEARING_MERCENARY]: 4,
+    [CARD_ID.CRIMSON_BLADE_INFILTRATOR]: 4,
+    [CARD_ID.BEACON_HEAVY_CAVALRY]: 4,
+    [CARD_ID.LONE_ARMY_GENERAL]: 4,
+    [CARD_ID.ASH_DISMANTLER]: 4,
+    [CARD_ID.EXHAUSTED_VOLCANO_DRAGON]: 3,
+    [CARD_ID.RETURN_FIRE]: 3,
+    [CARD_ID.FIREBALL_ASSAULT]: 2,
+  },
+  'blue-mobile-intercept': {
+    [CARD_ID.TIDEWAY_SCOUT]: 4,
+    [CARD_ID.SPRAY_HERALD]: 4,
+    [CARD_ID.SURGING_DUELIST]: 4,
+    [CARD_ID.MIST_RETURNING_MESSENGER]: 4,
+    [CARD_ID.TIDEFRONT_FORTIFIER]: 4,
+    [CARD_ID.AZURE_WAVE_VOYAGER]: 4,
+    [CARD_ID.DEEP_TIDE_INTERCEPTOR]: 4,
+    [CARD_ID.WAVE_RETURN_MAGE]: 4,
+    [CARD_ID.EPHEMERAL_DEEP_WHALE]: 3,
+    [CARD_ID.LIFE_DROPLET]: 2,
+    [CARD_ID.TRANSFER]: 3,
+  },
+  'green-fortress-cycle': {
+    [CARD_ID.OAKBARK_SENTINEL]: 4,
+    [CARD_ID.ROOTED_ANCIENT]: 4,
+    [CARD_ID.VINE_SNARE_HUNTER]: 4,
+    [CARD_ID.GEODE_MINER]: 4,
+    [CARD_ID.ROOT_FORT_REARGUARD]: 4,
+    [CARD_ID.GREAT_TREE_GUARDIAN]: 4,
+    [CARD_ID.FOREST_CAGE_BEASTMASTER]: 4,
+    [CARD_ID.LEYLINE_MINING_GIANT]: 4,
+    [CARD_ID.DREAMWALKING_FOREST_GIANT]: 3,
+    [CARD_ID.ABUNDANCE]: 3,
+    [CARD_ID.LIFE_CYCLE]: 2,
+  },
 } as const
 
 describe('theme decks', () => {
@@ -140,12 +207,11 @@ describe('theme decks', () => {
     expect(cards.filter((card) => card.kind === 'spell' && card.cost === 0)).toHaveLength(
       EXPECTED_SPELLS_BY_DECK[deck.id].length,
     )
-    expect(
-      cards.filter((card) => card.kind === 'creature' && card.color === deck.colors[0]),
-    ).toHaveLength(expectedCreatureColors.primary)
-    expect(
-      cards.filter((card) => card.kind === 'creature' && card.color === deck.colors[1]),
-    ).toHaveLength(expectedCreatureColors.secondary)
+    Object.entries(expectedCreatureColors).forEach(([color, count]) => {
+      expect(
+        cards.filter((card) => card.kind === 'creature' && card.color === color),
+      ).toHaveLength(count)
+    })
     expect(
       cards
         .filter((card) => card.kind === 'spell')
@@ -153,7 +219,7 @@ describe('theme decks', () => {
     ).toEqual(EXPECTED_SPELLS_BY_DECK[deck.id])
   })
 
-  it('uses every current card definition across the three preset decks', () => {
+  it('uses every current card definition across the six preset decks', () => {
     const usedDefinitionIds = new Set(
       THEME_DECKS.flatMap((deck) => deck.cardDefinitionIds),
     )

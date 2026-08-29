@@ -41,7 +41,7 @@ type BoardViewProps = {
   playerDamageMarker?: { playerId: PlayerId; damage: number } | null
   players: Record<PlayerState['id'], PlayerState>
   playerBarriers: Record<PlayerId, number>
-  playerDeckColors: Record<PlayerId, readonly [CardColor, CardColor]>
+  playerDeckColors: Record<PlayerId, readonly [CardColor, ...CardColor[]]>
   activePlayerId: PlayerId
   groups: EffectiveBoardGroup[]
   creatureStatModifiers: Record<CardInstanceId, CreatureStatModifier>
@@ -60,7 +60,7 @@ type BoardPlayerProps = {
   player: PlayerState
   cards: Record<CardInstanceId, CardInstance>
   barrier: number
-  deckColors: readonly [CardColor, CardColor]
+  deckColors: readonly [CardColor, ...CardColor[]]
   damage: number | null
 }
 
@@ -129,6 +129,8 @@ const getSummonSlotTitle = (option?: SummonOption): string | undefined => {
 }
 
 const BoardPlayer = ({ player, cards, barrier, deckColors, damage }: BoardPlayerProps) => {
+  const mainColor = deckColors[0]
+  const subColor = deckColors[1] ?? mainColor
   const placedSpell = player.placedSpell
   const placedSpellCard =
     placedSpell === null ? null : cards[placedSpell.cardId].card
@@ -156,12 +158,12 @@ const BoardPlayer = ({ player, cards, barrier, deckColors, damage }: BoardPlayer
       <motion.div
         className="board-endpoint"
         data-player-id={player.id}
-        data-main-color={deckColors[0]}
-        data-sub-color={deckColors[1]}
+        data-main-color={mainColor}
+        data-sub-color={subColor}
         style={
           {
-            '--player-main-color': PLAYER_COLOR_VALUES[deckColors[0]],
-            '--player-sub-color': PLAYER_COLOR_VALUES[deckColors[1]],
+            '--player-main-color': PLAYER_COLOR_VALUES[mainColor],
+            '--player-sub-color': PLAYER_COLOR_VALUES[subColor],
           } as CSSProperties
         }
         initial={false}
