@@ -267,12 +267,6 @@
   font-size: 20px;
 }
 
-.setup-deck-heading span {
-  color: #59635a;
-  font-size: 12px;
-  font-weight: 700;
-}
-
 .setup-deck-colors {
   display: flex;
   flex-wrap: wrap;

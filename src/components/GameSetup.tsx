@@ -53,7 +53,6 @@ const DeckSummary = ({ deck }: { deck: ThemeDeck }) => (
   <div className="setup-deck-summary">
     <div className="setup-deck-heading">
       <strong>{deck.name}</strong>
-      <span>40枚</span>
     </div>
     <div className="setup-deck-colors" aria-label={deck.colors.map((color) => COLOR_LABELS[color]).join('・')}>
       {deck.colors.map((color) => (
