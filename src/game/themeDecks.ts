@@ -3,16 +3,16 @@ import type { CardColor, CardDefinitionId } from './types'
 
 const CARD_ID = CARD_DEFINITION_IDS
 
-export const THEME_DECK_IDS = [
-  'red-blue-skirmish',
-  'blue-green-intercept',
-  'green-red-frontline',
-  'red-total-assault',
-  'blue-mobile-intercept',
-  'green-fortress-cycle',
-] as const
+export const THEME_DECK_IDS = {
+  RED_BLUE_SKIRMISH: '17937130-b84a-45da-a9a2-1d5179ea2303',
+  BLUE_GREEN_INTERCEPT: '4c513ec7-edc2-4a5a-b965-52a770260cc7',
+  GREEN_RED_FRONTLINE: '6a6d5a62-6c24-4a09-b9b7-ae4dea011be6',
+  RED_TOTAL_ASSAULT: '060d14bb-5e7c-4150-ab19-11168b56c622',
+  BLUE_MOBILE_INTERCEPT: '7a07f81f-d165-493a-ae8f-92f66b8a1c5a',
+  GREEN_FORTRESS_CYCLE: '61d4a505-c40a-47a9-b012-83d4dbe54689',
+} as const
 
-export type ThemeDeckId = (typeof THEME_DECK_IDS)[number]
+export type ThemeDeckId = (typeof THEME_DECK_IDS)[keyof typeof THEME_DECK_IDS]
 
 export type ThemeDeck = {
   id: ThemeDeckId
@@ -20,6 +20,7 @@ export type ThemeDeck = {
   colors: readonly [CardColor, ...CardColor[]]
   description: string
   cardDefinitionIds: readonly CardDefinitionId[]
+  tournamentShuffleSalt: number
 }
 
 // Source order is stable because fixed-seed tournament shuffling starts from this order.
@@ -283,54 +284,60 @@ const GREEN_FORTRESS_CYCLE = [
 
 export const THEME_DECKS = [
   {
-    id: 'red-blue-skirmish',
+    id: THEME_DECK_IDS.RED_BLUE_SKIRMISH,
     name: '遊撃突破',
     colors: ['red', 'blue'],
     description: '青の進軍・橋頭堡・帰還で侵入路を作り、赤の単独突破を狙う。',
     cardDefinitionIds: RED_BLUE_SKIRMISH,
+    tournamentShuffleSalt: 3_350_137_494,
   },
   {
-    id: 'blue-green-intercept',
+    id: THEME_DECK_IDS.BLUE_GREEN_INTERCEPT,
     name: '分断迎撃',
     colors: ['blue', 'green'],
     description: '青の位置制御と反撃を、緑の高防御・捕獲・しんがりで支える。',
     cardDefinitionIds: BLUE_GREEN_INTERCEPT,
+    tournamentShuffleSalt: 2_589_017_928,
   },
   {
-    id: 'green-red-frontline',
+    id: THEME_DECK_IDS.GREEN_RED_FRONTLINE,
     name: '連環戦線',
     colors: ['green', 'red'],
     description: '緑の採掘拠点を維持し、赤の基礎火力・撤去・刺客で反攻する。',
     cardDefinitionIds: GREEN_RED_FRONTLINE,
+    tournamentShuffleSalt: 63_853_786,
   },
   {
-    id: 'red-total-assault',
+    id: THEME_DECK_IDS.RED_TOTAL_ASSAULT,
     name: '総力突破',
     colors: ['red'],
     description: '赤の高攻撃・一騎当千・直接火力を集め、複数地点から突破する。',
     cardDefinitionIds: RED_TOTAL_ASSAULT,
+    tournamentShuffleSalt: 4_146_351_749,
   },
   {
-    id: 'blue-mobile-intercept',
+    id: THEME_DECK_IDS.BLUE_MOBILE_INTERCEPT,
     name: '転戦迎撃',
     colors: ['blue'],
     description: '青の高進軍・反撃・帰還・テレポートで戦線を組み替える。',
     cardDefinitionIds: BLUE_MOBILE_INTERCEPT,
+    tournamentShuffleSalt: 2_168_962_053,
   },
   {
-    id: 'green-fortress-cycle',
+    id: THEME_DECK_IDS.GREEN_FORTRESS_CYCLE,
     name: '要塞循環',
     colors: ['green'],
     description: '緑の高防御・採掘・捕獲を維持し、資源を再展開へつなげる。',
     cardDefinitionIds: GREEN_FORTRESS_CYCLE,
+    tournamentShuffleSalt: 1_477_358_106,
   },
 ] satisfies ThemeDeck[]
 
 export const THEME_DECK_BY_ID = {
-  'red-blue-skirmish': THEME_DECKS[0],
-  'blue-green-intercept': THEME_DECKS[1],
-  'green-red-frontline': THEME_DECKS[2],
-  'red-total-assault': THEME_DECKS[3],
-  'blue-mobile-intercept': THEME_DECKS[4],
-  'green-fortress-cycle': THEME_DECKS[5],
+  [THEME_DECK_IDS.RED_BLUE_SKIRMISH]: THEME_DECKS[0],
+  [THEME_DECK_IDS.BLUE_GREEN_INTERCEPT]: THEME_DECKS[1],
+  [THEME_DECK_IDS.GREEN_RED_FRONTLINE]: THEME_DECKS[2],
+  [THEME_DECK_IDS.RED_TOTAL_ASSAULT]: THEME_DECKS[3],
+  [THEME_DECK_IDS.BLUE_MOBILE_INTERCEPT]: THEME_DECKS[4],
+  [THEME_DECK_IDS.GREEN_FORTRESS_CYCLE]: THEME_DECKS[5],
 } satisfies Record<ThemeDeckId, ThemeDeck>

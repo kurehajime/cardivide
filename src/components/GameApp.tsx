@@ -4,6 +4,7 @@ import {
   GameAI,
   GameManager,
   THEME_DECK_BY_ID,
+  THEME_DECK_IDS,
   type AiDifficulty,
   type ActivatedAbilityOption,
   type CardInstanceId,
@@ -432,8 +433,8 @@ const GameSession = ({
 
 const GameApp = () => {
   const [selection, setSelection] = useState<GameSelection>({
-    playerDeckId: 'green-red-frontline',
-    comDeckId: 'red-blue-skirmish',
+    playerDeckId: THEME_DECK_IDS.GREEN_RED_FRONTLINE,
+    comDeckId: THEME_DECK_IDS.RED_BLUE_SKIRMISH,
     difficulty: 'hard',
   })
   const [gameStarted, setGameStarted] = useState(false)

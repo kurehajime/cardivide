@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { THEME_DECKS } from '../themeDecks'
 import {
   DEFAULT_TOURNAMENT_GAMES_PER_SIDE,
+  createDeckMatchupWinRateTable,
   createRoundRobinSchedule,
   playAiMatch,
   summarizeTournament,
@@ -98,5 +99,61 @@ describe('AI tournament', () => {
     expect(summary.playerAWins).toBe(1)
     expect(summary.deckRecords[0]).toMatchObject({ played: 2, wins: 1, unresolved: 1 })
     expect(summary.deckRecords[1]).toMatchObject({ played: 2, losses: 1, unresolved: 1 })
+  })
+
+  it('creates a symmetric deck matchup win rate table and excludes unresolved games', () => {
+    const decks = THEME_DECKS.slice(0, 3)
+    const [ab, ba, ac, ca, bc, cb] = createRoundRobinSchedule(decks, 1)
+    const victory = (
+      match: typeof ab,
+      winnerPlayerId: 'playerA' | 'playerB',
+    ) => ({
+      ...match,
+      termination: 'victory' as const,
+      winnerPlayerId,
+      winnerDeckId:
+        winnerPlayerId === 'playerA'
+          ? match.playerADeckId
+          : match.playerBDeckId,
+      turn: 10,
+      actionCount: 30,
+      playerAHp: winnerPlayerId === 'playerA' ? 5 : 0,
+      playerBHp: winnerPlayerId === 'playerB' ? 5 : 0,
+    })
+    const unresolved = {
+      ...ac,
+      termination: 'turnLimit' as const,
+      winnerPlayerId: null,
+      winnerDeckId: null,
+      turn: 201,
+      actionCount: 600,
+      playerAHp: 10,
+      playerBHp: 10,
+    }
+
+    const table = createDeckMatchupWinRateTable(decks, [
+      victory(ab, 'playerA'),
+      victory(ab, 'playerA'),
+      victory(ba, 'playerA'),
+      unresolved,
+      victory(ca, 'playerA'),
+      victory(bc, 'playerA'),
+      victory(cb, 'playerA'),
+    ])
+
+    expect(table).toEqual({
+      [decks[0].id]: {
+        [decks[1].id]: 0.6667,
+        [decks[2].id]: 0,
+      },
+      [decks[1].id]: {
+        [decks[0].id]: 0.3333,
+        [decks[2].id]: 0.5,
+      },
+      [decks[2].id]: {
+        [decks[0].id]: 1,
+        [decks[1].id]: 0.5,
+      },
+    })
   })
 })

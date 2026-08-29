@@ -1,46 +1,47 @@
 import { describe, expect, it } from 'vitest'
 import { CARD_BY_DEFINITION_ID, CARD_DEFINITION_IDS, CARD_LIST } from './cards'
 import { GameManager } from './GameManager'
-import { THEME_DECKS, type ThemeDeckId } from './themeDecks'
+import { THEME_DECK_IDS, THEME_DECKS, type ThemeDeckId } from './themeDecks'
 import type { CardColor } from './types'
 
 const KEEP_ORDER_RANDOM = () => 1 - Number.EPSILON
 const CARD_ID = CARD_DEFINITION_IDS
+const DECK_ID = THEME_DECK_IDS
 
 const EXPECTED_SPELLS_BY_DECK = {
-  'red-blue-skirmish': [
+  [DECK_ID.RED_BLUE_SKIRMISH]: [
     CARD_ID.FIREBALL_ASSAULT,
     CARD_ID.RETURN_FIRE,
     CARD_ID.FIREBALL_ASSAULT,
     CARD_ID.LIFE_DROPLET,
   ],
-  'blue-green-intercept': [
+  [DECK_ID.BLUE_GREEN_INTERCEPT]: [
     CARD_ID.TRANSFER,
     CARD_ID.LIFE_DROPLET,
     CARD_ID.TRANSFER,
     CARD_ID.TRANSFER,
     CARD_ID.ABUNDANCE,
   ],
-  'green-red-frontline': [
+  [DECK_ID.GREEN_RED_FRONTLINE]: [
     CARD_ID.LIFE_CYCLE,
     CARD_ID.LIFE_CYCLE,
     CARD_ID.RETURN_FIRE,
   ],
-  'red-total-assault': [
+  [DECK_ID.RED_TOTAL_ASSAULT]: [
     CARD_ID.RETURN_FIRE,
     CARD_ID.RETURN_FIRE,
     CARD_ID.RETURN_FIRE,
     CARD_ID.FIREBALL_ASSAULT,
     CARD_ID.FIREBALL_ASSAULT,
   ],
-  'blue-mobile-intercept': [
+  [DECK_ID.BLUE_MOBILE_INTERCEPT]: [
     CARD_ID.LIFE_DROPLET,
     CARD_ID.LIFE_DROPLET,
     CARD_ID.TRANSFER,
     CARD_ID.TRANSFER,
     CARD_ID.TRANSFER,
   ],
-  'green-fortress-cycle': [
+  [DECK_ID.GREEN_FORTRESS_CYCLE]: [
     CARD_ID.ABUNDANCE,
     CARD_ID.ABUNDANCE,
     CARD_ID.ABUNDANCE,
@@ -50,25 +51,25 @@ const EXPECTED_SPELLS_BY_DECK = {
 } as const
 
 const EXPECTED_CREATURE_COSTS_BY_DECK = {
-  'red-blue-skirmish': { 2: 25, 4: 8, 5: 3 },
-  'blue-green-intercept': { 2: 22, 4: 10, 5: 3 },
-  'green-red-frontline': { 2: 22, 4: 10, 5: 5 },
-  'red-total-assault': { 2: 20, 4: 12, 5: 3 },
-  'blue-mobile-intercept': { 2: 20, 4: 12, 5: 3 },
-  'green-fortress-cycle': { 2: 20, 4: 12, 5: 3 },
+  [DECK_ID.RED_BLUE_SKIRMISH]: { 2: 25, 4: 8, 5: 3 },
+  [DECK_ID.BLUE_GREEN_INTERCEPT]: { 2: 22, 4: 10, 5: 3 },
+  [DECK_ID.GREEN_RED_FRONTLINE]: { 2: 22, 4: 10, 5: 5 },
+  [DECK_ID.RED_TOTAL_ASSAULT]: { 2: 20, 4: 12, 5: 3 },
+  [DECK_ID.BLUE_MOBILE_INTERCEPT]: { 2: 20, 4: 12, 5: 3 },
+  [DECK_ID.GREEN_FORTRESS_CYCLE]: { 2: 20, 4: 12, 5: 3 },
 } as const
 
 const EXPECTED_CREATURE_COLORS_BY_DECK = {
-  'red-blue-skirmish': { red: 22, blue: 14, green: 0 },
-  'blue-green-intercept': { red: 0, blue: 21, green: 14 },
-  'green-red-frontline': { red: 14, blue: 0, green: 23 },
-  'red-total-assault': { red: 35, blue: 0, green: 0 },
-  'blue-mobile-intercept': { red: 0, blue: 35, green: 0 },
-  'green-fortress-cycle': { red: 0, blue: 0, green: 35 },
+  [DECK_ID.RED_BLUE_SKIRMISH]: { red: 22, blue: 14, green: 0 },
+  [DECK_ID.BLUE_GREEN_INTERCEPT]: { red: 0, blue: 21, green: 14 },
+  [DECK_ID.GREEN_RED_FRONTLINE]: { red: 14, blue: 0, green: 23 },
+  [DECK_ID.RED_TOTAL_ASSAULT]: { red: 35, blue: 0, green: 0 },
+  [DECK_ID.BLUE_MOBILE_INTERCEPT]: { red: 0, blue: 35, green: 0 },
+  [DECK_ID.GREEN_FORTRESS_CYCLE]: { red: 0, blue: 0, green: 35 },
 } as const satisfies Record<ThemeDeckId, Record<CardColor, number>>
 
 const EXPECTED_CARD_COUNTS_BY_DECK = {
-  'red-blue-skirmish': {
+  [DECK_ID.RED_BLUE_SKIRMISH]: {
     [CARD_ID.SPARK_SWORDSMAN]: 3,
     [CARD_ID.BURNING_VANGUARD]: 3,
     [CARD_ID.SOLITARY_PEAK_SWORDSMAN]: 3,
@@ -89,7 +90,7 @@ const EXPECTED_CARD_COUNTS_BY_DECK = {
     [CARD_ID.EPHEMERAL_DEEP_WHALE]: 1,
     [CARD_ID.LIFE_DROPLET]: 1,
   },
-  'blue-green-intercept': {
+  [DECK_ID.BLUE_GREEN_INTERCEPT]: {
     [CARD_ID.TIDEWAY_SCOUT]: 3,
     [CARD_ID.SPRAY_HERALD]: 2,
     [CARD_ID.SURGING_DUELIST]: 3,
@@ -111,7 +112,7 @@ const EXPECTED_CARD_COUNTS_BY_DECK = {
     [CARD_ID.DREAMWALKING_FOREST_GIANT]: 1,
     [CARD_ID.ABUNDANCE]: 1,
   },
-  'green-red-frontline': {
+  [DECK_ID.GREEN_RED_FRONTLINE]: {
     [CARD_ID.OAKBARK_SENTINEL]: 3,
     [CARD_ID.ROOTED_ANCIENT]: 3,
     [CARD_ID.VINE_SNARE_HUNTER]: 3,
@@ -131,7 +132,7 @@ const EXPECTED_CARD_COUNTS_BY_DECK = {
     [CARD_ID.EXHAUSTED_VOLCANO_DRAGON]: 2,
     [CARD_ID.RETURN_FIRE]: 1,
   },
-  'red-total-assault': {
+  [DECK_ID.RED_TOTAL_ASSAULT]: {
     [CARD_ID.SPARK_SWORDSMAN]: 4,
     [CARD_ID.BURNING_VANGUARD]: 4,
     [CARD_ID.SOLITARY_PEAK_SWORDSMAN]: 4,
@@ -144,7 +145,7 @@ const EXPECTED_CARD_COUNTS_BY_DECK = {
     [CARD_ID.RETURN_FIRE]: 3,
     [CARD_ID.FIREBALL_ASSAULT]: 2,
   },
-  'blue-mobile-intercept': {
+  [DECK_ID.BLUE_MOBILE_INTERCEPT]: {
     [CARD_ID.TIDEWAY_SCOUT]: 4,
     [CARD_ID.SPRAY_HERALD]: 4,
     [CARD_ID.SURGING_DUELIST]: 4,
@@ -157,7 +158,7 @@ const EXPECTED_CARD_COUNTS_BY_DECK = {
     [CARD_ID.LIFE_DROPLET]: 2,
     [CARD_ID.TRANSFER]: 3,
   },
-  'green-fortress-cycle': {
+  [DECK_ID.GREEN_FORTRESS_CYCLE]: {
     [CARD_ID.OAKBARK_SENTINEL]: 4,
     [CARD_ID.ROOTED_ANCIENT]: 4,
     [CARD_ID.VINE_SNARE_HUNTER]: 4,
@@ -173,6 +174,17 @@ const EXPECTED_CARD_COUNTS_BY_DECK = {
 } as const
 
 describe('theme decks', () => {
+  it('uses unique UUIDs as deck IDs', () => {
+    const ids = THEME_DECKS.map((deck) => deck.id)
+
+    expect(new Set(ids).size).toBe(THEME_DECKS.length)
+    ids.forEach((id) => {
+      expect(id).toMatch(
+        /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/,
+      )
+    })
+  })
+
   it.each(THEME_DECKS)('$name contains the documented 40-card cost structure', (deck) => {
     const expectedCreatureCosts = EXPECTED_CREATURE_COSTS_BY_DECK[deck.id]
     const expectedCreatureColors = EXPECTED_CREATURE_COLORS_BY_DECK[deck.id]

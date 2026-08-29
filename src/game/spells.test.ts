@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { CARD_DEFINITION_IDS } from './cards'
 import { GameManager, assertValidGameState } from './GameManager'
-import { THEME_DECK_BY_ID } from './themeDecks'
+import { THEME_DECK_BY_ID, THEME_DECK_IDS } from './themeDecks'
 import type { CardInstanceId, GameState, PlayerId } from './types'
 
 const KEEP_ORDER_RANDOM = () => 1 - Number.EPSILON
@@ -100,7 +100,7 @@ const createThemeManager = (
 ): GameManager =>
   GameManager.create(KEEP_ORDER_RANDOM, {
     playerA: THEME_DECK_BY_ID[playerDeckId].cardDefinitionIds,
-    playerB: THEME_DECK_BY_ID['red-blue-skirmish'].cardDefinitionIds,
+    playerB: THEME_DECK_BY_ID[THEME_DECK_IDS.RED_BLUE_SKIRMISH].cardDefinitionIds,
   })
 
 describe('spell rules', () => {
@@ -363,7 +363,7 @@ describe('spell rules', () => {
   })
 
   it('destroys the red creatures in a chosen group and bypasses the enemy shield with fireball assault', () => {
-    const initial = createThemeManager('red-blue-skirmish')
+    const initial = createThemeManager(THEME_DECK_IDS.RED_BLUE_SKIRMISH)
     const fireballAssault = findDefinition(
       initial.state,
       'playerA',
@@ -429,7 +429,7 @@ describe('spell rules', () => {
   })
 
   it('moves a chosen blue creature next to the player with less HP', () => {
-    const initial = createThemeManager('blue-green-intercept')
+    const initial = createThemeManager(THEME_DECK_IDS.BLUE_GREEN_INTERCEPT)
     const transfer = findDefinition(initial.state, 'playerA', CARD_ID.TRANSFER)
     const greenCreature = findDefinition(
       initial.state,
@@ -474,7 +474,7 @@ describe('spell rules', () => {
   })
 
   it('uses transfer without moving its target when both players have equal HP', () => {
-    const initial = createThemeManager('blue-green-intercept')
+    const initial = createThemeManager(THEME_DECK_IDS.BLUE_GREEN_INTERCEPT)
     const transfer = findDefinition(initial.state, 'playerA', CARD_ID.TRANSFER)
     const blueCreature = findDefinition(
       initial.state,
@@ -500,7 +500,7 @@ describe('spell rules', () => {
   })
 
   it('destroys every own green creature and refunds full cost with life cycle', () => {
-    const initial = createThemeManager('green-red-frontline')
+    const initial = createThemeManager(THEME_DECK_IDS.GREEN_RED_FRONTLINE)
     const lifeCycle = findDefinition(initial.state, 'playerA', CARD_ID.LIFE_CYCLE)
     const greenCreature = findDefinition(
       initial.state,

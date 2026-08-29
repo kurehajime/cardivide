@@ -9,6 +9,7 @@ export const DEFAULT_MATCH_TURN_LIMIT = 200
 
 const MAX_ACTIONS_PER_MATCH = 10_000
 const KEEP_ORDER_RANDOM = () => 1 - Number.EPSILON
+const WIN_RATE_DECIMAL_PLACES = 4
 
 export type TournamentMatch = {
   matchNumber: number
@@ -49,6 +50,11 @@ export type TournamentSummary = {
   deckRecords: DeckTournamentRecord[]
 }
 
+export type DeckMatchupWinRateTable = Record<
+  string,
+  Record<string, number | null>
+>
+
 type PlayAiMatchOptions = TournamentMatch & {
   playerADeck: ThemeDeck
   playerBDeck: ThemeDeck
@@ -74,18 +80,9 @@ const createSeededRandom = (seed: number): (() => number) => {
   }
 }
 
-const hashString = (value: string): number => {
-  let hash = 2_166_136_261
-  for (let index = 0; index < value.length; index += 1) {
-    hash ^= value.charCodeAt(index)
-    hash = Math.imul(hash, 16_777_619)
-  }
-  return hash >>> 0
-}
-
 const shuffleDeck = (deck: ThemeDeck, seed: number): CardDefinitionId[] => {
   const shuffled = [...deck.cardDefinitionIds]
-  const random = createSeededRandom(seed ^ hashString(deck.id))
+  const random = createSeededRandom(seed ^ deck.tournamentShuffleSalt)
 
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
     const swapIndex = Math.floor(random() * (index + 1))
@@ -272,4 +269,87 @@ export const summarizeTournament = (
     playerBWins,
     deckRecords: decks.map((deck) => records.get(deck.id)!),
   }
+}
+
+export const createDeckMatchupWinRateTable = (
+  decks: readonly ThemeDeck[],
+  results: readonly AiMatchResult[],
+): DeckMatchupWinRateTable => {
+  const uniqueIds = new Set(decks.map((deck) => deck.id))
+  if (uniqueIds.size !== decks.length) {
+    throw new Error('Deck IDs must be unique to create a matchup win rate table.')
+  }
+
+  const records = new Map<
+    ThemeDeckId,
+    Map<ThemeDeckId, { wins: number; decided: number }>
+  >(
+    decks.map((deck) => [
+      deck.id,
+      new Map(
+        decks
+          .filter((opponent) => opponent.id !== deck.id)
+          .map((opponent) => [opponent.id, { wins: 0, decided: 0 }]),
+      ),
+    ]),
+  )
+
+  results.forEach((result) => {
+    if (result.playerADeckId === result.playerBDeckId) {
+      throw new Error('Tournament result must reference two different decks.')
+    }
+
+    const playerARecord = records
+      .get(result.playerADeckId)
+      ?.get(result.playerBDeckId)
+    const playerBRecord = records
+      .get(result.playerBDeckId)
+      ?.get(result.playerADeckId)
+    if (!playerARecord || !playerBRecord) {
+      throw new Error('Tournament result references an unknown deck.')
+    }
+    if (result.winnerDeckId === null) {
+      return
+    }
+    if (
+      result.winnerDeckId !== result.playerADeckId &&
+      result.winnerDeckId !== result.playerBDeckId
+    ) {
+      throw new Error('Tournament result winner is not part of the matchup.')
+    }
+
+    playerARecord.decided += 1
+    playerBRecord.decided += 1
+    if (result.winnerDeckId === result.playerADeckId) {
+      playerARecord.wins += 1
+    } else {
+      playerBRecord.wins += 1
+    }
+  })
+
+  return Object.fromEntries(
+    decks.map((deck) => [
+      deck.id,
+      Object.fromEntries(
+        decks
+          .filter((opponent) => opponent.id !== deck.id)
+          .map((opponent) => {
+            const record = records.get(deck.id)?.get(opponent.id)
+            if (!record) {
+              throw new Error('Matchup record is missing.')
+            }
+            return [
+              opponent.id,
+              record.decided === 0
+                ? null
+                : Number(
+                    (record.wins / record.decided).toFixed(
+                      WIN_RATE_DECIMAL_PLACES,
+                    ),
+                  ),
+            ]
+          }),
+      ),
+    ]),
+  )
 }

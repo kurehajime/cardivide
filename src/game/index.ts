@@ -5,6 +5,7 @@ export {
   DEFAULT_TOURNAMENT_GAMES_PER_SIDE,
   DEFAULT_TOURNAMENT_SEED,
   GameAI,
+  createDeckMatchupWinRateTable,
   evaluateBase,
   evaluateBattleEntry,
   evaluateCoherentMainPlan,
@@ -77,6 +78,7 @@ export type {
 export type { DeckSummary } from './decks'
 export type {
   AiMatchResult,
+  DeckMatchupWinRateTable,
   DeckTournamentRecord,
   EvaluationBreakdown,
   HandPlayCandidate,

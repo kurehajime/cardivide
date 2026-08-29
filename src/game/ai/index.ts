@@ -17,6 +17,7 @@ export {
   DEFAULT_MATCH_TURN_LIMIT,
   DEFAULT_TOURNAMENT_GAMES_PER_SIDE,
   DEFAULT_TOURNAMENT_SEED,
+  createDeckMatchupWinRateTable,
   createRoundRobinSchedule,
   playAiMatch,
   runRoundRobinTournament,
@@ -24,6 +25,7 @@ export {
 } from './tournament'
 export type {
   AiMatchResult,
+  DeckMatchupWinRateTable,
   DeckTournamentRecord,
   MatchTermination,
   TournamentMatch,

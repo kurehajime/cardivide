@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { CARD_DEFINITION_IDS } from '../cards'
 import { GameManager } from '../GameManager'
-import { THEME_DECK_BY_ID } from '../themeDecks'
+import { THEME_DECK_BY_ID, THEME_DECK_IDS } from '../themeDecks'
 import type { CardInstanceId, GameState, PlayerId } from '../types'
 import {
   AI_DIFFICULTY_IGNORED_HAND_COUNT,
@@ -443,7 +443,9 @@ describe('AI evaluation', () => {
   })
 
   it('adds life droplet hold value once for its accumulated blue discards', () => {
-    const deck = [...THEME_DECK_BY_ID['blue-green-intercept'].cardDefinitionIds]
+    const deck = [
+      ...THEME_DECK_BY_ID[THEME_DECK_IDS.BLUE_GREEN_INTERCEPT].cardDefinitionIds,
+    ]
     const transferIndex = deck.indexOf(CARD_ID.TRANSFER)
     deck[transferIndex] = CARD_ID.LIFE_DROPLET
     const initial = GameManager.create(KEEP_ORDER_RANDOM, {

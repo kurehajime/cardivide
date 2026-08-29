@@ -1,4 +1,7 @@
+import { writeFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import {
+  createDeckMatchupWinRateTable,
   DEFAULT_MATCH_TURN_LIMIT,
   DEFAULT_TOURNAMENT_GAMES_PER_SIDE,
   DEFAULT_TOURNAMENT_SEED,
@@ -50,6 +53,17 @@ const results = runRoundRobinTournament({
   onMatchComplete: (result) => console.log(formatMatchResult(result)),
 })
 const summary = summarizeTournament(THEME_DECKS, results)
+const matchupWinRates = createDeckMatchupWinRateTable(THEME_DECKS, results)
+const matchupWinRatesUrl = new URL(
+  '../src/game/ai/deck-matchup-win-rates.json',
+  import.meta.url,
+)
+
+writeFileSync(
+  matchupWinRatesUrl,
+  `${JSON.stringify(matchupWinRates, null, 2)}\n`,
+  'utf8',
+)
 
 console.log('')
 console.log('デッキ別集計')
@@ -67,3 +81,4 @@ console.log(
   `先後集計: 先手 ${summary.playerAWins}勝 / 後手 ${summary.playerBWins}勝 / ` +
     `未決着 ${summary.unresolvedMatches}戦`,
 )
+console.log(`直接対戦勝率JSON: ${fileURLToPath(matchupWinRatesUrl)}`)
