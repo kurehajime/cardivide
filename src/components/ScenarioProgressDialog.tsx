@@ -39,6 +39,7 @@ const ScenarioProgressDialog = ({
     nextBattleIndex === null
       ? null
       : THEME_DECK_BY_ID[opponentDeckIds[nextBattleIndex]]
+  const defeatedOpponent = THEME_DECK_BY_ID[opponentDeckIds[currentBattleIndex]]
   const title =
     result === 'intro'
       ? 'シナリオ開始'
@@ -52,8 +53,8 @@ const ScenarioProgressDialog = ({
       ? `最初の対戦相手は「${nextOpponent.name}」`
       : scenarioComplete
         ? 'すべての対戦相手を撃破しました'
-        : nextOpponent
-          ? `次の対戦相手は「${nextOpponent.name}」`
+        : playerWon
+          ? `「${defeatedOpponent.name}」を倒した`
           : 'お疲れ様でした'
 
   return (
