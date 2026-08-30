@@ -356,7 +356,7 @@ const GameSession = ({
       <LayoutGroup id="game-card-layout">
         <main className="game-shell">
           <header className="game-header">
-            <h1>Card Line</h1>
+            <h1>CARDIVIDE</h1>
             <div className="game-header-controls">
               {scenarioRun && (
                 <div className="scenario-progress" aria-label="シナリオ進行状況">

@@ -153,7 +153,7 @@ const GameSetup = ({
   return (
     <main className="setup-shell">
       <header className="setup-header">
-        <h1>Card Line</h1>
+        <h1>CARDIVIDE</h1>
         <span>対戦設定</span>
       </header>
       <section className="setup-panel" aria-label="デッキ選択">
