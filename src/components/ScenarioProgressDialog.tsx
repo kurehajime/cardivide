@@ -5,6 +5,7 @@ import {
   type CardColor,
   type ThemeDeckId,
 } from '../game'
+import { PLAYER_IMAGE_BY_DECK_ID } from './playerImages'
 
 type ScenarioProgressDialogProps = {
   opponentDeckIds: readonly ThemeDeckId[]
@@ -12,8 +13,6 @@ type ScenarioProgressDialogProps = {
   result: 'intro' | 'win' | 'loss'
   onConfirm: () => void
 }
-
-const PLAYER_ICON_URL = `${import.meta.env.BASE_URL}player.svg`
 
 const DECK_COLOR_VALUES = {
   red: '#6f3028',
@@ -121,7 +120,11 @@ const ScenarioProgressDialog = ({
                     } as CSSProperties
                   }
                 >
-                  <img src={PLAYER_ICON_URL} alt="" aria-hidden="true" />
+                  <img
+                    src={PLAYER_IMAGE_BY_DECK_ID[deckId]}
+                    alt=""
+                    aria-hidden="true"
+                  />
                   {defeated && (
                     <span className="scenario-opponent-cross" aria-hidden="true">
                       ×

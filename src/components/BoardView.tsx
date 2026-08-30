@@ -20,10 +20,12 @@ import type {
   PlayerState,
   PlaySpellAction,
   SummonOption,
+  ThemeDeckId,
 } from '../game'
 import CardView from './CardView'
 import GraveyardSummary from './GraveyardSummary'
 import ManaRefundEffects from './ManaRefundEffects'
+import { PLAYER_IMAGE_BY_DECK_ID } from './playerImages'
 
 export type BoardAttackAnimation = {
   id: number
@@ -42,6 +44,7 @@ type BoardViewProps = {
   players: Record<PlayerState['id'], PlayerState>
   playerBarriers: Record<PlayerId, number>
   playerDeckColors: Record<PlayerId, readonly [CardColor, ...CardColor[]]>
+  playerDeckIds: Record<PlayerId, ThemeDeckId>
   activePlayerId: PlayerId
   groups: EffectiveBoardGroup[]
   creatureStatModifiers: Record<CardInstanceId, CreatureStatModifier>
@@ -61,6 +64,7 @@ type BoardPlayerProps = {
   cards: Record<CardInstanceId, CardInstance>
   barrier: number
   deckColors: readonly [CardColor, ...CardColor[]]
+  imageUrl: string
   damage: number | null
 }
 
@@ -72,8 +76,6 @@ const BOARD_SCROLL_PADDING = 12
 const DAMAGE_MARKER_STYLE = {
   '--damage-marker-icon': `url("${import.meta.env.BASE_URL}damage.svg")`,
 } as CSSProperties
-
-const PLAYER_ICON_URL = `${import.meta.env.BASE_URL}player.svg`
 
 const PLAYER_COLOR_VALUES = {
   red: '#6f3028',
@@ -128,7 +130,14 @@ const getSummonSlotTitle = (option?: SummonOption): string | undefined => {
   return `進軍可能 / コスト ${option.effectiveCost}`
 }
 
-const BoardPlayer = ({ player, cards, barrier, deckColors, damage }: BoardPlayerProps) => {
+const BoardPlayer = ({
+  player,
+  cards,
+  barrier,
+  deckColors,
+  imageUrl,
+  damage,
+}: BoardPlayerProps) => {
   const mainColor = deckColors[0]
   const subColor = deckColors[1] ?? mainColor
   const placedSpell = player.placedSpell
@@ -195,7 +204,7 @@ const BoardPlayer = ({ player, cards, barrier, deckColors, damage }: BoardPlayer
       >
         <img
           className={`board-player-icon board-player-icon-${player.id}`}
-          src={PLAYER_ICON_URL}
+          src={imageUrl}
           alt=""
           aria-hidden="true"
         />
@@ -366,6 +375,7 @@ const BoardView = ({
   players,
   playerBarriers,
   playerDeckColors,
+  playerDeckIds,
   activePlayerId,
   groups,
   creatureStatModifiers,
@@ -507,6 +517,7 @@ const BoardView = ({
         cards={cards}
         barrier={playerBarriers.playerA}
         deckColors={playerDeckColors.playerA}
+        imageUrl={PLAYER_IMAGE_BY_DECK_ID[playerDeckIds.playerA]}
         damage={playerDamageMarker?.playerId === 'playerA' ? playerDamageMarker.damage : null}
       />
       <motion.div ref={laneScrollRef} className="board-lane-scroll" layoutScroll>
@@ -665,6 +676,7 @@ const BoardView = ({
         cards={cards}
         barrier={playerBarriers.playerB}
         deckColors={playerDeckColors.playerB}
+        imageUrl={PLAYER_IMAGE_BY_DECK_ID[playerDeckIds.playerB]}
         damage={playerDamageMarker?.playerId === 'playerB' ? playerDamageMarker.damage : null}
       />
     </section>

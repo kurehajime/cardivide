@@ -392,6 +392,10 @@ const GameSession = ({
               playerA: THEME_DECK_BY_ID[playerDeckId].colors,
               playerB: THEME_DECK_BY_ID[comDeckId].colors,
             }}
+            playerDeckIds={{
+              playerA: playerDeckId,
+              playerB: comDeckId,
+            }}
             activePlayerId={state.activePlayerId}
             groups={boardGroups}
             creatureStatModifiers={creatureStatModifiers}
