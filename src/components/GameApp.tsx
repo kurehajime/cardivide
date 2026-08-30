@@ -536,9 +536,9 @@ const GameSession = ({
 const GameApp = () => {
   const [setupMode, setSetupMode] = useState<BattleMode>('scenario')
   const [selection, setSelection] = useState<GameSelection>({
-    playerDeckId: THEME_DECK_IDS.GREEN_RED_FRONTLINE,
+    playerDeckId: THEME_DECK_IDS.RED_TOTAL_ASSAULT,
     comDeckId: THEME_DECK_IDS.RED_BLUE_SKIRMISH,
-    difficulty: 'hard',
+    difficulty: 'easy',
   })
   const [scenarioRun, setScenarioRun] = useState<ScenarioRun | null>(null)
   const [gameStarted, setGameStarted] = useState(false)
