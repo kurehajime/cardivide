@@ -301,7 +301,7 @@ export const THEME_DECKS = [
   },
   {
     id: THEME_DECK_IDS.BLUE_MOBILE_INTERCEPT,
-    name: '遊撃エクスプレス',
+    name: '急襲エクスプレス',
     colors: ['blue'],
     description: '青の高進軍・反撃・帰還・テレポートで戦線を組み替える。',
     cardDefinitionIds: BLUE_MOBILE_INTERCEPT,
