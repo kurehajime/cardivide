@@ -9,7 +9,7 @@ import {
 type ScenarioProgressDialogProps = {
   opponentDeckIds: readonly ThemeDeckId[]
   currentBattleIndex: number
-  playerWon: boolean
+  result: 'intro' | 'win' | 'loss'
   onConfirm: () => void
 }
 
@@ -24,27 +24,38 @@ const DECK_COLOR_VALUES = {
 const ScenarioProgressDialog = ({
   opponentDeckIds,
   currentBattleIndex,
-  playerWon,
+  result,
   onConfirm,
 }: ScenarioProgressDialogProps) => {
+  const playerWon = result === 'win'
   const scenarioComplete =
     playerWon && currentBattleIndex === opponentDeckIds.length - 1
   const nextBattleIndex =
-    playerWon && !scenarioComplete ? currentBattleIndex + 1 : null
+    result === 'intro'
+      ? currentBattleIndex
+      : playerWon && !scenarioComplete
+        ? currentBattleIndex + 1
+        : null
   const nextOpponent =
     nextBattleIndex === null
       ? null
       : THEME_DECK_BY_ID[opponentDeckIds[nextBattleIndex]]
-  const title = scenarioComplete
-    ? 'シナリオクリア'
-    : playerWon
-      ? '勝利'
-      : '敗北'
-  const description = scenarioComplete
-    ? 'すべての対戦相手を撃破しました'
-    : nextOpponent
-      ? `次の対戦相手は「${nextOpponent.name}」`
-      : 'お疲れ様でした'
+  const title =
+    result === 'intro'
+      ? 'シナリオ開始'
+      : scenarioComplete
+        ? 'シナリオクリア'
+        : playerWon
+          ? '勝利'
+          : '敗北'
+  const description =
+    result === 'intro' && nextOpponent
+      ? `最初の対戦相手は「${nextOpponent.name}」`
+      : scenarioComplete
+        ? 'すべての対戦相手を撃破しました'
+        : nextOpponent
+          ? `次の対戦相手は「${nextOpponent.name}」`
+          : 'お疲れ様でした'
 
   return (
     <motion.div
@@ -76,7 +87,7 @@ const ScenarioProgressDialog = ({
               index < currentBattleIndex ||
               (playerWon && index === currentBattleIndex)
             const next = index === nextBattleIndex
-            const failed = !playerWon && index === currentBattleIndex
+            const failed = result === 'loss' && index === currentBattleIndex
             const stateLabel = defeated
               ? '撃破済み'
               : next
@@ -128,7 +139,11 @@ const ScenarioProgressDialog = ({
           autoFocus
           onClick={onConfirm}
         >
-          {nextBattleIndex === null ? 'OK' : '次の対戦へ'}
+          {result === 'intro'
+            ? '対戦開始'
+            : nextBattleIndex === null
+              ? 'OK'
+              : '次の対戦へ'}
         </button>
       </motion.section>
     </motion.div>

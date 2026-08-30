@@ -104,6 +104,9 @@ const GameSession = ({
     aiRef.current = new GameAI({ difficulty, random: Math.random })
   }
   const ai = aiRef.current
+  const [showScenarioIntro, setShowScenarioIntro] = useState(
+    scenarioRun?.currentBattleIndex === 0,
+  )
   const [{ manager, selectedCardId, message }, dispatch] = useReducer(
     gameUiReducer,
     { playerDeckId, comDeckId, difficulty },
@@ -485,14 +488,27 @@ const GameSession = ({
               </motion.div>
             </motion.div>
           )}
-          {winnerId !== null && scenarioRun !== null && (
-            <ScenarioProgressDialog
-              opponentDeckIds={scenarioRun.opponentDeckIds}
-              currentBattleIndex={scenarioRun.currentBattleIndex}
-              playerWon={winnerId === 'playerA'}
-              onConfirm={() => onResultConfirm(winnerId)}
-            />
-          )}
+          {scenarioRun !== null &&
+            (showScenarioIntro || winnerId !== null) && (
+              <ScenarioProgressDialog
+                opponentDeckIds={scenarioRun.opponentDeckIds}
+                currentBattleIndex={scenarioRun.currentBattleIndex}
+                result={
+                  winnerId === null
+                    ? 'intro'
+                    : winnerId === 'playerA'
+                      ? 'win'
+                      : 'loss'
+                }
+                onConfirm={() => {
+                  if (winnerId === null) {
+                    setShowScenarioIntro(false)
+                  } else {
+                    onResultConfirm(winnerId)
+                  }
+                }}
+              />
+            )}
         </main>
       </LayoutGroup>
     </MotionConfig>

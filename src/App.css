@@ -624,6 +624,7 @@
 .scenario-result-overlay {
   padding: 24px;
   background: rgb(20 10 6 / 18%);
+  pointer-events: auto;
 }
 
 .scenario-result-dialog {
@@ -727,13 +728,11 @@
   place-items: center;
   border: 2px solid rgb(255 250 241 / 48%);
   border-radius: 50%;
-  background: linear-gradient(
-    112deg,
-    var(--scenario-main-color) 0%,
-    var(--scenario-main-color) 66.667%,
-    var(--scenario-sub-color) 66.667%,
-    var(--scenario-sub-color) 100%
-  );
+  background: linear-gradient(112deg,
+      var(--scenario-main-color) 0%,
+      var(--scenario-main-color) 66.667%,
+      var(--scenario-sub-color) 66.667%,
+      var(--scenario-sub-color) 100%);
   box-shadow: 0 8px 18px rgb(10 4 2 / 45%);
   overflow: hidden;
 }
@@ -794,16 +793,27 @@
 }
 
 .scenario-opponent-next .scenario-opponent-icon {
+  width: 100px;
+  height: 100px;
   border-color: #fffaf1;
   box-shadow:
     0 0 0 4px rgb(255 250 241 / 20%),
     0 10px 26px rgb(10 4 2 / 72%);
-  transform: translateY(-3px) scale(1.08);
+  transform: translateY(-5px);
+}
+
+.scenario-opponent-next .scenario-opponent-icon img {
+  width: 76px;
+  height: 76px;
 }
 
 .scenario-opponent-next .scenario-opponent-order,
 .scenario-opponent-next strong {
   color: #fffaf1;
+}
+
+.scenario-opponent-next strong {
+  font-size: 18px;
 }
 
 .scenario-opponent-failed {
@@ -909,13 +919,11 @@
   place-items: center;
   border: 2px solid #2d3f38;
   border-radius: 8px;
-  background: linear-gradient(
-    112deg,
-    var(--player-main-color) 0%,
-    var(--player-main-color) 66.667%,
-    var(--player-sub-color) 66.667%,
-    var(--player-sub-color) 100%
-  );
+  background: linear-gradient(112deg,
+      var(--player-main-color) 0%,
+      var(--player-main-color) 66.667%,
+      var(--player-sub-color) 66.667%,
+      var(--player-sub-color) 100%);
   color: #f8fbf5;
   font-size: 13px;
   font-weight: 700;
