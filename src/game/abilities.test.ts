@@ -33,6 +33,27 @@ type ConfigureOptions = {
 
 const createTestManager = (): GameManager => GameManager.create(KEEP_ORDER_RANDOM)
 
+const withHandSize = (
+  manager: GameManager,
+  playerId: PlayerId,
+  handSize: number,
+): GameManager => {
+  const player = manager.state.players[playerId]
+  const returnedToDeck = player.hand.slice(handSize)
+
+  return GameManager.from({
+    ...manager.state,
+    players: {
+      ...manager.state.players,
+      [playerId]: {
+        ...player,
+        hand: player.hand.slice(0, handSize),
+        deck: [...returnedToDeck, ...player.deck],
+      },
+    },
+  })
+}
+
 const findCardIds = (
   state: GameState,
   ownerId: PlayerId,
@@ -268,7 +289,7 @@ describe('CreatureRules position modifiers', () => {
 
 describe('summon modifiers', () => {
   it('keeps march zero creatures at the starting edge when they have no ally anchor', () => {
-    const initial = createTestManager()
+    const initial = withHandSize(createTestManager(), 'playerA', 4)
     const [enemy] = findCardIds(
       initial.state,
       'playerB',
@@ -601,7 +622,7 @@ describe('activated abilities', () => {
   })
 
   it('returns to a four-card hand and rejects a full hand', () => {
-    const initial = createTestManager()
+    const initial = withHandSize(createTestManager(), 'playerA', 4)
     const [source] = findCardIds(
       initial.state,
       'playerA',
@@ -643,7 +664,7 @@ describe('activated abilities', () => {
   })
 
   it('allows a human player to return the same physical card repeatedly in one turn', () => {
-    const initial = createTestManager()
+    const initial = withHandSize(createTestManager(), 'playerA', 4)
     const [source] = findCardIds(
       initial.state,
       'playerA',

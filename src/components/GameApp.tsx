@@ -21,6 +21,7 @@ import GameSetup, {
 } from './GameSetup'
 import HandView from './HandView'
 import PhaseBar from './PhaseBar'
+import ScenarioProgressDialog from './ScenarioProgressDialog'
 
 const COMBAT_EFFECT_DURATION_MS = 500
 const AI_ACTION_DELAY_MS = 700
@@ -48,7 +49,7 @@ type ScenarioRun = {
 }
 
 type GameSessionProps = GameSelection & {
-  scenarioProgress: { current: number; total: number } | null
+  scenarioRun: ScenarioRun | null
   onExit: () => void
   onResultConfirm: (winnerId: PlayerId) => void
 }
@@ -92,7 +93,7 @@ const GameSession = ({
   playerDeckId,
   comDeckId,
   difficulty,
-  scenarioProgress,
+  scenarioRun,
   onExit,
   onResultConfirm,
 }: GameSessionProps) => {
@@ -113,12 +114,9 @@ const GameSession = ({
   const playerB = state.players.playerB
   const winnerId = GameManager.getWinner(manager)
   const winnerMessage =
-    winnerId === null
+    winnerId === null || scenarioRun !== null
       ? null
-      : winnerId === 'playerA' &&
-          scenarioProgress?.current === scenarioProgress?.total
-        ? 'シナリオクリア'
-        : `${state.players[winnerId].name}の勝利`
+      : `${state.players[winnerId].name}の勝利`
   const currentPlayer = GameManager.getCurrentPlayer(manager)
   const selectedCard = selectedCardId === null ? null : state.cards[selectedCardId] ?? null
   const playerAHand = playerA.hand.map((cardId) => state.cards[cardId])
@@ -343,9 +341,10 @@ const GameSession = ({
           <header className="game-header">
             <h1>Card Line</h1>
             <div className="game-header-controls">
-              {scenarioProgress && (
+              {scenarioRun && (
                 <div className="scenario-progress" aria-label="シナリオ進行状況">
-                  Battle {scenarioProgress.current} / {scenarioProgress.total}
+                  Battle {scenarioRun.currentBattleIndex + 1} /{' '}
+                  {scenarioRun.opponentDeckIds.length}
                 </div>
               )}
               <PhaseBar phase={state.phase} turn={state.turn} activePlayer={currentPlayer.name} />
@@ -358,7 +357,7 @@ const GameSession = ({
               </button>
             </div>
           </header>
-          {message && winnerMessage === null && (
+          {message && winnerId === null && (
             <div className="game-message" role="status">
               {message}
             </div>
@@ -486,6 +485,14 @@ const GameSession = ({
               </motion.div>
             </motion.div>
           )}
+          {winnerId !== null && scenarioRun !== null && (
+            <ScenarioProgressDialog
+              opponentDeckIds={scenarioRun.opponentDeckIds}
+              currentBattleIndex={scenarioRun.currentBattleIndex}
+              playerWon={winnerId === 'playerA'}
+              onConfirm={() => onResultConfirm(winnerId)}
+            />
+          )}
         </main>
       </LayoutGroup>
     </MotionConfig>
@@ -577,14 +584,7 @@ const GameApp = () => {
           : `free-${selection.playerDeckId}-${selection.comDeckId}`
       }
       {...selection}
-      scenarioProgress={
-        scenarioRun
-          ? {
-              current: scenarioRun.currentBattleIndex + 1,
-              total: scenarioRun.opponentDeckIds.length,
-            }
-          : null
-      }
+      scenarioRun={scenarioRun}
       onExit={returnToSetup}
       onResultConfirm={handleResultConfirm}
     />

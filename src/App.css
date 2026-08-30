@@ -621,6 +621,231 @@
   outline-offset: 4px;
 }
 
+.scenario-result-overlay {
+  padding: 24px;
+  background: rgb(20 10 6 / 18%);
+}
+
+.scenario-result-dialog {
+  width: min(980px, 100%);
+  display: grid;
+  gap: 22px;
+  padding: 24px 28px 28px;
+  border: 1px solid rgb(255 250 241 / 38%);
+  border-radius: 8px;
+  background: rgb(31 23 19 / 92%);
+  box-shadow: 0 18px 56px rgb(20 10 6 / 58%);
+  color: #fffaf1;
+  backdrop-filter: blur(5px) saturate(0.75);
+  pointer-events: auto;
+}
+
+.scenario-result-header {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  text-align: center;
+}
+
+.scenario-result-header p,
+.scenario-result-header h2,
+.scenario-result-header span {
+  margin: 0;
+}
+
+.scenario-result-header p {
+  color: #d8c8b8;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.scenario-result-header h2 {
+  font-family: 'Shippori Mincho', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
+  font-size: 42px;
+  line-height: 1.1;
+  text-shadow: 0 5px 18px rgb(10 4 2 / 80%);
+}
+
+.scenario-result-header span {
+  color: #eadfd4;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.scenario-opponent-track {
+  min-width: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(126px, 1fr);
+  gap: 12px;
+  margin: 0;
+  padding: 0 0 12px;
+  overflow-x: auto;
+  list-style: none;
+}
+
+.scenario-opponent {
+  position: relative;
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 6px;
+  color: #d8c8b8;
+  opacity: 0.5;
+}
+
+.scenario-opponent:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  top: 61px;
+  left: calc(50% + 43px);
+  width: calc(100% - 74px);
+  height: 2px;
+  background: rgb(255 250 241 / 26%);
+}
+
+.scenario-opponent-state {
+  min-height: 20px;
+  display: grid;
+  place-items: center;
+  padding: 2px 8px;
+  border-radius: 4px;
+  color: #d8c8b8;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1.4;
+}
+
+.scenario-opponent-icon {
+  position: relative;
+  z-index: 1;
+  width: 76px;
+  height: 76px;
+  display: grid;
+  place-items: center;
+  border: 2px solid rgb(255 250 241 / 48%);
+  border-radius: 50%;
+  background: linear-gradient(
+    112deg,
+    var(--scenario-main-color) 0%,
+    var(--scenario-main-color) 66.667%,
+    var(--scenario-sub-color) 66.667%,
+    var(--scenario-sub-color) 100%
+  );
+  box-shadow: 0 8px 18px rgb(10 4 2 / 45%);
+  overflow: hidden;
+}
+
+.scenario-opponent-icon img {
+  width: 58px;
+  height: 58px;
+  object-fit: contain;
+  opacity: 0.78;
+  transform: rotate(-8deg) scaleX(-1);
+}
+
+.scenario-opponent-cross {
+  position: absolute;
+  inset: -10px;
+  display: grid;
+  place-items: center;
+  color: #ffeee8;
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 88px;
+  font-weight: 900;
+  line-height: 1;
+  text-shadow:
+    0 3px 0 #6e1e19,
+    0 7px 18px rgb(10 4 2 / 82%);
+}
+
+.scenario-opponent-order {
+  color: #ad9c8e;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+.scenario-opponent strong {
+  max-width: 100%;
+  min-height: 38px;
+  display: grid;
+  align-items: start;
+  color: #fffaf1;
+  font-size: 14px;
+  line-height: 1.35;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.scenario-opponent-defeated {
+  opacity: 0.78;
+}
+
+.scenario-opponent-next {
+  color: #fffaf1;
+  opacity: 1;
+}
+
+.scenario-opponent-next .scenario-opponent-state {
+  background: #f4eee5;
+  color: #26342f;
+}
+
+.scenario-opponent-next .scenario-opponent-icon {
+  border-color: #fffaf1;
+  box-shadow:
+    0 0 0 4px rgb(255 250 241 / 20%),
+    0 10px 26px rgb(10 4 2 / 72%);
+  transform: translateY(-3px) scale(1.08);
+}
+
+.scenario-opponent-next .scenario-opponent-order,
+.scenario-opponent-next strong {
+  color: #fffaf1;
+}
+
+.scenario-opponent-failed {
+  opacity: 1;
+}
+
+.scenario-opponent-failed .scenario-opponent-state {
+  background: #7f2924;
+  color: #fffaf1;
+}
+
+.scenario-opponent-failed .scenario-opponent-icon {
+  border-color: #d96b60;
+  box-shadow: 0 0 0 4px rgb(217 107 96 / 18%);
+}
+
+.scenario-result-confirm {
+  justify-self: center;
+  min-width: 190px;
+  min-height: 54px;
+  padding: 10px 24px;
+  border: 2px solid #fffaf1;
+  border-radius: 6px;
+  background: #f4eee5;
+  box-shadow: 0 8px 20px rgb(20 10 6 / 46%);
+  color: #26342f;
+  font-size: 18px;
+  font-weight: 900;
+  transition: background-color 120ms ease, transform 120ms ease;
+}
+
+.scenario-result-confirm:hover {
+  background: #fffaf1;
+  cursor: pointer;
+  transform: translateY(-2px);
+}
+
+.scenario-result-confirm:focus-visible {
+  outline: 3px solid #fffaf1;
+  outline-offset: 4px;
+}
+
 .board-panel,
 .hand-panel {
   border: 0;
@@ -1893,6 +2118,24 @@
     justify-self: center;
     min-width: 160px;
     margin-right: 0;
+  }
+
+  .scenario-result-overlay {
+    padding: 12px;
+  }
+
+  .scenario-result-dialog {
+    gap: 18px;
+    padding: 20px 14px 22px;
+  }
+
+  .scenario-result-header h2 {
+    font-size: 34px;
+  }
+
+  .scenario-opponent-track {
+    grid-auto-columns: 112px;
+    justify-content: start;
   }
 
   .game-header {

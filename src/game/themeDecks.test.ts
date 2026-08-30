@@ -256,8 +256,8 @@ describe('theme decks', () => {
     expect(instances.map(({ id }) => id)).toEqual(
       Array.from({ length: 80 }, (_, index) => index + 1),
     )
-    expect(manager.state.players.playerA.hand).toHaveLength(4)
-    expect(manager.state.players.playerA.deck).toHaveLength(36)
+    expect(manager.state.players.playerA.hand).toHaveLength(5)
+    expect(manager.state.players.playerA.deck).toHaveLength(35)
     expect(manager.state.players.playerB.hand).toHaveLength(0)
     expect(manager.state.players.playerB.deck).toHaveLength(40)
     expect(instances.slice(0, 40).every(({ ownerId }) => ownerId === 'playerA')).toBe(true)

@@ -188,9 +188,6 @@ const createInitialState = (
   }
 }
 
-const getKeepUpHandSize = (state: GameState): number =>
-  state.turn === 1 && state.activePlayerId === 'playerA' ? 4 : MAX_HAND_SIZE
-
 const replacePlayer = (state: GameState, player: PlayerState): GameState => ({
   ...state,
   players: {
@@ -663,7 +660,7 @@ const resolveKeepUpState = (state: GameState): GameState => {
   const activePlayer = state.players[state.activePlayerId]
   const bonusMana = getKeepUpManaBonusForState(state, activePlayer.id)
   const nextPlayer = {
-    ...drawUpTo(activePlayer, getKeepUpHandSize(state)),
+    ...drawUpTo(activePlayer, MAX_HAND_SIZE),
     mana: activePlayer.mana + 2 + bonusMana,
   }
 

@@ -95,7 +95,7 @@ describe('GameManager card instance tracking', () => {
     expect(nextManager.state.players.playerA.hand).not.toContain(selectedCopy)
     expect(nextManager.state.players.playerA.hand).toContain(thirdCopy)
     expect(nextManager.state.board.creatures.map(({ cardId }) => cardId)).toEqual([selectedCopy])
-    expect(nextManager.state.players.playerA.hand).toHaveLength(3)
+    expect(nextManager.state.players.playerA.hand).toHaveLength(4)
     expect(() => GameManager.summonCreature(nextManager, selectedCopy, 0)).toThrow(
       /is not in あなた's hand/,
     )
@@ -190,7 +190,7 @@ describe('GameManager card instance tracking', () => {
       ({ type }) => type === 'discardFromHand',
     )
 
-    expect(initialDiscardActions).toHaveLength(4)
+    expect(initialDiscardActions).toHaveLength(5)
     manager = GameManager.discardFromHand(manager, discardedCardId)
 
     expect(manager.state.players.playerA.hand).not.toContain(discardedCardId)
