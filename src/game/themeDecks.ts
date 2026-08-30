@@ -285,7 +285,7 @@ const GREEN_FORTRESS_CYCLE = [
 export const THEME_DECKS = [
   {
     id: THEME_DECK_IDS.RED_TOTAL_ASSAULT,
-    name: '総力突破',
+    name: 'ブンブンぶん殴り',
     colors: ['red'],
     description: '赤の高攻撃・一騎当千・直接火力を集め、複数地点から突破する。',
     cardDefinitionIds: RED_TOTAL_ASSAULT,
@@ -293,7 +293,7 @@ export const THEME_DECKS = [
   },
   {
     id: THEME_DECK_IDS.GREEN_FORTRESS_CYCLE,
-    name: '要塞循環',
+    name: 'じゃぶじゃぶマネー',
     colors: ['green'],
     description: '緑の高防御・採掘・捕獲を維持し、資源を再展開へつなげる。',
     cardDefinitionIds: GREEN_FORTRESS_CYCLE,
@@ -301,7 +301,7 @@ export const THEME_DECKS = [
   },
   {
     id: THEME_DECK_IDS.BLUE_MOBILE_INTERCEPT,
-    name: '転戦迎撃',
+    name: '遊撃エクスプレス',
     colors: ['blue'],
     description: '青の高進軍・反撃・帰還・テレポートで戦線を組み替える。',
     cardDefinitionIds: BLUE_MOBILE_INTERCEPT,
@@ -309,7 +309,7 @@ export const THEME_DECKS = [
   },
   {
     id: THEME_DECK_IDS.RED_BLUE_SKIRMISH,
-    name: '遊撃突破',
+    name: '爆弾魔',
     colors: ['red', 'blue'],
     description: '青の進軍・橋頭堡・帰還で侵入路を作り、赤の単独突破を狙う。',
     cardDefinitionIds: RED_BLUE_SKIRMISH,
@@ -317,7 +317,7 @@ export const THEME_DECKS = [
   },
   {
     id: THEME_DECK_IDS.GREEN_RED_FRONTLINE,
-    name: '連環戦線',
+    name: 'メガトンハンマー',
     colors: ['green', 'red'],
     description: '緑の採掘拠点を維持し、赤の基礎火力・撤去・刺客で反攻する。',
     cardDefinitionIds: GREEN_RED_FRONTLINE,
@@ -325,7 +325,7 @@ export const THEME_DECKS = [
   },
   {
     id: THEME_DECK_IDS.BLUE_GREEN_INTERCEPT,
-    name: '分断迎撃',
+    name: '真綿',
     colors: ['blue', 'green'],
     description: '青の位置制御と反撃を、緑の高防御・捕獲・しんがりで支える。',
     cardDefinitionIds: BLUE_GREEN_INTERCEPT,
