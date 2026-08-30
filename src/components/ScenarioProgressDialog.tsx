@@ -66,6 +66,7 @@ const ScenarioProgressDialog = ({
     >
       <motion.section
         className="scenario-result-dialog"
+        data-result={scenarioComplete ? 'complete' : result}
         role="dialog"
         aria-modal="true"
         aria-labelledby="scenario-result-title"
