@@ -25,6 +25,7 @@ import ScenarioProgressDialog from './ScenarioProgressDialog'
 
 const COMBAT_EFFECT_DURATION_MS = 500
 const AI_ACTION_DELAY_MS = 700
+const SCENARIO_WIN_DIALOG_DELAY_MS = 500
 const AI_PLAYER_ID = 'playerB'
 
 type GameUiState = {
@@ -107,6 +108,7 @@ const GameSession = ({
   const [showScenarioIntro, setShowScenarioIntro] = useState(
     scenarioRun?.currentBattleIndex === 0,
   )
+  const [showScenarioWinResult, setShowScenarioWinResult] = useState(false)
   const [{ manager, selectedCardId, message }, dispatch] = useReducer(
     gameUiReducer,
     { playerDeckId, comDeckId, difficulty },
@@ -188,6 +190,18 @@ const GameSession = ({
 
     return () => window.clearTimeout(timeoutId)
   }, [state.pendingCombat])
+
+  useEffect(() => {
+    if (scenarioRun === null || winnerId !== 'playerA') {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setShowScenarioWinResult(true)
+    }, SCENARIO_WIN_DIALOG_DELAY_MS)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [scenarioRun, winnerId])
 
   useEffect(() => {
     if (!import.meta.env.DEV) {
@@ -493,7 +507,7 @@ const GameSession = ({
             </motion.div>
           )}
           {scenarioRun !== null &&
-            (showScenarioIntro || winnerId !== null) && (
+            (showScenarioIntro || winnerId === 'playerB' || showScenarioWinResult) && (
               <ScenarioProgressDialog
                 opponentDeckIds={scenarioRun.opponentDeckIds}
                 currentBattleIndex={scenarioRun.currentBattleIndex}

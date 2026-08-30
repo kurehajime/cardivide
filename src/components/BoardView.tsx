@@ -77,6 +77,8 @@ const DAMAGE_MARKER_STYLE = {
   '--damage-marker-icon': `url("${import.meta.env.BASE_URL}damage.svg")`,
 } as CSSProperties
 
+const PLAYER_ICON_URL = `${import.meta.env.BASE_URL}player.svg`
+
 const PLAYER_COLOR_VALUES = {
   red: '#6f3028',
   blue: '#2b5278',
@@ -517,7 +519,7 @@ const BoardView = ({
         cards={cards}
         barrier={playerBarriers.playerA}
         deckColors={playerDeckColors.playerA}
-        imageUrl={PLAYER_IMAGE_BY_DECK_ID[playerDeckIds.playerA]}
+        imageUrl={PLAYER_ICON_URL}
         damage={playerDamageMarker?.playerId === 'playerA' ? playerDamageMarker.damage : null}
       />
       <motion.div ref={laneScrollRef} className="board-lane-scroll" layoutScroll>

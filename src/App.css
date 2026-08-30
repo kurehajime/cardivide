@@ -718,9 +718,9 @@
   content: '';
   position: absolute;
   z-index: 0;
-  top: 73px;
-  left: calc(50% + 43px);
-  width: calc(100% - 74px);
+  top: 79px;
+  left: calc(50% + 49px);
+  width: calc(100% - 86px);
   height: 2px;
   background: rgb(255 250 241 / 26%);
 }
@@ -740,18 +740,20 @@
 .scenario-opponent-icon {
   position: relative;
   z-index: 1;
-  width: 72px;
-  height: 96px;
+  width: 84px;
+  height: 108px;
   display: grid;
   place-items: center;
-  border: 2px solid rgb(255 250 241 / 48%);
+  border: 6px solid transparent;
   border-radius: 6px;
-  background: linear-gradient(112deg,
+  background: linear-gradient(90deg,
       var(--scenario-main-color) 0%,
       var(--scenario-main-color) 66.667%,
       var(--scenario-sub-color) 66.667%,
-      var(--scenario-sub-color) 100%);
-  box-shadow: 0 8px 18px rgb(10 4 2 / 45%);
+      var(--scenario-sub-color) 100%) border-box;
+  box-shadow:
+    0 0 0 2px rgb(31 24 20 / 72%),
+    0 8px 18px rgb(10 4 2 / 45%);
   overflow: hidden;
 }
 
@@ -809,9 +811,9 @@
 }
 
 .scenario-opponent-next .scenario-opponent-icon {
-  width: 96px;
-  height: 128px;
-  border-color: #fffaf1;
+  width: 108px;
+  height: 140px;
+  border-color: transparent;
   box-shadow:
     0 0 0 4px rgb(255 250 241 / 20%),
     0 10px 26px rgb(10 4 2 / 72%);
@@ -837,7 +839,7 @@
 }
 
 .scenario-opponent-failed .scenario-opponent-icon {
-  border-color: #d96b60;
+  border-color: transparent;
   box-shadow: 0 0 0 4px rgb(217 107 96 / 18%);
 }
 
@@ -931,13 +933,22 @@
   justify-self: center;
   display: grid;
   place-items: center;
-  border: 2px solid #2d3f38;
+  border: 7px solid transparent;
   border-radius: 8px;
-  background: linear-gradient(112deg,
+  background:
+    linear-gradient(112deg,
       var(--player-main-color) 0%,
       var(--player-main-color) 66.667%,
       var(--player-sub-color) 66.667%,
-      var(--player-sub-color) 100%);
+      var(--player-sub-color) 100%) padding-box,
+    linear-gradient(90deg,
+      var(--player-main-color) 0%,
+      var(--player-main-color) 66.667%,
+      var(--player-sub-color) 66.667%,
+      var(--player-sub-color) 100%) border-box;
+  box-shadow:
+    0 0 0 2px rgb(31 24 20 / 72%),
+    0 8px 18px rgb(31 19 12 / 38%);
   color: #f8fbf5;
   font-size: 13px;
   font-weight: 700;
@@ -963,6 +974,15 @@
   opacity: 0.82;
   object-fit: cover;
   pointer-events: none;
+}
+
+.board-player-icon-playerA {
+  inset: 50% auto auto 50%;
+  width: 78%;
+  height: 78%;
+  opacity: 0.28;
+  object-fit: contain;
+  transform: translate(-50%, -50%) rotate(8deg);
 }
 
 .board-player-identity {

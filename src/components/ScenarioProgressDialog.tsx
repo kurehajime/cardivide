@@ -109,7 +109,7 @@ const ScenarioProgressDialog = ({
                 aria-label={`${index + 1}戦目 ${deck.name} ${stateLabel}`}
               >
                 <span className="scenario-opponent-state" aria-hidden="true">
-                  {next ? '次の対戦' : failed ? '敗北' : '\u00a0'}
+                  {next ? '次の対戦' : failed ? 'COMの勝利' : '\u00a0'}
                 </span>
                 <span
                   className="scenario-opponent-icon"
