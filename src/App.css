@@ -52,7 +52,12 @@
 
 .setup-shell {
   min-height: 100svh;
-  padding: 24px;
+  min-height: 100dvh;
+  padding:
+    calc(24px + env(safe-area-inset-top, 0px))
+    calc(24px + env(safe-area-inset-right, 0px))
+    calc(24px + env(safe-area-inset-bottom, 0px))
+    calc(24px + env(safe-area-inset-left, 0px));
   background: var(--table-background);
   color: #f8f3ec;
 }
@@ -399,10 +404,15 @@
   position: relative;
   isolation: isolate;
   min-height: 100svh;
+  min-height: 100dvh;
   display: grid;
   grid-template-rows: auto auto minmax(0, 1fr) auto;
   gap: 14px;
-  padding: 18px;
+  padding:
+    calc(18px + env(safe-area-inset-top, 0px))
+    calc(18px + env(safe-area-inset-right, 0px))
+    calc(18px + env(safe-area-inset-bottom, 0px))
+    calc(18px + env(safe-area-inset-left, 0px));
   background: var(--table-background);
   color: #f8f3ec;
 }
@@ -2119,7 +2129,11 @@
 
 @media (max-width: 720px) {
   .setup-shell {
-    padding: 16px 12px;
+    padding:
+      calc(16px + env(safe-area-inset-top, 0px))
+      calc(12px + env(safe-area-inset-right, 0px))
+      calc(16px + env(safe-area-inset-bottom, 0px))
+      calc(12px + env(safe-area-inset-left, 0px));
   }
 
   .setup-header {
@@ -2143,7 +2157,11 @@
   }
 
   .game-shell {
-    padding: 12px;
+    padding:
+      calc(12px + env(safe-area-inset-top, 0px))
+      calc(12px + env(safe-area-inset-right, 0px))
+      calc(12px + env(safe-area-inset-bottom, 0px))
+      calc(12px + env(safe-area-inset-left, 0px));
   }
 
   .game-result-band {
