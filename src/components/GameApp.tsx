@@ -370,7 +370,7 @@ const GameSession = ({
                 type="button"
                 onClick={onExit}
               >
-                デッキ変更
+                メニューに戻る
               </button>
             </div>
           </header>
