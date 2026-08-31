@@ -516,14 +516,6 @@ const BoardView = ({
 
   return (
     <section ref={boardRef} className="board-panel" aria-label="battlefield">
-      <span
-        className="board-direction-rail board-direction-rail-playerA"
-        aria-hidden="true"
-      />
-      <span
-        className="board-direction-rail board-direction-rail-playerB"
-        aria-hidden="true"
-      />
       <ManaRefundEffects
         boardRef={boardRef}
         cardIds={manaRefundCardIds}
@@ -536,6 +528,10 @@ const BoardView = ({
         deckColors={playerDeckColors.playerA}
         imageUrl={PLAYER_ICON_URL}
         damage={playerDamageMarker?.playerId === 'playerA' ? playerDamageMarker.damage : null}
+      />
+      <span
+        className={`board-lane-flow board-lane-flow-${activePlayerId}`}
+        aria-hidden="true"
       />
       <motion.div ref={laneScrollRef} className="board-lane-scroll" layoutScroll>
         {board.creatures.length === 0 ? (

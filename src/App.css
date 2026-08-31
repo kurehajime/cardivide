@@ -899,10 +899,6 @@
   background: transparent;
 }
 
-.board-direction-rail {
-  display: none;
-}
-
 .board-player {
   min-width: 0;
   display: grid;
@@ -1126,6 +1122,34 @@
 .board-lane-scroll {
   min-width: 0;
   overflow-x: auto;
+}
+
+.board-lane-flow {
+  z-index: 0;
+  grid-area: lane;
+  align-self: stretch;
+  justify-self: stretch;
+  background-image: url('./assets/arrow-right.svg');
+  background-repeat: repeat-x;
+  background-position: -96px center;
+  background-size: 96px 96px;
+  opacity: 0.14;
+  pointer-events: none;
+  animation: board-lane-flow 1.8s linear infinite;
+}
+
+.board-lane-flow-playerB {
+  transform: scaleX(-1);
+}
+
+@keyframes board-lane-flow {
+  from {
+    background-position-x: -96px;
+  }
+
+  to {
+    background-position-x: 0;
+  }
 }
 
 .board-lane-grid {
@@ -2221,31 +2245,6 @@
     width: 100%;
   }
 
-  .board-direction-rail {
-    position: absolute;
-    z-index: 0;
-    width: 148px;
-    display: block;
-    pointer-events: none;
-  }
-
-  .board-direction-rail-playerA {
-    top: 34%;
-    bottom: 4px;
-    left: 4px;
-    border-bottom: 5px solid #b84c3e;
-    border-left: 5px solid #b84c3e;
-    border-radius: 0 0 0 12px;
-  }
-
-  .board-direction-rail-playerB {
-    top: 4px;
-    right: 4px;
-    bottom: 34%;
-    border-top: 5px solid #3f73b8;
-    border-right: 5px solid #3f73b8;
-    border-radius: 0 12px 0 0;
-  }
 }
 
 @media (max-width: 720px) {
@@ -2500,30 +2499,8 @@
     width: 100%;
   }
 
-  .board-direction-rail {
-    position: absolute;
-    z-index: 0;
-    width: 72px;
-    display: block;
-    pointer-events: none;
-  }
-
-  .board-direction-rail-playerA {
-    top: 34%;
-    bottom: 2px;
-    left: 1px;
-    border-bottom: 4px solid #b84c3e;
-    border-left: 4px solid #b84c3e;
-    border-radius: 0 0 0 9px;
-  }
-
-  .board-direction-rail-playerB {
-    top: 2px;
-    right: 1px;
-    bottom: 34%;
-    border-top: 4px solid #3f73b8;
-    border-right: 4px solid #3f73b8;
-    border-radius: 0 9px 0 0;
+  .board-lane-flow {
+    background-size: 48px 48px;
   }
 
   .board-card-content > .card-view {
@@ -2626,5 +2603,12 @@
   .card-detail-popover {
     gap: 8px;
     padding: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .board-lane-flow {
+    animation: none;
+    background-position-x: center;
   }
 }
