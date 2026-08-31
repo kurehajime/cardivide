@@ -155,7 +155,10 @@ const BoardPlayer = ({
   const shakeDuration = damageLevel === 'critical' ? 0.48 : damageLevel === 'large' ? 0.4 : 0.34
 
   return (
-    <section className="board-player" aria-label={`${player.name} field`}>
+    <section
+      className={`board-player board-player-${player.id}`}
+      aria-label={`${player.name} field`}
+    >
       <dl className="board-player-stats">
         <div>
           <dt>HP</dt>
@@ -513,6 +516,14 @@ const BoardView = ({
 
   return (
     <section ref={boardRef} className="board-panel" aria-label="battlefield">
+      <span
+        className="board-direction-rail board-direction-rail-playerA"
+        aria-hidden="true"
+      />
+      <span
+        className="board-direction-rail board-direction-rail-playerB"
+        aria-hidden="true"
+      />
       <ManaRefundEffects
         boardRef={boardRef}
         cardIds={manaRefundCardIds}

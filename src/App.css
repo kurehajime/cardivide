@@ -887,6 +887,8 @@
 }
 
 .board-panel {
+  position: relative;
+  isolation: isolate;
   min-width: 0;
   display: grid;
   grid-template-columns: 148px minmax(0, 1fr) 148px;
@@ -895,6 +897,10 @@
   padding: 16px 16px 28px;
   overflow-x: auto;
   background: transparent;
+}
+
+.board-direction-rail {
+  display: none;
 }
 
 .board-player {
@@ -2228,23 +2234,56 @@
   }
 
   .board-panel {
-    --board-player-width: clamp(56px, 16.5vw, 64px);
-
-    grid-template-columns:
-      var(--board-player-width)
-      minmax(0, 1fr)
-      var(--board-player-width);
-    gap: 4px;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'player-b'
+      'lane'
+      'player-a';
+    gap: 8px;
     padding: 6px 0 14px;
     overflow-x: visible;
   }
 
   .board-player {
+    position: relative;
+    z-index: 1;
+    grid-template-rows: auto auto;
+    align-items: center;
     gap: 4px;
   }
 
+  .board-player-playerA {
+    grid-area: player-a;
+    grid-template-columns: 52px auto minmax(0, 1fr);
+    grid-template-areas:
+      'endpoint spell stats'
+      'endpoint spell graveyard';
+    padding: 0 8px 8px 10px;
+  }
+
+  .board-player-playerB {
+    grid-area: player-b;
+    grid-template-columns: minmax(0, 1fr) auto 52px;
+    grid-template-areas:
+      'stats spell endpoint'
+      'graveyard spell endpoint';
+    padding: 8px 10px 0 8px;
+  }
+
   .board-player-stats {
+    grid-area: stats;
+    width: min(190px, 100%);
     gap: 2px;
+  }
+
+  .board-player-playerA .board-player-stats,
+  .board-player-playerA .graveyard-summary {
+    justify-self: end;
+  }
+
+  .board-player-playerB .board-player-stats,
+  .board-player-playerB .graveyard-summary {
+    justify-self: start;
   }
 
   .board-player-stats div {
@@ -2266,6 +2305,7 @@
   }
 
   .board-endpoint {
+    grid-area: endpoint;
     width: min(52px, 100%);
     border-width: 4px;
     border-radius: 6px;
@@ -2287,6 +2327,7 @@
   }
 
   .graveyard-summary {
+    grid-area: graveyard;
     gap: 2px;
     padding: 0;
   }
@@ -2308,8 +2349,17 @@
   }
 
   .board-spell > .card-view {
-    width: min(52px, 100%);
+    width: min(42px, 100%);
     box-shadow: 0 4px 9px rgb(18 22 19 / 42%);
+  }
+
+  .board-spell {
+    grid-area: spell;
+  }
+
+  .board-spell-empty > .card-empty {
+    width: 28px;
+    opacity: 0.58;
   }
 
   .spell-exile-token {
@@ -2323,11 +2373,44 @@
 
   .board-lane-grid {
     --board-card-width: clamp(52px, 16.75vw, 65px);
-    --board-insert-slot-width: clamp(14px, 4.4vw, 18px);
+    --board-insert-slot-width: 14px;
 
     column-gap: 3px;
     row-gap: 3px;
     padding-bottom: 8px;
+  }
+
+  .board-lane-scroll {
+    position: relative;
+    z-index: 1;
+    grid-area: lane;
+    width: 100%;
+  }
+
+  .board-direction-rail {
+    position: absolute;
+    z-index: 0;
+    width: 72px;
+    display: block;
+    pointer-events: none;
+  }
+
+  .board-direction-rail-playerA {
+    top: 34%;
+    bottom: 2px;
+    left: 1px;
+    border-bottom: 4px solid #b84c3e;
+    border-left: 4px solid #b84c3e;
+    border-radius: 0 0 0 9px;
+  }
+
+  .board-direction-rail-playerB {
+    top: 2px;
+    right: 1px;
+    bottom: 34%;
+    border-top: 4px solid #3f73b8;
+    border-right: 4px solid #3f73b8;
+    border-radius: 0 9px 0 0;
   }
 
   .board-card-content > .card-view {
