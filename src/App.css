@@ -2225,9 +2225,22 @@
   }
 
   .hand-panel {
-    grid-template-columns: repeat(5, minmax(96px, 1fr));
     justify-content: start;
     overflow-x: auto;
+  }
+
+  .hand-panel-bottom {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 4px;
+    padding: 42px 4px 26px;
+    overflow-x: visible;
+  }
+
+  .hand-panel-bottom .hand-spell-play-button {
+    min-width: 52px;
+    min-height: 30px;
+    padding: 2px 6px;
+    font-size: 12px;
   }
 
   .player-hand-row {
