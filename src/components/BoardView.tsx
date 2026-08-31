@@ -502,10 +502,14 @@ const BoardView = ({
   const selectedSpellName = spellTargetActions[0]
     ? cards[spellTargetActions[0].cardId].card.name
     : undefined
+  const boardCardWidth = 'var(--board-card-width, 140px)'
+  const boardInsertSlotWidth = 'var(--board-insert-slot-width, 34px)'
   const gridTemplateColumns =
     board.creatures.length === 0
-      ? 'minmax(140px, 1fr)'
-      : `34px ${board.creatures.map(() => '140px 34px').join(' ')}`
+      ? `minmax(${boardCardWidth}, 1fr)`
+      : `${boardInsertSlotWidth} ${board.creatures
+          .map(() => `${boardCardWidth} ${boardInsertSlotWidth}`)
+          .join(' ')}`
 
   return (
     <section ref={boardRef} className="board-panel" aria-label="battlefield">

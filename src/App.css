@@ -1122,6 +1122,9 @@
 }
 
 .board-lane-grid {
+  --board-card-width: 140px;
+  --board-insert-slot-width: 34px;
+
   display: grid;
   column-gap: 10px;
   row-gap: 8px;
@@ -1133,7 +1136,7 @@
 
 .board-slot {
   position: relative;
-  width: 140px;
+  width: var(--board-card-width);
   min-width: 0;
 }
 
@@ -1310,8 +1313,8 @@
 }
 
 .board-insert-slot {
-  width: 34px;
-  min-width: 34px;
+  width: var(--board-insert-slot-width);
+  min-width: var(--board-insert-slot-width);
   min-height: 132px;
   border: 1px dashed #73736e;
   border-radius: 8px;
@@ -1321,8 +1324,8 @@
 }
 
 .board-insert-slot-empty {
-  width: 140px;
-  min-width: 140px;
+  width: var(--board-card-width);
+  min-width: var(--board-card-width);
   justify-self: center;
 }
 
@@ -2222,6 +2225,167 @@
   .phase-bar {
     grid-template-columns: auto auto minmax(0, 1fr);
     align-items: stretch;
+  }
+
+  .board-panel {
+    --board-player-width: clamp(56px, 16.5vw, 64px);
+
+    grid-template-columns:
+      var(--board-player-width)
+      minmax(0, 1fr)
+      var(--board-player-width);
+    gap: 4px;
+    padding: 6px 0 14px;
+    overflow-x: visible;
+  }
+
+  .board-player {
+    gap: 4px;
+  }
+
+  .board-player-stats {
+    gap: 2px;
+  }
+
+  .board-player-stats div {
+    display: grid;
+    justify-items: center;
+    gap: 0;
+    padding: 2px 1px;
+    border-radius: 4px;
+  }
+
+  .board-player-stats dt {
+    font-size: 7px;
+    line-height: 1.1;
+  }
+
+  .board-player-stats dd {
+    font-size: 11px;
+    line-height: 1.1;
+  }
+
+  .board-endpoint {
+    width: min(52px, 100%);
+    border-width: 4px;
+    border-radius: 6px;
+    box-shadow:
+      0 0 0 1px rgb(31 24 20 / 72%),
+      0 4px 9px rgb(31 19 12 / 38%);
+    font-size: 8px;
+  }
+
+  .board-player-identity {
+    right: 2px;
+    bottom: 4px;
+    left: 2px;
+    gap: 0;
+  }
+
+  .board-player-barrier {
+    font-size: 6px;
+  }
+
+  .graveyard-summary {
+    gap: 2px;
+    padding: 0;
+  }
+
+  .graveyard-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .graveyard-counts {
+    gap: 2px;
+  }
+
+  .graveyard-count {
+    width: 14px;
+    height: 14px;
+    flex-basis: 14px;
+    font-size: 8px;
+  }
+
+  .board-spell > .card-view {
+    width: min(52px, 100%);
+    box-shadow: 0 4px 9px rgb(18 22 19 / 42%);
+  }
+
+  .spell-exile-token {
+    top: 3px;
+    right: 1px;
+    width: 20px;
+    height: 20px;
+    border-width: 1px;
+    font-size: 10px;
+  }
+
+  .board-lane-grid {
+    --board-card-width: clamp(52px, 16.75vw, 65px);
+    --board-insert-slot-width: clamp(14px, 4.4vw, 18px);
+
+    column-gap: 3px;
+    row-gap: 3px;
+    padding-bottom: 8px;
+  }
+
+  .board-card-content > .card-view {
+    box-shadow: 0 4px 9px rgb(18 22 19 / 42%);
+  }
+
+  .board-insert-slot {
+    min-height: 0;
+    aspect-ratio: 5 / 7;
+    border-radius: 4px;
+    font-size: 9px;
+  }
+
+  .board-group-button {
+    min-height: 20px;
+    font-size: 8px;
+  }
+
+  .board-group-playerB {
+    padding: 3px 5px 3px 10px;
+    clip-path: polygon(8px 0, 100% 0, 100% 100%, 8px 100%, 0 50%);
+  }
+
+  .board-group-playerA {
+    padding: 3px 10px 3px 5px;
+    clip-path: polygon(0 0, calc(100% - 8px) 0, 100% 50%, calc(100% - 8px) 100%, 0 100%);
+  }
+
+  .board-ability-actions {
+    right: 2px;
+    bottom: 13px;
+    left: 2px;
+    gap: 2px;
+  }
+
+  .board-ability-actions button,
+  .board-ability-actions .board-spell-target-button {
+    min-height: 15px;
+    padding: 1px 3px;
+    font-size: 7px;
+  }
+
+  .damage-marker {
+    width: 24px;
+    height: 24px;
+    font-size: 12px;
+  }
+
+  .player-damage-marker-large {
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+  }
+
+  .player-damage-marker-critical {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
   }
 
   .hand-panel {
