@@ -927,14 +927,17 @@
 
 .board-player-stats dt {
   color: #536052;
-  font-size: 10px;
+  font-size: 12px;
 }
 
 .board-player-stats dd {
   margin: 0;
   color: #171a17;
-  font-size: 16px;
+  font-size: 34px;
   font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .board-endpoint {
@@ -1125,14 +1128,16 @@
 }
 
 .board-lane-flow {
+  --board-lane-arrow-size: 96px;
+
   z-index: 0;
   grid-area: lane;
   align-self: stretch;
   justify-self: center;
   background-image: url('./assets/arrow-right.svg');
   background-repeat: repeat-x;
-  background-position: -96px center;
-  background-size: 96px 96px;
+  background-position: calc(-1 * var(--board-lane-arrow-size)) center;
+  background-size: var(--board-lane-arrow-size) var(--board-lane-arrow-size);
   opacity: 0.14;
   pointer-events: none;
   animation: board-lane-flow 1.8s linear infinite;
@@ -1144,7 +1149,7 @@
 
 @keyframes board-lane-flow {
   from {
-    background-position-x: -96px;
+    background-position-x: calc(-1 * var(--board-lane-arrow-size));
   }
 
   to {
@@ -2279,7 +2284,7 @@
   }
 
   .board-lane-flow {
-    background-size: 80px 80px;
+    --board-lane-arrow-size: 80px;
   }
 
   .hand-panel-bottom {
@@ -2467,21 +2472,22 @@
   }
 
   .board-player-stats div {
-    display: grid;
-    justify-items: center;
-    gap: 0;
-    padding: 2px 1px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 2px;
+    padding: 2px 3px;
     border-radius: 4px;
   }
 
   .board-player-stats dt {
-    font-size: 7px;
+    font-size: 8px;
     line-height: 1.1;
   }
 
   .board-player-stats dd {
-    font-size: 11px;
-    line-height: 1.1;
+    font-size: 18px;
+    line-height: 1;
   }
 
   .board-endpoint {
@@ -2570,8 +2576,9 @@
   }
 
   .board-lane-flow {
+    --board-lane-arrow-size: 48px;
+
     width: calc(100% + 24px);
-    background-size: 48px 48px;
   }
 
   .board-card-content > .card-view {
