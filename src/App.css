@@ -1413,8 +1413,9 @@
   background: #26342f;
   filter: drop-shadow(0 0 1px #2d3f38);
   color: #f8fbf5;
-  font-size: 12px;
+  font-size: 16px;
   font-weight: 800;
+  line-height: 1;
   white-space: nowrap;
 }
 
@@ -2594,7 +2595,7 @@
 
   .board-group-button {
     min-height: 20px;
-    font-size: 8px;
+    font-size: 11px;
   }
 
   .board-group-playerB {
