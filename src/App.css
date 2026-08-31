@@ -1128,7 +1128,7 @@
   z-index: 0;
   grid-area: lane;
   align-self: stretch;
-  justify-self: stretch;
+  justify-self: center;
   background-image: url('./assets/arrow-right.svg');
   background-repeat: repeat-x;
   background-position: -96px center;
@@ -2245,6 +2245,10 @@
     width: 100%;
   }
 
+  .board-lane-flow {
+    width: calc(100% + 68px);
+  }
+
 }
 
 @media (max-width: 720px) {
@@ -2500,6 +2504,7 @@
   }
 
   .board-lane-flow {
+    width: calc(100% + 24px);
     background-size: 48px 48px;
   }
 
