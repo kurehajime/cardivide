@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import type { CSSProperties } from 'react'
 import {
   THEME_DECK_BY_ID,
   THEME_DECKS,
@@ -45,6 +46,12 @@ const COLOR_LABELS: Record<CardColor, string> = {
   blue: '青',
   green: '緑',
 }
+
+const DECK_COLOR_VALUES = {
+  red: '#6f3028',
+  blue: '#2b5278',
+  green: '#315d42',
+} satisfies Record<CardColor, string>
 
 const isThemeDeckId = (value: string): value is ThemeDeckId =>
   Object.prototype.hasOwnProperty.call(THEME_DECK_BY_ID, value)
@@ -116,22 +123,36 @@ const ScenarioDeckSelector = ({
     <fieldset className="setup-scenario-fieldset">
       <legend>プレイヤーデッキ</legend>
       <div className="setup-scenario-decks">
-        {THEME_DECKS.map((deck) => (
-          <label key={deck.id} className="setup-scenario-deck-option">
-            <input
-              type="radio"
-              name="scenario-player-deck"
-              value={deck.id}
-              checked={deck.id === value}
-              onChange={() => onChange(deck.id)}
-            />
-            <span className="setup-scenario-radio" aria-hidden="true" />
-            <span className="setup-scenario-deck-label">
-              <strong>{deck.name}</strong>
-              <span>{deck.colors.map((color) => COLOR_LABELS[color]).join('・')}</span>
-            </span>
-          </label>
-        ))}
+        {THEME_DECKS.map((deck) => {
+          const mainColor = deck.colors[0]
+          const subColor = deck.colors[1] ?? mainColor
+
+          return (
+            <label
+              key={deck.id}
+              className="setup-scenario-deck-option"
+              style={
+                {
+                  '--setup-deck-main-color': DECK_COLOR_VALUES[mainColor],
+                  '--setup-deck-sub-color': DECK_COLOR_VALUES[subColor],
+                } as CSSProperties
+              }
+            >
+              <input
+                type="radio"
+                name="scenario-player-deck"
+                value={deck.id}
+                checked={deck.id === value}
+                onChange={() => onChange(deck.id)}
+              />
+              <span className="setup-scenario-radio" aria-hidden="true" />
+              <span className="setup-scenario-deck-label">
+                <strong>{deck.name}</strong>
+                <span>{deck.colors.map((color) => COLOR_LABELS[color]).join('・')}</span>
+              </span>
+            </label>
+          )
+        })}
       </div>
       <DeckSummary deck={selectedDeck} />
     </fieldset>
