@@ -1,4 +1,12 @@
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react'
 import { createPortal } from 'react-dom'
 import {
   describeAbility,
@@ -8,6 +16,7 @@ import {
 } from '../game'
 
 type CardViewProps = {
+  artAttackAnimation?: CardArtAttackAnimation
   card: Card | null
   compact?: boolean
   detailOpen?: boolean
@@ -16,6 +25,12 @@ type CardViewProps = {
   label?: string
   nestedInButton?: boolean
   statModifier?: CreatureStatModifier
+}
+
+type CardArtAttackAnimation = {
+  id: number
+  direction: 'left' | 'right'
+  tiltDegrees: number
 }
 
 const COLOR_LABELS = {
@@ -75,13 +90,20 @@ const clamp = (value: number, minimum: number, maximum: number): number =>
 const formatModifier = (value: number): string => `${value > 0 ? '+' : ''}${value}`
 
 type CardFaceProps = {
+  artAttackAnimation?: CardArtAttackAnimation
   card: Card
   colorLabel: string
   jitterArt?: boolean
   statModifier?: CreatureStatModifier
 }
 
-const CardFace = ({ card, colorLabel, jitterArt = false, statModifier }: CardFaceProps) => {
+const CardFace = ({
+  artAttackAnimation,
+  card,
+  colorLabel,
+  jitterArt = false,
+  statModifier,
+}: CardFaceProps) => {
   const artId = useId().replaceAll(':', '')
   const artClipId = `card-art-clip-${artId}`
   const artColorFilterId = `card-art-color-${artId}`
@@ -162,7 +184,13 @@ const CardFace = ({ card, colorLabel, jitterArt = false, statModifier }: CardFac
       <rect className="card-face-art-background" x="25" y="83" width="450" height="265" rx="12" />
       {artUrl && (
         <image
-          className="card-face-art-image"
+          key={artAttackAnimation?.id ?? 'idle'}
+          className={`card-face-art-image ${artAttackAnimation ? `card-face-art-attacking-${artAttackAnimation.direction}` : ''}`}
+          style={
+            {
+              '--card-art-attack-tilt': `${artAttackAnimation?.tiltDegrees ?? 0}deg`,
+            } as CSSProperties
+          }
           href={artUrl}
           x="28"
           y="86"
@@ -255,6 +283,7 @@ const CardFace = ({ card, colorLabel, jitterArt = false, statModifier }: CardFac
 }
 
 const CardView = ({
+  artAttackAnimation,
   card,
   compact = false,
   detailOpen = false,
@@ -469,6 +498,7 @@ const CardView = ({
       onPointerLeave={closeDetail}
     >
       <CardFace
+        artAttackAnimation={artAttackAnimation}
         card={card}
         colorLabel={colorLabel}
         jitterArt={jitterArt}

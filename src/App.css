@@ -1885,7 +1885,51 @@
 }
 
 .card-face-art-image {
+  transform-box: fill-box;
+  transform-origin: 50% 90%;
   pointer-events: none;
+}
+
+.card-face-art-attacking-right {
+  animation: card-face-art-attack-right 200ms cubic-bezier(0.16, 0.75, 0.2, 1);
+}
+
+.card-face-art-attacking-left {
+  animation: card-face-art-attack-left 200ms cubic-bezier(0.16, 0.75, 0.2, 1);
+}
+
+@keyframes card-face-art-attack-right {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg) scale(1);
+  }
+
+  42% {
+    transform: translateX(42px) rotate(var(--card-art-attack-tilt)) scaleX(1.04)
+      scaleY(0.97);
+  }
+
+  66% {
+    transform: translateX(30px) rotate(var(--card-art-attack-tilt)) scaleX(1.02)
+      scaleY(0.985);
+  }
+}
+
+@keyframes card-face-art-attack-left {
+  0%,
+  100% {
+    transform: translateX(0) rotate(0deg) scale(1);
+  }
+
+  42% {
+    transform: translateX(-42px) rotate(var(--card-art-attack-tilt)) scaleX(1.04)
+      scaleY(0.97);
+  }
+
+  66% {
+    transform: translateX(-30px) rotate(var(--card-art-attack-tilt)) scaleX(1.02)
+      scaleY(0.985);
+  }
 }
 
 .card-face-art-color {
@@ -2739,5 +2783,10 @@
   .board-lane-flow {
     animation: none;
     background-position-x: center;
+  }
+
+  .card-face-art-attacking-right,
+  .card-face-art-attacking-left {
+    animation: none;
   }
 }

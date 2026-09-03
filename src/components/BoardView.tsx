@@ -85,6 +85,25 @@ const PLAYER_COLOR_VALUES = {
   green: '#315d42',
 } satisfies Record<CardColor, string>
 
+const getAttackTiltDegrees = (
+  cardId: CardInstanceId,
+  boardIndex: number,
+  animationId: number,
+  ownerId: PlayerId,
+): number => {
+  let hash = Math.imul(animationId + 1, 0x045d_9f3b) >>> 0
+  const serializedCardId = String(cardId)
+  for (let index = 0; index < serializedCardId.length; index += 1) {
+    hash = Math.imul(hash ^ serializedCardId.charCodeAt(index), 16_777_619) >>> 0
+  }
+  hash = (hash + Math.imul(boardIndex + 1, 0x9e37_79b1)) >>> 0
+  hash = (hash ^ (hash >>> 16)) >>> 0
+  hash = Math.imul(hash, 0x7feb_352d) >>> 0
+  hash = (hash ^ (hash >>> 15)) >>> 0
+  const magnitude = 4 + ((hash % 61 + boardIndex * 23) % 61) / 10
+  return ownerId === 'playerA' ? magnitude : -magnitude
+}
+
 const CARD_COLOR_LABELS = {
   red: '赤',
   blue: '青',
@@ -594,6 +613,24 @@ const BoardView = ({
                       }
                     >
                       <CardView
+                        artAttackAnimation={
+                          attackAnimation !== null &&
+                          index >= attackAnimation.startIndex &&
+                          index <= attackAnimation.endIndex &&
+                            cards[creature.cardId].ownerId === attackAnimation.ownerId
+                            ? {
+                                id: attackAnimation.id,
+                                direction:
+                                  attackAnimation.ownerId === 'playerA' ? 'right' : 'left',
+                                tiltDegrees: getAttackTiltDegrees(
+                                  creature.cardId,
+                                  index,
+                                  attackAnimation.id,
+                                  attackAnimation.ownerId,
+                                ),
+                              }
+                            : undefined
+                        }
                         card={cards[creature.cardId].card}
                         compact
                         jitterArt
