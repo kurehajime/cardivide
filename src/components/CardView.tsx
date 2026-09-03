@@ -10,6 +10,7 @@ import {
 type CardViewProps = {
   card: Card | null
   compact?: boolean
+  detailOpen?: boolean
   faceDown?: boolean
   jitterArt?: boolean
   label?: string
@@ -55,6 +56,7 @@ type DetailPosition = {
   placement: DetailPlacement
   top: number
   left: number
+  maxHeight?: number
 }
 
 const DETAIL_GAP = 10
@@ -255,6 +257,7 @@ const CardFace = ({ card, colorLabel, jitterArt = false, statModifier }: CardFac
 const CardView = ({
   card,
   compact = false,
+  detailOpen = false,
   faceDown = false,
   jitterArt = false,
   label,
@@ -265,7 +268,9 @@ const CardView = ({
   const detailRef = useRef<HTMLDivElement>(null)
   const detailId = useId()
   const [showDetail, setShowDetail] = useState(false)
+  const [detailPinned, setDetailPinned] = useState(false)
   const [detailPosition, setDetailPosition] = useState<DetailPosition | null>(null)
+  const detailVisible = showDetail || detailOpen || detailPinned
 
   const openDetail = useCallback(() => {
     setDetailPosition(null)
@@ -275,6 +280,13 @@ const CardView = ({
   const closeDetail = useCallback(() => {
     setShowDetail(false)
   }, [])
+
+  const togglePinnedDetail = useCallback(() => {
+    if (nestedInButton) {
+      return
+    }
+    setDetailPinned((pinned) => !pinned)
+  }, [nestedInButton])
 
   const updateDetailPosition = useCallback(() => {
     const cardElement = cardRef.current
@@ -287,6 +299,28 @@ const CardView = ({
     const detailRect = detailElement.getBoundingClientRect()
     const availableRight = window.innerWidth - cardRect.right - DETAIL_GAP - VIEWPORT_PADDING
     const availableLeft = cardRect.left - DETAIL_GAP - VIEWPORT_PADDING
+    const mobilePlacement = window.matchMedia('(max-width: 720px)').matches
+
+    if (mobilePlacement) {
+      const top = cardRect.bottom + DETAIL_GAP
+
+      setDetailPosition({
+        placement: 'bottom',
+        top,
+        left: clamp(
+          cardRect.left + (cardRect.width - detailRect.width) / 2,
+          VIEWPORT_PADDING,
+          window.innerWidth - detailRect.width - VIEWPORT_PADDING,
+        ),
+        maxHeight: Math.max(0, window.innerHeight - top - VIEWPORT_PADDING),
+      })
+      return
+    }
+
+    const detailHeight = Math.min(
+      detailElement.scrollHeight + detailRect.height - detailElement.clientHeight,
+      window.innerHeight - VIEWPORT_PADDING * 2,
+    )
     const availableBottom = window.innerHeight - cardRect.bottom - DETAIL_GAP - VIEWPORT_PADDING
 
     let placement: DetailPlacement
@@ -295,31 +329,31 @@ const CardView = ({
 
     if (availableRight >= detailRect.width) {
       placement = 'right'
-      top = cardRect.top + (cardRect.height - detailRect.height) / 2
+      top = cardRect.top + (cardRect.height - detailHeight) / 2
       left = cardRect.right + DETAIL_GAP
     } else if (availableLeft >= detailRect.width) {
       placement = 'left'
-      top = cardRect.top + (cardRect.height - detailRect.height) / 2
+      top = cardRect.top + (cardRect.height - detailHeight) / 2
       left = cardRect.left - detailRect.width - DETAIL_GAP
-    } else if (availableBottom >= detailRect.height) {
+    } else if (availableBottom >= detailHeight) {
       placement = 'bottom'
       top = cardRect.bottom + DETAIL_GAP
       left = cardRect.left + (cardRect.width - detailRect.width) / 2
     } else {
       placement = 'top'
-      top = cardRect.top - detailRect.height - DETAIL_GAP
+      top = cardRect.top - detailHeight - DETAIL_GAP
       left = cardRect.left + (cardRect.width - detailRect.width) / 2
     }
 
     setDetailPosition({
       placement,
-      top: clamp(top, VIEWPORT_PADDING, window.innerHeight - detailRect.height - VIEWPORT_PADDING),
+      top: clamp(top, VIEWPORT_PADDING, window.innerHeight - detailHeight - VIEWPORT_PADDING),
       left: clamp(left, VIEWPORT_PADDING, window.innerWidth - detailRect.width - VIEWPORT_PADDING),
     })
   }, [])
 
   useLayoutEffect(() => {
-    if (!showDetail) {
+    if (!detailVisible) {
       return
     }
 
@@ -331,7 +365,25 @@ const CardView = ({
       window.removeEventListener('resize', updateDetailPosition)
       window.removeEventListener('scroll', updateDetailPosition, true)
     }
-  }, [showDetail, updateDetailPosition])
+  }, [detailVisible, updateDetailPosition])
+
+  useEffect(() => {
+    if (!detailPinned) {
+      return
+    }
+
+    const closePinnedDetail = (event: PointerEvent) => {
+      if (
+        event.target instanceof Node &&
+        !cardRef.current?.contains(event.target)
+      ) {
+        setDetailPinned(false)
+      }
+    }
+
+    document.addEventListener('pointerdown', closePinnedDetail, true)
+    return () => document.removeEventListener('pointerdown', closePinnedDetail, true)
+  }, [detailPinned])
 
   useEffect(() => {
     if (!nestedInButton) {
@@ -407,11 +459,12 @@ const CardView = ({
     <article
       ref={cardRef}
       className={`card-view card-${colorClass} ${compact ? 'card-compact' : ''}`}
-      aria-describedby={showDetail ? detailId : undefined}
+      aria-describedby={detailVisible ? detailId : undefined}
       aria-label={`${card.name}${hasStatModifier ? `、${modifierLabel}` : ''}`}
       tabIndex={nestedInButton ? undefined : 0}
       onBlur={closeDetail}
       onFocus={openDetail}
+      onClick={togglePinnedDetail}
       onPointerEnter={openDetail}
       onPointerLeave={closeDetail}
     >
@@ -421,7 +474,7 @@ const CardView = ({
         jitterArt={jitterArt}
         statModifier={statModifier}
       />
-      {showDetail &&
+      {detailVisible &&
         createPortal(
           <div
             ref={detailRef}
@@ -431,6 +484,7 @@ const CardView = ({
             style={{
               top: detailPosition?.top ?? 0,
               left: detailPosition?.left ?? 0,
+              maxHeight: detailPosition?.maxHeight,
               visibility: detailPosition === null ? 'hidden' : 'visible',
             }}
           >

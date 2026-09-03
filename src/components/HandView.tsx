@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { motion } from 'motion/react'
 import type { CardInstance, CardInstanceId } from '../game'
 import CardView from './CardView'
@@ -36,6 +37,7 @@ const HandView = ({
   onDiscardCard,
   onPlaySpell,
 }: HandViewProps) => {
+  const [inspectedCardId, setInspectedCardId] = useState<CardInstanceId | null>(null)
   const isEmpty = cards.length === 0
   const visibleCards = isEmpty ? Array.from({ length: EMPTY_HAND_SLOTS }, () => null) : cards
 
@@ -47,6 +49,7 @@ const HandView = ({
       {visibleCards.map((card, index) => {
         const unavailable =
           card !== null && playableCardIds !== undefined && !playableCardIds.has(card.id)
+        const actionDisabled = card === null || disabled || unavailable
         const cardClassName = [
           'hand-card-button',
           unavailable ? 'hand-card-unavailable' : '',
@@ -64,13 +67,27 @@ const HandView = ({
             className={cardClassName}
             type="button"
             aria-label={faceDown ? '裏向きのカード' : card?.card.name}
-            title={unavailable ? '現在は使用できません' : undefined}
-            disabled={!card || disabled || unavailable}
-            onClick={() => card && onCardClick?.(card.id)}
+            title={actionDisabled && card !== null ? '現在は使用できません（タップで詳細表示）' : undefined}
+            disabled={!card || faceDown}
+            onClick={() => {
+              if (!card) {
+                return
+              }
+              setInspectedCardId((currentCardId) =>
+                currentCardId === card.id ? null : card.id,
+              )
+              if (!actionDisabled) {
+                onCardClick?.(card.id)
+              }
+            }}
           >
             <CardView
               card={card?.card ?? null}
               compact
+              detailOpen={
+                !faceDown &&
+                (selectedCardId === card?.id || inspectedCardId === card?.id)
+              }
               faceDown={faceDown}
               nestedInButton
             />

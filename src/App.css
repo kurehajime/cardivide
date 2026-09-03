@@ -1759,8 +1759,8 @@
   cursor: default;
 }
 
-.hand-card-unavailable:disabled {
-  cursor: not-allowed;
+.hand-card-unavailable {
+  cursor: pointer;
 }
 
 .hand-card-unavailable>.card-view {
@@ -2448,22 +2448,25 @@
   }
 
   .game-header {
-    display: grid;
-    justify-content: stretch;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
   }
 
   .game-header-controls {
-    width: 100%;
-    display: grid;
+    width: auto;
+    display: flex;
+    margin-left: auto;
   }
 
-  .scenario-progress {
-    justify-content: center;
+  .game-header h1 {
+    font-size: 20px;
   }
 
+  .scenario-progress,
   .phase-bar {
-    grid-template-columns: auto auto minmax(0, 1fr);
-    align-items: stretch;
+    display: none;
   }
 
   .board-panel {
