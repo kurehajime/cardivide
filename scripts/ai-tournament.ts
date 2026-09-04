@@ -192,7 +192,6 @@ const runExpansionTournament = (
       `勝敗分割 ${summary.splitComparisons}組 / ` +
       `未決着を含む ${summary.unresolvedComparisons}組`,
   )
-  console.log('結果の記録先: 拡張カード検証.md（手動更新）')
 }
 
 const args = process.argv.slice(2)
