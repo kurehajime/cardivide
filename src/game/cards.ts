@@ -351,7 +351,7 @@ export const CREATURE_CARDS = [
     cost: 1,
     attack: 5,
     defense: 5,
-    march: 0,
+    march: 1,
     abilities: [{ type: 'installment', mana: 2 }, { type: 'vanish' }],
   },
   {
