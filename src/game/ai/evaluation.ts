@@ -1,6 +1,6 @@
 import { GameManager } from '../GameManager'
 import { getOpponentId } from '../boardQueries'
-import type { CardInstanceId, GameAction, PlayerId } from '../types'
+import type { CardInstanceId, GameAction, GameState, PlayerId } from '../types'
 import type { EvaluationBreakdown, HandPlayCandidate } from './types'
 import {
   areScoresEquivalent,
@@ -23,6 +23,7 @@ export const AI_EVALUATION_PARAMETERS = {
   captureMarch: 1,
   capturePosition: 0.5,
   futureAttackPotentialMultiplier: 0.75,
+  plunderFutureDeployableHand: 0.3,
 } as const
 
 const zeroBreakdown = (): EvaluationBreakdown => ({
@@ -164,21 +165,129 @@ const getOpponentPublicScore = (evaluation: EvaluationBreakdown): number => {
   return -(evaluation.total - evaluation.handReserve)
 }
 
+const getBestAffordableCreatureCost = (
+  manager: GameManager,
+  aiPlayerId: PlayerId,
+  mana: number,
+): number => {
+  const creatureCosts = manager.state.players[aiPlayerId].hand.flatMap((cardId) => {
+    const card = manager.state.cards[cardId].card
+    return card.kind === 'creature' ? [card.cost] : []
+  })
+  let bestCost = 0
+
+  for (let mask = 1; mask < 1 << creatureCosts.length; mask += 1) {
+    let totalCost = 0
+    for (let index = 0; index < creatureCosts.length; index += 1) {
+      if ((mask & (1 << index)) !== 0) {
+        totalCost += creatureCosts[index]
+      }
+    }
+    if (totalCost <= mana) {
+      bestCost = Math.max(bestCost, totalCost)
+    }
+  }
+
+  return bestCost
+}
+
+export const getPlunderFutureDeployableHandValue = (
+  manager: GameManager,
+  aiPlayerId: PlayerId,
+  manaGain: number,
+  retainedManaAfterCombat: number,
+): number => {
+  if (manaGain <= 0 || GameManager.getWinner(manager) !== null) {
+    return 0
+  }
+
+  const keepUpMana = 2 + GameManager.getKeepUpManaBonus(manager, aiPlayerId)
+  const manaAfterGain = retainedManaAfterCombat + keepUpMana
+  const manaWithoutGain = Math.max(0, retainedManaAfterCombat - manaGain) + keepUpMana
+  return (
+    getBestAffordableCreatureCost(manager, aiPlayerId, manaAfterGain) -
+    getBestAffordableCreatureCost(manager, aiPlayerId, manaWithoutGain)
+  ) * AI_EVALUATION_PARAMETERS.plunderFutureDeployableHand
+}
+
+const projectActivePlayerInstallments = (manager: GameManager): GameState => {
+  const playerId = manager.state.activePlayerId
+  const resolution = GameManager.getEndTurnInstallmentResolution(manager, playerId)
+  if (
+    resolution.mana === manager.state.players[playerId].mana &&
+    resolution.destroyedCardIds.length === 0
+  ) {
+    return manager.state
+  }
+
+  const destroyedCardIds = new Set(resolution.destroyedCardIds)
+  const player = manager.state.players[playerId]
+  return {
+    ...manager.state,
+    players: {
+      ...manager.state.players,
+      [playerId]: {
+        ...player,
+        mana: resolution.mana,
+        discard: [...player.discard, ...resolution.destroyedCardIds],
+      },
+    },
+    board: {
+      creatures: manager.state.board.creatures.filter(
+        ({ cardId }) => !destroyedCardIds.has(cardId),
+      ),
+    },
+  }
+}
+
 const createBattleView = (
   manager: GameManager,
   attackerId: PlayerId,
-): GameManager =>
-  GameManager.from({
-    ...manager.state,
+): GameManager => {
+  const state =
+    attackerId === manager.state.activePlayerId
+      ? manager.state
+      : projectActivePlayerInstallments(manager)
+  return GameManager.from({
+    ...state,
     activePlayerId: attackerId,
     phase: 'battle',
     hasAttackedThisTurn: false,
     pendingCombat: null,
   })
+}
 
 type CombatOutcomeScores = {
   aiScore: number
   attackerScore: number
+}
+
+const getNoAttackOutcomeScores = (
+  manager: GameManager,
+  attackerId: PlayerId,
+  aiPlayerId: PlayerId,
+  ignoredHandCardIds: ReadonlySet<CardInstanceId>,
+  baseEvaluation: EvaluationBreakdown,
+): CombatOutcomeScores => {
+  const projectedState =
+    attackerId === manager.state.activePlayerId
+      ? manager.state
+      : projectActivePlayerInstallments(manager)
+  const evaluation =
+    projectedState === manager.state
+      ? baseEvaluation
+      : evaluateBase(
+          GameManager.from(projectedState),
+          aiPlayerId,
+          ignoredHandCardIds,
+        )
+  return {
+    aiScore: evaluation.total,
+    attackerScore:
+      attackerId === aiPlayerId
+        ? evaluation.total
+        : getOpponentPublicScore(evaluation),
+  }
 }
 
 const getCombatOutcomeScores = (
@@ -199,7 +308,16 @@ const getCombatOutcomeScores = (
     )
     const nextManager = GameManager.from(preview.nextState)
     const aiEvaluation = evaluateBase(nextManager, aiPlayerId, ignoredHandCardIds)
-    const aiScore = aiEvaluation.total
+    const plunderFutureDeployableHand =
+      attackerId === aiPlayerId
+        ? getPlunderFutureDeployableHandValue(
+            nextManager,
+            aiPlayerId,
+            preview.attackerManaGain,
+            GameManager.getManaRetainedAfterTurnEnd(nextManager, aiPlayerId),
+          )
+        : 0
+    const aiScore = aiEvaluation.total + plunderFutureDeployableHand
     return {
       aiScore,
       attackerScore:
@@ -247,15 +365,26 @@ export const evaluateBattleEntry = (
     aiPlayerId,
     ignoredHandCardIds,
   )
+  const myNoAttackOutcome = getNoAttackOutcomeScores(
+    manager,
+    aiPlayerId,
+    aiPlayerId,
+    ignoredHandCardIds,
+    base,
+  )
+  const opponentNoAttackOutcome = getNoAttackOutcomeScores(
+    manager,
+    opponentId,
+    aiPlayerId,
+    ignoredHandCardIds,
+    base,
+  )
   const myBestOutcome = Math.max(
-    base.total,
+    myNoAttackOutcome.aiScore,
     ...myOutcomes.map(({ aiScore }) => aiScore),
   )
   const opponentBestOutcome = selectBestAttackerOutcome(
-    {
-      aiScore: base.total,
-      attackerScore: getOpponentPublicScore(base),
-    },
+    opponentNoAttackOutcome,
     opponentOutcomes,
   )
   const myAttackPotentialMultiplier =
@@ -263,7 +392,8 @@ export const evaluateBattleEntry = (
       ? 1
       : AI_EVALUATION_PARAMETERS.futureAttackPotentialMultiplier
   const myAttackPotential =
-    Math.max(myBestOutcome - base.total, 0) * myAttackPotentialMultiplier
+    Math.max(myBestOutcome - myNoAttackOutcome.aiScore, 0) *
+    myAttackPotentialMultiplier
   const opponentAttackThreat = Math.max(
     base.total - opponentBestOutcome.aiScore,
     0,

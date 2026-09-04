@@ -14,6 +14,7 @@ import {
   evaluateBattleEntry,
   evaluateCoherentMainPlan,
   getDeployableHandValue,
+  getPlunderFutureDeployableHandValue,
 } from './evaluation'
 import {
   AI_SCORE_EPSILON,
@@ -297,6 +298,7 @@ describe('GameManager AI rule APIs', () => {
 
     expect(preview.attackerId).toBe('playerA')
     expect(preview.playerDamage).toBe(1)
+    expect(preview.attackerManaGain).toBe(0)
     expect(preview.nextState.turn).toBe(summoned.state.turn)
     expect(preview.nextState.activePlayerId).toBe('playerA')
     expect(preview.nextState.players.playerB.hp).toBe(19)
@@ -640,6 +642,124 @@ describe('AI evaluation', () => {
     expect(evaluateBattleEntry(manager, 'playerA').opponentAttackThreat).toBeCloseTo(
       expectedThreat,
     )
+  })
+
+  it('removes an unpaid installment creature before evaluating the opponent attack', () => {
+    const initial = GameManager.create(KEEP_ORDER_RANDOM, {
+      playerA: [CARD_ID.MEPHISTOPHELES],
+      playerB: [CARD_ID.BEACON_HEAVY_CAVALRY],
+    })
+    const mephistopheles = findCardId(
+      initial.state,
+      'playerA',
+      CARD_ID.MEPHISTOPHELES,
+    )
+    const attacker = findCardId(
+      initial.state,
+      'playerB',
+      CARD_ID.BEACON_HEAVY_CAVALRY,
+    )
+    const manager = GameManager.from({
+      ...initial.state,
+      players: {
+        playerA: {
+          ...initial.state.players.playerA,
+          mana: 0,
+          deck: initial.state.players.playerA.deck.filter(
+            (cardId) => cardId !== mephistopheles,
+          ),
+          hand: [],
+        },
+        playerB: {
+          ...initial.state.players.playerB,
+          mana: 0,
+          deck: initial.state.players.playerB.deck.filter(
+            (cardId) => cardId !== attacker,
+          ),
+          hand: initial.state.players.playerB.hand.filter(
+            (cardId) => cardId !== attacker,
+          ),
+        },
+      },
+      board: {
+        creatures: [mephistopheles, attacker].map((cardId) => ({
+          cardId,
+          summonedTurn: 0,
+        })),
+      },
+    })
+
+    expect(
+      GameManager.getEndTurnInstallmentResolution(manager, 'playerA')
+        .destroyedCardIds,
+    ).toEqual([mephistopheles])
+    expect(evaluateBattleEntry(manager, 'playerA').opponentAttackThreat).toBe(14)
+  })
+
+  it('removes an unpaid installment creature even when the opponent cannot attack', () => {
+    const initial = GameManager.create(KEEP_ORDER_RANDOM, {
+      playerA: [CARD_ID.MEPHISTOPHELES],
+      playerB: [CARD_ID.BEACON_HEAVY_CAVALRY],
+    })
+    const mephistopheles = findCardId(
+      initial.state,
+      'playerA',
+      CARD_ID.MEPHISTOPHELES,
+    )
+    const manager = GameManager.from({
+      ...initial.state,
+      players: {
+        ...initial.state.players,
+        playerA: {
+          ...initial.state.players.playerA,
+          mana: 0,
+          deck: initial.state.players.playerA.deck.filter(
+            (cardId) => cardId !== mephistopheles,
+          ),
+          hand: [],
+        },
+      },
+      board: {
+        creatures: [{ cardId: mephistopheles, summonedTurn: 0 }],
+      },
+    })
+
+    expect(evaluateBattleEntry(manager, 'playerA').opponentAttackThreat).toBe(
+      manager.state.cards[mephistopheles].card.cost *
+        AI_EVALUATION_PARAMETERS.boardMaterial,
+    )
+  })
+
+  it('values only the hand cost newly enabled by plunder mana', () => {
+    const initial = createTestManager()
+    const costFourCard = findCardId(
+      initial.state,
+      'playerA',
+      CARD_ID.BEACON_HEAVY_CAVALRY,
+    )
+    const player = initial.state.players.playerA
+    const manager = GameManager.from({
+      ...initial.state,
+      players: {
+        ...initial.state.players,
+        playerA: {
+          ...player,
+          mana: 2,
+          deck: [
+            ...player.deck.filter((cardId) => cardId !== costFourCard),
+            ...player.hand.filter((cardId) => cardId !== costFourCard),
+          ],
+          hand: [costFourCard],
+        },
+      },
+    })
+
+    expect(
+      getPlunderFutureDeployableHandValue(manager, 'playerA', 2, 2),
+    ).toBeCloseTo(4 * AI_EVALUATION_PARAMETERS.plunderFutureDeployableHand)
+    expect(
+      getPlunderFutureDeployableHandValue(manager, 'playerA', 0, 2),
+    ).toBe(0)
   })
 })
 

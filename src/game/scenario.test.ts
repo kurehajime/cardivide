@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import matchupWinRates from './ai/deck-matchup-win-rates.json'
 import { getScenarioOpponentDeckIds, resolveScenarioBattle } from './scenario'
-import { THEME_DECK_IDS, THEME_DECKS, type ThemeDeckId } from './themeDecks'
+import { THEME_DECKS, type ThemeDeckId } from './themeDecks'
 
 const winRates = matchupWinRates as Record<
   ThemeDeckId,
@@ -9,16 +9,6 @@ const winRates = matchupWinRates as Record<
 >
 
 describe('scenario battles', () => {
-  it('orders opponents from the easiest matchup to the hardest', () => {
-    expect(getScenarioOpponentDeckIds(THEME_DECK_IDS.RED_TOTAL_ASSAULT)).toEqual([
-      THEME_DECK_IDS.BLUE_MOBILE_INTERCEPT,
-      THEME_DECK_IDS.GREEN_RED_FRONTLINE,
-      THEME_DECK_IDS.RED_BLUE_SKIRMISH,
-      THEME_DECK_IDS.BLUE_GREEN_INTERCEPT,
-      THEME_DECK_IDS.GREEN_FORTRESS_CYCLE,
-    ])
-  })
-
   it.each(THEME_DECKS)('$name receives every other deck once in descending win-rate order', (deck) => {
     const opponents = getScenarioOpponentDeckIds(deck.id)
     const rates = opponents.map((opponentId) => winRates[deck.id][opponentId])

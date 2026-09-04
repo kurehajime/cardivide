@@ -149,6 +149,7 @@ export type CombatPreview = {
   destroyedCardIds: CardInstanceId[]
   refundedMana: Partial<Record<PlayerId, number>>
   playerDamage: number
+  attackerManaGain: number
   nextState: GameState
 }
 

@@ -770,6 +770,9 @@ describe('end-turn abilities', () => {
       phase: 'cleanup',
       mana: { playerA: 2 },
     })
+    expect(
+      GameManager.getEndTurnInstallmentResolution(manager, 'playerA'),
+    ).toEqual({ mana: 0, destroyedCardIds: [] })
     manager = GameManager.passPhase(manager)
     expect(manager.state.board.creatures).toContainEqual(
       expect.objectContaining({ cardId: mephistopheles }),
@@ -781,6 +784,9 @@ describe('end-turn abilities', () => {
       phase: 'cleanup',
       mana: { playerA: 1 },
     })
+    expect(
+      GameManager.getEndTurnInstallmentResolution(manager, 'playerA'),
+    ).toEqual({ mana: 1, destroyedCardIds: [mephistopheles] })
     manager = GameManager.passPhase(manager)
     expect(manager.state.board.creatures).toHaveLength(0)
     expect(manager.state.players.playerA.discard).toContain(mephistopheles)

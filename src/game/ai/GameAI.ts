@@ -4,6 +4,7 @@ import {
   evaluateBattleEntry,
   evaluateCoherentMainPlan,
   evaluateMainContinuation,
+  getPlunderFutureDeployableHandValue,
 } from './evaluation'
 import type {
   AiDifficulty,
@@ -21,15 +22,22 @@ export const AI_DIFFICULTY_IGNORED_HAND_COUNT: Record<AiDifficulty, number> = {
 const resolveBattleOption = (
   manager: GameManager,
   action: GameAction | null,
-): GameManager => {
+): { manager: GameManager; attackerManaGain: number } => {
   if (action === null) {
-    return GameManager.passPhase(GameManager.passPhase(manager))
+    return {
+      manager: GameManager.passPhase(GameManager.passPhase(manager)),
+      attackerManaGain: 0,
+    }
   }
   if (action.type !== 'attackGroup') {
     throw new Error('Battle option must attack a group or be null.')
   }
 
-  return GameManager.finishCombat(GameManager.applyAction(manager, action))
+  const pendingManager = GameManager.applyAction(manager, action)
+  return {
+    manager: GameManager.finishCombat(pendingManager),
+    attackerManaGain: pendingManager.state.pendingCombat?.attackerManaGain ?? 0,
+  }
 }
 
 const resolveMainActionForEvaluation = (
@@ -144,7 +152,7 @@ const chooseBattleAction = (
   ignoredHandCardIds: ReadonlySet<CardInstanceId>,
 ): GameAction => {
   const noAttackScore = evaluateBattleEntry(
-    resolveBattleOption(manager, null),
+    resolveBattleOption(manager, null).manager,
     aiPlayerId,
     ignoredHandCardIds,
   ).total
@@ -152,7 +160,8 @@ const chooseBattleAction = (
   let bestScore = noAttackScore
 
   for (const action of GameManager.getLegalBattleActions(manager)) {
-    const resolvedManager = resolveBattleOption(manager, action)
+    const resolved = resolveBattleOption(manager, action)
+    const resolvedManager = resolved.manager
     if (GameManager.getWinner(resolvedManager) === aiPlayerId) {
       return action
     }
@@ -160,7 +169,12 @@ const chooseBattleAction = (
       resolvedManager,
       aiPlayerId,
       ignoredHandCardIds,
-    ).total
+    ).total + getPlunderFutureDeployableHandValue(
+      resolvedManager,
+      aiPlayerId,
+      resolved.attackerManaGain,
+      resolvedManager.state.players[aiPlayerId].mana,
+    )
     if (isMeaningfullyGreater(score, bestScore)) {
       bestAction = action
       bestScore = score

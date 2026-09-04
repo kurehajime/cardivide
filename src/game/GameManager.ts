@@ -1036,6 +1036,17 @@ export class GameManager {
     return getManaRetainedAfterTurnEndForState(manager.state, playerId)
   }
 
+  static getEndTurnInstallmentResolution(
+    manager: GameManager,
+    playerId: PlayerId,
+  ): { mana: number; destroyedCardIds: CardInstanceId[] } {
+    const resolution = getEndTurnInstallmentResolution(manager.state, playerId)
+    return {
+      mana: resolution.mana,
+      destroyedCardIds: [...resolution.destroyedCardIds],
+    }
+  }
+
   static getDestructionManaRefund(
     manager: GameManager,
     cardId: CardInstanceId,
@@ -1674,6 +1685,7 @@ export class GameManager {
       destroyedCardIds: [...pendingCombat.destroyedCardIds],
       refundedMana,
       playerDamage: pendingCombat.playerDamage,
+      attackerManaGain: pendingCombat.attackerManaGain ?? 0,
       nextState: GameManager.from(resolvedState).state,
     }
   }
