@@ -6,6 +6,7 @@ import {
   isForwardInsertFromAnchor,
 } from './boardQueries'
 import { CARD_DEFINITION_IDS, CREATURE_CARDS } from './cards'
+import { STANDARD_DECK_LIST } from './decks'
 import type {
   CardInstanceId,
   CreatureCard,
@@ -27,6 +28,7 @@ type ConfigureOptions = {
   activePlayerId?: PlayerId
   phase?: Phase
   mana?: Partial<Record<PlayerId, number>>
+  hp?: Partial<Record<PlayerId, number>>
   handAdditions?: CardInstanceId[]
   turn?: number
 }
@@ -80,6 +82,7 @@ const configureManager = (
     activePlayerId = 'playerA',
     phase = 'main',
     mana = {},
+    hp = {},
     handAdditions = [],
     turn = 10,
   }: ConfigureOptions,
@@ -95,6 +98,7 @@ const configureManager = (
     )
     return {
       ...player,
+      hp: hp[playerId] ?? player.hp,
       mana: mana[playerId] ?? player.mana,
       deck: player.deck.filter((cardId) => !movedCardIds.has(cardId)),
       hand: [
@@ -122,6 +126,19 @@ const configureManager = (
         summonedTurn,
       })),
     },
+  })
+}
+
+const createExpansionTestManager = (): GameManager => {
+  const deck = [
+    ...STANDARD_DECK_LIST,
+    CARD_ID.MEPHISTOPHELES,
+    CARD_ID.MAGICIAN,
+    CARD_ID.THIEF,
+  ]
+  return GameManager.create(KEEP_ORDER_RANDOM, {
+    playerA: deck,
+    playerB: deck,
   })
 }
 
@@ -237,6 +254,34 @@ describe('CreatureRules position modifiers', () => {
       },
     })
     expect(GameManager.getCreatureStats(manager, allyA).attack).toBe(0)
+  })
+
+  it('applies trickster attack or defense according to player HP', () => {
+    const initial = createExpansionTestManager()
+    const [magician] = findCardIds(
+      initial.state,
+      'playerA',
+      CARD_ID.MAGICIAN,
+    )
+    let manager = configureManager(initial, {
+      board: [{ cardId: magician }],
+      hp: { playerA: 20, playerB: 10 },
+    })
+    expect(GameManager.getCreatureStats(manager, magician)).toEqual({
+      attack: 4,
+      defense: 1,
+      march: 0,
+    })
+
+    manager = configureManager(initial, {
+      board: [{ cardId: magician }],
+      hp: { playerA: 10, playerB: 20 },
+    })
+    expect(GameManager.getCreatureStats(manager, magician)).toEqual({
+      attack: 1,
+      defense: 4,
+      march: 0,
+    })
   })
 
   it('adds repeated numeric abilities while keeping the card instance serializable', () => {
@@ -521,6 +566,28 @@ describe('keep-up mana abilities', () => {
 })
 
 describe('combat abilities', () => {
+  it('gains plunder mana when its group damages the enemy player', () => {
+    const initial = createExpansionTestManager()
+    const [attacker] = findCardIds(
+      initial.state,
+      'playerA',
+      CARD_ID.SPARK_SWORDSMAN,
+    )
+    const [thief] = findCardIds(initial.state, 'playerA', CARD_ID.THIEF)
+    let manager = configureManager(initial, {
+      board: [{ cardId: attacker }, { cardId: thief }],
+      mana: { playerA: 0 },
+    })
+
+    manager = GameManager.attackGroup(manager, 0, 1)
+    expect(manager.state.pendingCombat).toMatchObject({
+      playerDamage: 1,
+      attackerManaGain: 2,
+    })
+    manager = GameManager.finishCombat(manager)
+    expect(manager.state.players.playerA.mana).toBe(2)
+  })
+
   it('resolves counterattack simultaneously against the attacking front creature', () => {
     const initial = createTestManager()
     const [attackingRear, attackingFront] = findCardIds(
@@ -687,5 +754,36 @@ describe('activated abilities', () => {
 
     expect(manager.state.players.playerA.hand).toContain(source)
     expect(manager.state.players.playerA.mana).toBe(3)
+  })
+})
+
+describe('end-turn abilities', () => {
+  it('pays installment mana or destroys the creature without a refund', () => {
+    const initial = createExpansionTestManager()
+    const [mephistopheles] = findCardIds(
+      initial.state,
+      'playerA',
+      CARD_ID.MEPHISTOPHELES,
+    )
+    let manager = configureManager(initial, {
+      board: [{ cardId: mephistopheles }],
+      phase: 'cleanup',
+      mana: { playerA: 2 },
+    })
+    manager = GameManager.passPhase(manager)
+    expect(manager.state.board.creatures).toContainEqual(
+      expect.objectContaining({ cardId: mephistopheles }),
+    )
+    expect(manager.state.players.playerA.mana).toBe(0)
+
+    manager = configureManager(initial, {
+      board: [{ cardId: mephistopheles }],
+      phase: 'cleanup',
+      mana: { playerA: 1 },
+    })
+    manager = GameManager.passPhase(manager)
+    expect(manager.state.board.creatures).toHaveLength(0)
+    expect(manager.state.players.playerA.discard).toContain(mephistopheles)
+    expect(manager.state.players.playerA.mana).toBe(1)
   })
 })

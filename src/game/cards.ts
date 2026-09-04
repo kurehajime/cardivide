@@ -34,7 +34,16 @@ export const CARD_DEFINITION_IDS = {
   FIREBALL_ASSAULT: 'aab9db3e-2214-4bf8-81e2-154b489c2c51',
   TRANSFER: 'd802b528-da1b-4474-9acf-ddd9c3978f61',
   LIFE_CYCLE: '71101851-b5aa-4f63-9071-60e470a49009',
+  MEPHISTOPHELES: '094c4047-a55a-4001-ae91-b562f15b66f7',
+  MAGICIAN: 'b67d6803-0077-4a65-ad0b-68dcc7fcc546',
+  THIEF: 'ca42b887-4e49-497e-8472-543c35559ae2',
 } as const satisfies Record<string, CardDefinitionId>
+
+export const EXPANSION_CARD_DEFINITION_IDS = [
+  CARD_DEFINITION_IDS.MEPHISTOPHELES,
+  CARD_DEFINITION_IDS.MAGICIAN,
+  CARD_DEFINITION_IDS.THIEF,
+] as const satisfies readonly CardDefinitionId[]
 
 export const CREATURE_CARDS = [
   {
@@ -333,6 +342,39 @@ export const CREATURE_CARDS = [
     defense: 4,
     march: 1,
     abilities: [{ type: 'mining', mana: 1 }],
+  },
+  {
+    definitionId: CARD_DEFINITION_IDS.MEPHISTOPHELES,
+    name: 'メフィストフェレス',
+    kind: 'creature',
+    color: 'red',
+    cost: 2,
+    attack: 6,
+    defense: 6,
+    march: 1,
+    abilities: [{ type: 'installment', mana: 2 }],
+  },
+  {
+    definitionId: CARD_DEFINITION_IDS.MAGICIAN,
+    name: '奇術師',
+    kind: 'creature',
+    color: 'blue',
+    cost: 2,
+    attack: 1,
+    defense: 1,
+    march: 0,
+    abilities: [{ type: 'trickster', amount: 3 }],
+  },
+  {
+    definitionId: CARD_DEFINITION_IDS.THIEF,
+    name: '盗賊',
+    kind: 'creature',
+    color: 'green',
+    cost: 2,
+    attack: 0,
+    defense: 1,
+    march: 1,
+    abilities: [{ type: 'plunder', mana: 2 }],
   },
 ] satisfies CreatureCard[]
 

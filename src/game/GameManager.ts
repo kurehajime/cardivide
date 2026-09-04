@@ -133,9 +133,13 @@ const cloneGameState = (state: GameState): GameState => ({
         ...state.pendingCombat,
         damageMarkers: state.pendingCombat.damageMarkers.map((marker) => ({ ...marker })),
         destroyedCardIds: [...state.pendingCombat.destroyedCardIds],
-        destructionManaRefunds: state.pendingCombat.destructionManaRefunds
-          ? { ...state.pendingCombat.destructionManaRefunds }
-          : undefined,
+        ...(state.pendingCombat.destructionManaRefunds
+          ? {
+              destructionManaRefunds: {
+                ...state.pendingCombat.destructionManaRefunds,
+              },
+            }
+          : {}),
       }
     : null,
 })
@@ -392,13 +396,61 @@ const getPlayerBarrierForState = (state: GameState, playerId: PlayerId): number 
       : 0)
 }
 
+const getEndTurnInstallmentResolution = (
+  state: GameState,
+  playerId: PlayerId,
+): { mana: number; destroyedCardIds: CardInstanceId[] } => {
+  let mana = state.players[playerId].mana
+  const destroyedCardIds: CardInstanceId[] = []
+
+  state.board.creatures.forEach((creature, boardIndex) => {
+    const instance = getCardInstance(state, creature.cardId)
+    if (instance.ownerId !== playerId) {
+      return
+    }
+    const cost = new CreatureRules(state, boardIndex).getEndTurnManaCost()
+    if (cost <= mana) {
+      mana -= cost
+    } else if (cost > 0) {
+      destroyedCardIds.push(creature.cardId)
+    }
+  })
+
+  return { mana, destroyedCardIds }
+}
+
+const resolveEndTurnInstallments = (
+  state: GameState,
+  playerId: PlayerId,
+): GameState => {
+  const { mana, destroyedCardIds } = getEndTurnInstallmentResolution(
+    state,
+    playerId,
+  )
+  const destroyedSet = new Set(destroyedCardIds)
+  const player = state.players[playerId]
+
+  return {
+    ...replacePlayer(state, {
+      ...player,
+      mana,
+      discard: [...player.discard, ...destroyedCardIds],
+    }),
+    board: {
+      creatures: state.board.creatures.filter(
+        ({ cardId }) => !destroyedSet.has(cardId),
+      ),
+    },
+  }
+}
+
 const getManaRetainedAfterTurnEndForState = (
   state: GameState,
   playerId: PlayerId,
 ): number =>
   getPlacedSpellCard(state, playerId)?.effect.type === 'abundance'
     ? 0
-    : state.players[playerId].mana
+    : getEndTurnInstallmentResolution(state, playerId).mana
 
 const exileDiscardedCreatures = (
   state: GameState,
@@ -681,6 +733,13 @@ const resolvePendingCombatState = (state: GameState): GameState => {
     destroyedCardIds.has(cardId),
   )
   const nextPlayers = refundDestroyedCreatures(state, destroyedCreatures)
+  if ((pendingCombat.attackerManaGain ?? 0) > 0) {
+    const attackingPlayer = nextPlayers[state.activePlayerId]
+    nextPlayers[state.activePlayerId] = {
+      ...attackingPlayer,
+      mana: attackingPlayer.mana + (pendingCombat.attackerManaGain ?? 0),
+    }
+  }
   const defendingPlayer = nextPlayers[pendingCombat.defendingPlayerId]
   nextPlayers[pendingCombat.defendingPlayerId] = {
     ...defendingPlayer,
@@ -700,10 +759,18 @@ const resolvePendingCombatState = (state: GameState): GameState => {
 }
 
 const endTurnState = (state: GameState): GameState => {
-  const endingPlayer = state.players[state.activePlayerId]
-  const afterEndTurnManaEffect = replacePlayer(state, {
+  const afterInstallments = resolveEndTurnInstallments(
+    state,
+    state.activePlayerId,
+  )
+  const endingPlayer = afterInstallments.players[state.activePlayerId]
+  const afterEndTurnManaEffect = replacePlayer(afterInstallments, {
     ...endingPlayer,
-    mana: getManaRetainedAfterTurnEndForState(state, state.activePlayerId),
+    mana:
+      getPlacedSpellCard(afterInstallments, state.activePlayerId)?.effect.type ===
+      'abundance'
+        ? 0
+        : endingPlayer.mana,
   })
   const afterImmediateExpiration = expirePlacedSpell(
     afterEndTurnManaEffect,
@@ -871,6 +938,13 @@ export const assertValidGameState = (state: GameState): void => {
     }
     if (!state.pendingCombat.playerWasHit && state.pendingCombat.playerDamage !== 0) {
       throw new Error('Combat cannot damage a player it did not reach.')
+    }
+    if (
+      state.pendingCombat.attackerManaGain !== undefined &&
+      (!Number.isInteger(state.pendingCombat.attackerManaGain) ||
+        state.pendingCombat.attackerManaGain < 0)
+    ) {
+      throw new Error('Combat attacker mana gain must be a non-negative integer.')
     }
     const combatFlags = new Uint8Array(registeredCardCount + 1)
     state.pendingCombat.damageMarkers.forEach(({ cardId, damage }) => {
@@ -1448,6 +1522,24 @@ export class GameManager {
       )
 
     if (targetIndex < 0 || targetIndex >= board.length) {
+      const playerDamage = Math.max(
+        0,
+        attackPower - getPlayerBarrierForState(manager.state, defenderId),
+      )
+      const attackerManaGain =
+        playerDamage > 0
+          ? board
+              .slice(startIndex, endIndex + 1)
+              .reduce(
+                (total, creature) =>
+                  total +
+                  CreatureRules.fromCardId(
+                    manager.state,
+                    creature.cardId,
+                  ).getPlayerDamageManaGain(),
+                0,
+              )
+          : 0
       return GameManager.from({
         ...manager.state,
         phase: 'battle',
@@ -1457,10 +1549,8 @@ export class GameManager {
           destroyedCardIds: [],
           defendingPlayerId: defenderId,
           playerWasHit: true,
-          playerDamage: Math.max(
-            0,
-            attackPower - getPlayerBarrierForState(manager.state, defenderId),
-          ),
+          playerDamage,
+          ...(attackerManaGain > 0 ? { attackerManaGain } : {}),
         },
       })
     }
@@ -1511,6 +1601,20 @@ export class GameManager {
           remainingAttack - getPlayerBarrierForState(manager.state, defenderId),
         )
       : 0
+    const attackerManaGain =
+      playerDamage > 0
+        ? board
+            .slice(startIndex, endIndex + 1)
+            .reduce(
+              (total, creature) =>
+                total +
+                CreatureRules.fromCardId(
+                  manager.state,
+                  creature.cardId,
+                ).getPlayerDamageManaGain(),
+              0,
+            )
+        : 0
     const defendingFront = board[targetIndex]
     const counterDamage = CreatureRules.fromCardId(
       manager.state,
@@ -1539,6 +1643,7 @@ export class GameManager {
         defendingPlayerId: defenderId,
         playerWasHit,
         playerDamage,
+        ...(attackerManaGain > 0 ? { attackerManaGain } : {}),
       },
     })
   }

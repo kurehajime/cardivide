@@ -1,12 +1,16 @@
 import { describe, expect, it } from 'vitest'
 import { THEME_DECKS } from '../themeDecks'
+import { CARD_DEFINITION_IDS } from '../cards'
 import {
   DEFAULT_TOURNAMENT_GAMES_PER_SIDE,
+  createExpansionCardSchedule,
   createDeckMatchupWinRateTable,
   createRoundRobinSchedule,
   playAiMatch,
+  summarizeExpansionTournament,
   summarizeTournament,
 } from './tournament'
+import type { ExpansionAiMatchResult } from './tournament'
 
 describe('AI tournament', () => {
   it('creates the configured number of games for both player orders of every deck pairing', () => {
@@ -48,6 +52,100 @@ describe('AI tournament', () => {
         expect(secondOrderSeeds).toEqual(firstOrderSeeds)
       }
     }
+  })
+
+  it('creates 900 paired expansion games with each deck expanded equally in both seats', () => {
+    const schedule = createExpansionCardSchedule(
+      THEME_DECKS,
+      CARD_DEFINITION_IDS.MEPHISTOPHELES,
+      2,
+    )
+
+    expect(schedule).toHaveLength(900)
+    for (let index = 0; index < schedule.length; index += 2) {
+      const first = schedule[index]
+      const second = schedule[index + 1]
+      expect(second).toMatchObject({
+        comparisonNumber: first.comparisonNumber,
+        gameNumber: first.gameNumber,
+        seed: first.seed,
+        playerADeckId: first.playerADeckId,
+        playerBDeckId: first.playerBDeckId,
+        expansionCardDefinitionId: first.expansionCardDefinitionId,
+        expansionCardCount: first.expansionCardCount,
+      })
+      expect([first.expansionPlayerId, second.expansionPlayerId]).toEqual([
+        'playerA',
+        'playerB',
+      ])
+    }
+
+    THEME_DECKS.forEach((deck) => {
+      const expandedGames = schedule.filter((match) =>
+        match.expansionPlayerId === 'playerA'
+          ? match.playerADeckId === deck.id
+          : match.playerBDeckId === deck.id,
+      )
+      expect(expandedGames).toHaveLength(150)
+      expect(
+        expandedGames.filter(({ expansionPlayerId }) => expansionPlayerId === 'playerA'),
+      ).toHaveLength(75)
+      expect(
+        expandedGames.filter(({ expansionPlayerId }) => expansionPlayerId === 'playerB'),
+      ).toHaveLength(75)
+    })
+  })
+
+  it('summarizes favorable and unfavorable paired expansion results', () => {
+    const [firstExpandedA, firstExpandedB, secondExpandedA, secondExpandedB] =
+      createExpansionCardSchedule(
+        THEME_DECKS,
+        CARD_DEFINITION_IDS.MEPHISTOPHELES,
+        2,
+        2,
+      )
+    const result = (
+      match: typeof firstExpandedA,
+      winnerPlayerId: 'playerA' | 'playerB',
+    ): ExpansionAiMatchResult => ({
+      ...match,
+      expansionDeckId:
+        match.expansionPlayerId === 'playerA'
+          ? match.playerADeckId
+          : match.playerBDeckId,
+      termination: 'victory',
+      winnerPlayerId,
+      winnerDeckId:
+        winnerPlayerId === 'playerA'
+          ? match.playerADeckId
+          : match.playerBDeckId,
+      turn: 10,
+      actionCount: 30,
+      playerAHp: winnerPlayerId === 'playerA' ? 5 : 0,
+      playerBHp: winnerPlayerId === 'playerB' ? 5 : 0,
+    })
+    const summary = summarizeExpansionTournament(THEME_DECKS, [
+      result(firstExpandedA, firstExpandedA.expansionPlayerId),
+      result(firstExpandedB, firstExpandedB.expansionPlayerId),
+      result(
+        secondExpandedA,
+        secondExpandedA.expansionPlayerId === 'playerA' ? 'playerB' : 'playerA',
+      ),
+      result(
+        secondExpandedB,
+        secondExpandedB.expansionPlayerId === 'playerA' ? 'playerB' : 'playerA',
+      ),
+    ])
+
+    expect(summary).toMatchObject({
+      totalMatches: 4,
+      expansionWins: 2,
+      baseWins: 2,
+      favorableComparisons: 1,
+      unfavorableComparisons: 1,
+      splitComparisons: 0,
+      unresolvedComparisons: 0,
+    })
   })
 
   it('stops an unresolved game at the simulation turn limit', () => {

@@ -24,6 +24,9 @@ export type KeywordAbility =
   | { type: 'capture'; marchTax: number }
   | { type: 'mining'; mana: number }
   | { type: 'rearguard'; attack: number; defense: number }
+  | { type: 'installment'; mana: number }
+  | { type: 'trickster'; amount: number }
+  | { type: 'plunder'; mana: number }
 
 export type KeywordAbilityType = KeywordAbility['type']
 
@@ -136,6 +139,7 @@ export type PendingCombat = {
   defendingPlayerId: PlayerId
   playerWasHit: boolean
   playerDamage: number
+  attackerManaGain?: number
   endsTurnAfterResolution?: false
 }
 

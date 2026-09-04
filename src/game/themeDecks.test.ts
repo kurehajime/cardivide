@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest'
-import { CARD_BY_DEFINITION_ID, CARD_DEFINITION_IDS, CARD_LIST } from './cards'
+import {
+  CARD_BY_DEFINITION_ID,
+  CARD_DEFINITION_IDS,
+  CARD_LIST,
+  EXPANSION_CARD_DEFINITION_IDS,
+} from './cards'
 import { GameManager } from './GameManager'
 import { THEME_DECK_IDS, THEME_DECKS, type ThemeDeckId } from './themeDecks'
-import type { CardColor } from './types'
+import type { CardColor, CardDefinitionId } from './types'
 
 const KEEP_ORDER_RANDOM = () => 1 - Number.EPSILON
 const CARD_ID = CARD_DEFINITION_IDS
@@ -232,14 +237,19 @@ describe('theme decks', () => {
   })
 
   it('uses every current card definition across the six preset decks', () => {
-    const usedDefinitionIds = new Set(
+    const usedDefinitionIds = new Set<CardDefinitionId>(
       THEME_DECKS.flatMap((deck) => deck.cardDefinitionIds),
+    )
+    const expansionDefinitionIds = new Set<CardDefinitionId>(
+      EXPANSION_CARD_DEFINITION_IDS,
     )
 
     expect(
-      CARD_LIST.filter((card) => !usedDefinitionIds.has(card.definitionId)).map(
-        (card) => card.name,
-      ),
+      CARD_LIST.filter(
+        (card) =>
+          !usedDefinitionIds.has(card.definitionId) &&
+          !expansionDefinitionIds.has(card.definitionId),
+      ).map((card) => card.name),
     ).toEqual([])
   })
 

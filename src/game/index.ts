@@ -5,6 +5,7 @@ export {
   DEFAULT_TOURNAMENT_GAMES_PER_SIDE,
   DEFAULT_TOURNAMENT_SEED,
   GameAI,
+  createExpansionCardSchedule,
   createDeckMatchupWinRateTable,
   evaluateBase,
   evaluateBattleEntry,
@@ -13,7 +14,9 @@ export {
   getDeployableHandValue,
   createRoundRobinSchedule,
   playAiMatch,
+  runExpansionCardTournament,
   runRoundRobinTournament,
+  summarizeExpansionTournament,
   summarizeTournament,
 } from './ai'
 export type { AiDifficulty, GameAIOptions } from './ai'
@@ -24,6 +27,7 @@ export {
   CARD_DEFINITION_IDS,
   CARD_LIST,
   CREATURE_CARDS,
+  EXPANSION_CARD_DEFINITION_IDS,
   SPELL_CARDS,
 } from './cards'
 export {
@@ -83,6 +87,10 @@ export type {
   DeckMatchupWinRateTable,
   DeckTournamentRecord,
   EvaluationBreakdown,
+  ExpansionAiMatchResult,
+  ExpansionDeckTournamentRecord,
+  ExpansionTournamentMatch,
+  ExpansionTournamentSummary,
   HandPlayCandidate,
   MatchTermination,
   TournamentMatch,

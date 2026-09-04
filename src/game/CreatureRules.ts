@@ -9,6 +9,7 @@ import {
   isAdjacentToEnemyPlayer,
   isCreatureFlankedByEnemies,
   isGroupFlankedByEnemies,
+  getOpponentId,
 } from './boardQueries'
 import type {
   ActivatedAbilityOption,
@@ -60,6 +61,14 @@ type AbilityHandler<TAbility extends KeywordAbility = KeywordAbility> = {
     ability: TAbility,
     context: CreatureRuleContext,
     movingPlayerId: PlayerId,
+  ) => number
+  getEndTurnManaCost?: (
+    ability: TAbility,
+    context: CreatureRuleContext,
+  ) => number
+  getPlayerDamageManaGain?: (
+    ability: TAbility,
+    context: CreatureRuleContext,
   ) => number
   getActivatedAbility?: (
     ability: TAbility,
@@ -184,6 +193,25 @@ const ABILITY_HANDLERS = {
         : NO_STAT_MODIFIER
     },
   },
+  installment: {
+    getEndTurnManaCost: (ability) => ability.mana,
+  },
+  trickster: {
+    getPositionStatModifier: (ability, context) => {
+      const ownerHp = context.state.players[context.ownerId].hp
+      const opponentHp = context.state.players[getOpponentId(context.ownerId)].hp
+      if (ownerHp > opponentHp) {
+        return { attack: ability.amount, defense: 0 }
+      }
+      if (ownerHp < opponentHp) {
+        return { attack: 0, defense: ability.amount }
+      }
+      return NO_STAT_MODIFIER
+    },
+  },
+  plunder: {
+    getPlayerDamageManaGain: (ability) => ability.mana,
+  },
 } satisfies AbilityHandlerMap
 
 const getAbilityHandler = (ability: KeywordAbility): AbilityHandler =>
@@ -213,6 +241,12 @@ export const formatAbility = (ability: KeywordAbility): string => {
       return `採掘${ability.mana}`
     case 'rearguard':
       return `しんがり(+${ability.attack}/+${ability.defense})`
+    case 'installment':
+      return `リボ払い${ability.mana}`
+    case 'trickster':
+      return `トリックスター${ability.amount}`
+    case 'plunder':
+      return `略奪${ability.mana}`
   }
 }
 
@@ -240,6 +274,12 @@ export const describeAbility = (ability: KeywordAbility): string => {
       return `このクリーチャーが所属するグループが敵クリーチャーまたは敵プレイヤーに囲まれている場合、自分のキープアップフェイズに追加で${ability.mana}マナを得る。同一グループ内の<<採掘>>は重複しない。`
     case 'rearguard':
       return `このクリーチャーの後方に敵クリーチャーが隣接する場合、攻撃力+${ability.attack}、防御力+${ability.defense}する。`
+    case 'installment':
+      return `自分のエンドフェイズにマナ${ability.mana}を支払う。足りない場合はこのクリーチャーを破壊する。この効果で破壊された場合はマナは返還されない。`
+    case 'trickster':
+      return `自プレイヤーのHPが相手より大きい場合は攻撃力を+${ability.amount}し、小さい場合は防御力を+${ability.amount}する。同じ場合は変わらない。`
+    case 'plunder':
+      return `このクリーチャーが所属するグループが敵プレイヤーに1以上のダメージを与えた場合、マナ${ability.mana}を得る。`
   }
 }
 
@@ -348,6 +388,30 @@ export class CreatureRules {
           ability,
           this.context,
           movingPlayerId,
+        ) ?? 0),
+      0,
+    )
+  }
+
+  getEndTurnManaCost(): number {
+    return this.getAbilities().reduce(
+      (total, ability) =>
+        total +
+        (getAbilityHandler(ability).getEndTurnManaCost?.(
+          ability,
+          this.context,
+        ) ?? 0),
+      0,
+    )
+  }
+
+  getPlayerDamageManaGain(): number {
+    return this.getAbilities().reduce(
+      (total, ability) =>
+        total +
+        (getAbilityHandler(ability).getPlayerDamageManaGain?.(
+          ability,
+          this.context,
         ) ?? 0),
       0,
     )
