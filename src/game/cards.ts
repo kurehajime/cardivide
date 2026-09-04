@@ -363,7 +363,7 @@ export const CREATURE_CARDS = [
     attack: 1,
     defense: 1,
     march: 2,
-    abilities: [{ type: 'trickster', amount: 4 }],
+    abilities: [{ type: 'trickster', amount: 4 }, { type: 'return' }],
   },
   {
     definitionId: CARD_DEFINITION_IDS.THIEF,
