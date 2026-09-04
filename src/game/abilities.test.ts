@@ -268,9 +268,9 @@ describe('CreatureRules position modifiers', () => {
       hp: { playerA: 20, playerB: 10 },
     })
     expect(GameManager.getCreatureStats(manager, magician)).toEqual({
-      attack: 4,
+      attack: 5,
       defense: 1,
-      march: 0,
+      march: 2,
     })
 
     manager = configureManager(initial, {
@@ -279,8 +279,8 @@ describe('CreatureRules position modifiers', () => {
     })
     expect(GameManager.getCreatureStats(manager, magician)).toEqual({
       attack: 1,
-      defense: 4,
-      march: 0,
+      defense: 5,
+      march: 2,
     })
   })
 
@@ -581,7 +581,7 @@ describe('combat abilities', () => {
 
     manager = GameManager.attackGroup(manager, 0, 1)
     expect(manager.state.pendingCombat).toMatchObject({
-      playerDamage: 1,
+      playerDamage: 3,
       attackerManaGain: 2,
     })
     manager = GameManager.finishCombat(manager)

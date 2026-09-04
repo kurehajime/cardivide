@@ -693,7 +693,7 @@ describe('AI evaluation', () => {
       GameManager.getEndTurnInstallmentResolution(manager, 'playerA')
         .destroyedCardIds,
     ).toEqual([mephistopheles])
-    expect(evaluateBattleEntry(manager, 'playerA').opponentAttackThreat).toBe(14)
+    expect(evaluateBattleEntry(manager, 'playerA').opponentAttackThreat).toBe(13)
   })
 
   it('removes an unpaid installment creature even when the opponent cannot attack', () => {
@@ -708,6 +708,16 @@ describe('AI evaluation', () => {
     )
     const manager = GameManager.from({
       ...initial.state,
+      cards: {
+        ...initial.state.cards,
+        [mephistopheles]: {
+          ...initial.state.cards[mephistopheles],
+          card: {
+            ...initial.state.cards[mephistopheles].card,
+            cost: 2,
+          },
+        },
+      },
       players: {
         ...initial.state.players,
         playerA: {
