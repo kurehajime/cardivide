@@ -391,7 +391,7 @@ export const CREATURE_CARDS = [
     attack: 0,
     defense: 2,
     march: 1,
-    abilities: [{ type: 'bombardment', damage: 4 }],
+    abilities: [{ type: 'bombardment', damage: 5 }],
   },
 ] satisfies CreatureCard[]
 
