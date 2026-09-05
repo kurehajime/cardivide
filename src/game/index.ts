@@ -42,7 +42,12 @@ export {
   THEME_DECK_IDS,
   THEME_DECKS,
 } from './themeDecks'
-export { getScenarioOpponentDeckIds, resolveScenarioBattle } from './scenario'
+export {
+  addScenarioReward,
+  getScenarioRewardChoices,
+  getScenarioOpponentDeckIds,
+  resolveScenarioBattle,
+} from './scenario'
 export type { ScenarioBattleResolution } from './scenario'
 export type {
   ActivatedAbilityOption,

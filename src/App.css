@@ -698,6 +698,8 @@
 
 .scenario-result-dialog {
   width: min(980px, 100%);
+  max-height: calc(100dvh - 48px);
+  overflow-y: auto;
   display: grid;
   gap: 22px;
   padding: 24px 28px 28px;
@@ -924,6 +926,127 @@
 .scenario-result-confirm:focus-visible {
   outline: 3px solid #fffaf1;
   outline-offset: 4px;
+}
+
+.scenario-result-confirm:disabled {
+  opacity: 0.45;
+  cursor: default;
+  transform: none;
+}
+
+.scenario-rewards {
+  min-width: 0;
+  text-align: center;
+}
+
+.scenario-rewards h3 {
+  margin: 0 0 12px;
+  color: #fff;
+  font-size: 18px;
+}
+
+.scenario-reward-choices {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  max-width: 570px;
+  margin: 0 auto;
+}
+
+.scenario-reward-choice {
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 6px;
+  min-width: 0;
+  padding: 8px;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+
+.scenario-reward-choice .card-view {
+  width: 100%;
+  min-width: 0;
+}
+
+.scenario-reward-choice strong {
+  font-size: 14px;
+  overflow-wrap: anywhere;
+}
+
+.scenario-reward-choice > span {
+  font-size: 12px;
+}
+
+.scenario-reward-choice[aria-pressed='true'] {
+  border-color: #fff;
+  background: rgb(255 255 255 / 15%);
+}
+
+.scenario-reward-choice:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+
+.scenario-reward-selection {
+  font-weight: 900;
+}
+
+.scenario-reward-detail {
+  max-width: 570px;
+  margin: 12px auto 0;
+  text-align: left;
+  font-family: 'Shippori Mincho', 'Yu Mincho', serif;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.scenario-reward-detail :is(h4, p, dl, dd) {
+  margin: 0;
+}
+
+.scenario-reward-detail dt {
+  font-weight: 800;
+}
+
+.scenario-result-with-rewards .scenario-opponent-icon {
+  width: 48px;
+  height: 62px;
+  border-width: 4px;
+}
+
+.scenario-result-with-rewards .scenario-opponent-next .scenario-opponent-icon {
+  width: 66px;
+  height: 86px;
+}
+
+.scenario-result-with-rewards .scenario-opponent:not(:last-child)::after {
+  top: 58px;
+}
+
+.scenario-result-with-rewards .scenario-opponent-cross {
+  font-size: 60px;
+}
+
+@media (max-width: 720px) {
+  .scenario-result-dialog {
+    max-height: calc(100dvh - 24px);
+  }
+
+  .scenario-reward-choices {
+    gap: 4px;
+  }
+
+  .scenario-reward-choice {
+    padding: 4px;
+  }
+
+  .scenario-reward-choice strong {
+    font-size: 12px;
+  }
 }
 
 .board-panel,

@@ -5,11 +5,14 @@ import {
   GameManager,
   THEME_DECK_BY_ID,
   THEME_DECK_IDS,
+  addScenarioReward,
+  getScenarioRewardChoices,
   getScenarioOpponentDeckIds,
   resolveScenarioBattle,
   type AiDifficulty,
   type ActivatedAbilityOption,
   type CardInstanceId,
+  type CardDefinitionId,
   type PlaySpellAction,
   type PlayerId,
   type ThemeDeckId,
@@ -47,20 +50,22 @@ type GameSelection = {
 type ScenarioRun = {
   opponentDeckIds: ThemeDeckId[]
   currentBattleIndex: number
+  playerCardDefinitionIds: CardDefinitionId[]
 }
 
 type GameSessionProps = GameSelection & {
   scenarioRun: ScenarioRun | null
   onExit: () => void
-  onResultConfirm: (winnerId: PlayerId) => void
+  onResultConfirm: (winnerId: PlayerId, rewardId?: CardDefinitionId) => void
 }
 
 const createGameUiState = ({
   playerDeckId,
   comDeckId,
-}: GameSelection): GameUiState => ({
+  scenarioRun,
+}: GameSelection & { scenarioRun: ScenarioRun | null }): GameUiState => ({
   manager: GameManager.create(Math.random, {
-    playerA: THEME_DECK_BY_ID[playerDeckId].cardDefinitionIds,
+    playerA: scenarioRun?.playerCardDefinitionIds ?? THEME_DECK_BY_ID[playerDeckId].cardDefinitionIds,
     playerB: THEME_DECK_BY_ID[comDeckId].cardDefinitionIds,
   }),
   selectedCardId: null,
@@ -109,9 +114,10 @@ const GameSession = ({
     scenarioRun?.currentBattleIndex === 0,
   )
   const [showScenarioWinResult, setShowScenarioWinResult] = useState(false)
+  const [rewardChoices, setRewardChoices] = useState<CardDefinitionId[]>([])
   const [{ manager, selectedCardId, message }, dispatch] = useReducer(
     gameUiReducer,
-    { playerDeckId, comDeckId, difficulty },
+    { playerDeckId, comDeckId, difficulty, scenarioRun },
     createGameUiState,
   )
   const { state } = manager
@@ -197,6 +203,9 @@ const GameSession = ({
     }
 
     const timeoutId = window.setTimeout(() => {
+      if (scenarioRun.currentBattleIndex < scenarioRun.opponentDeckIds.length - 1) {
+        setRewardChoices(getScenarioRewardChoices(scenarioRun.playerCardDefinitionIds))
+      }
       setShowScenarioWinResult(true)
     }, SCENARIO_WIN_DIALOG_DELAY_MS)
 
@@ -511,6 +520,8 @@ const GameSession = ({
               <ScenarioProgressDialog
                 opponentDeckIds={scenarioRun.opponentDeckIds}
                 currentBattleIndex={scenarioRun.currentBattleIndex}
+                rewardChoices={rewardChoices}
+                playerCardDefinitionIds={scenarioRun.playerCardDefinitionIds}
                 result={
                   winnerId === null
                     ? 'intro'
@@ -518,11 +529,15 @@ const GameSession = ({
                       ? 'win'
                       : 'loss'
                 }
-                onConfirm={() => {
+                onConfirm={(rewardId) => {
                   if (winnerId === null) {
                     setShowScenarioIntro(false)
                   } else {
-                    onResultConfirm(winnerId)
+                    if (rewardChoices.length > 0 &&
+                      (rewardId === undefined || !rewardChoices.includes(rewardId))) {
+                      return
+                    }
+                    onResultConfirm(winnerId, rewardId)
                   }
                 }}
               />
@@ -561,7 +576,11 @@ const GameApp = () => {
         comDeckId: firstOpponentDeckId,
         difficulty: nextSelection.difficulty,
       })
-      setScenarioRun({ opponentDeckIds, currentBattleIndex: 0 })
+      setScenarioRun({
+        opponentDeckIds,
+        currentBattleIndex: 0,
+        playerCardDefinitionIds: [...THEME_DECK_BY_ID[nextSelection.playerDeckId].cardDefinitionIds],
+      })
     } else {
       setSelection({
         playerDeckId: nextSelection.playerDeckId,
@@ -573,7 +592,7 @@ const GameApp = () => {
     setGameStarted(true)
   }
 
-  const handleResultConfirm = (winnerId: PlayerId) => {
+  const handleResultConfirm = (winnerId: PlayerId, rewardId?: CardDefinitionId) => {
     if (scenarioRun === null) {
       returnToSetup()
       return
@@ -591,10 +610,12 @@ const GameApp = () => {
 
     const nextOpponentDeckId =
       scenarioRun.opponentDeckIds[resolution.nextBattleIndex]
+    const playerCardDefinitionIds = addScenarioReward(scenarioRun.playerCardDefinitionIds, rewardId)
     setSelection((current) => ({ ...current, comDeckId: nextOpponentDeckId }))
     setScenarioRun({
       ...scenarioRun,
       currentBattleIndex: resolution.nextBattleIndex,
+      playerCardDefinitionIds,
     })
   }
 

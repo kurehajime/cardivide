@@ -1,6 +1,42 @@
 import matchupWinRates from './ai/deck-matchup-win-rates.json'
+import { EXPANSION_CARD_DEFINITION_IDS } from './cards'
 import { THEME_DECK_BY_ID, THEME_DECKS } from './themeDecks'
 import type { ThemeDeckId } from './themeDecks'
+import type { CardDefinitionId } from './types'
+
+const REWARD_COPIES = 2
+const MAX_REWARD_COPIES = 4
+
+const getEligibleRewards = (deck: readonly CardDefinitionId[]): CardDefinitionId[] =>
+  EXPANSION_CARD_DEFINITION_IDS.filter((id) =>
+    deck.filter((cardId) => cardId === id).length + REWARD_COPIES <= MAX_REWARD_COPIES,
+  )
+
+export const getScenarioRewardChoices = (
+  deck: readonly CardDefinitionId[],
+  random: () => number = Math.random,
+): CardDefinitionId[] => {
+  const candidates = getEligibleRewards(deck)
+  for (let index = candidates.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(random() * (index + 1))
+    ;[candidates[index], candidates[swapIndex]] = [candidates[swapIndex], candidates[index]]
+  }
+  return candidates.slice(0, 3)
+}
+
+export const addScenarioReward = (
+  deck: readonly CardDefinitionId[],
+  rewardId?: CardDefinitionId,
+): CardDefinitionId[] => {
+  const eligible = getEligibleRewards(deck)
+  if (rewardId === undefined && eligible.length === 0) {
+    return [...deck]
+  }
+  if (rewardId === undefined || !eligible.includes(rewardId)) {
+    throw new Error('Choose an eligible scenario reward.')
+  }
+  return [...deck, ...Array<CardDefinitionId>(REWARD_COPIES).fill(rewardId)]
+}
 
 const MAX_SCENARIO_BATTLES = 5
 const winRates = matchupWinRates as Record<

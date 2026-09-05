@@ -1,17 +1,24 @@
 import { motion } from 'motion/react'
-import type { CSSProperties } from 'react'
+import { useState, type CSSProperties } from 'react'
 import {
+  CARD_BY_DEFINITION_ID,
+  describeAbility,
+  formatAbility,
   THEME_DECK_BY_ID,
+  type CardDefinitionId,
   type CardColor,
   type ThemeDeckId,
 } from '../game'
 import { PLAYER_IMAGE_BY_DECK_ID } from './playerImages'
+import CardView from './CardView'
 
 type ScenarioProgressDialogProps = {
   opponentDeckIds: readonly ThemeDeckId[]
   currentBattleIndex: number
   result: 'intro' | 'win' | 'loss'
-  onConfirm: () => void
+  rewardChoices?: readonly CardDefinitionId[]
+  playerCardDefinitionIds?: readonly CardDefinitionId[]
+  onConfirm: (rewardId?: CardDefinitionId) => void
 }
 
 const DECK_COLOR_VALUES = {
@@ -24,11 +31,17 @@ const ScenarioProgressDialog = ({
   opponentDeckIds,
   currentBattleIndex,
   result,
+  rewardChoices = [],
+  playerCardDefinitionIds = [],
   onConfirm,
 }: ScenarioProgressDialogProps) => {
+  const [selectedRewardId, setSelectedRewardId] = useState<CardDefinitionId | null>(null)
   const playerWon = result === 'win'
   const scenarioComplete =
     playerWon && currentBattleIndex === opponentDeckIds.length - 1
+  const hasRewards = playerWon && !scenarioComplete && rewardChoices.length > 0
+  const rewardSelected = selectedRewardId !== null && rewardChoices.includes(selectedRewardId)
+  const selectedReward = rewardSelected ? CARD_BY_DEFINITION_ID[selectedRewardId] : undefined
   const nextBattleIndex =
     result === 'intro'
       ? currentBattleIndex
@@ -65,7 +78,7 @@ const ScenarioProgressDialog = ({
       transition={{ duration: 0.25, ease: 'easeOut' }}
     >
       <motion.section
-        className="scenario-result-dialog"
+        className={`scenario-result-dialog ${hasRewards ? 'scenario-result-with-rewards' : ''}`}
         data-result={scenarioComplete ? 'complete' : result}
         role="dialog"
         aria-modal="true"
@@ -138,11 +151,57 @@ const ScenarioProgressDialog = ({
             )
           })}
         </ol>
+        {hasRewards && (
+          <section className="scenario-rewards" aria-labelledby="scenario-reward-title">
+            <h3 id="scenario-reward-title">勝利報酬</h3>
+            <div className="scenario-reward-choices" role="group" aria-label="報酬カード">
+              {rewardChoices.map((definitionId) => {
+                const card = CARD_BY_DEFINITION_ID[definitionId]!
+                const copies = playerCardDefinitionIds.filter((id) => id === definitionId).length
+                return (
+                  <button
+                    key={definitionId}
+                    className="scenario-reward-choice"
+                    type="button"
+                    aria-pressed={selectedRewardId === definitionId}
+                    aria-label={`${card.name}を2枚追加（現在${copies}枚）`}
+                    onClick={() => setSelectedRewardId(definitionId)}
+                  >
+                    <CardView card={card} nestedInButton />
+                    <strong>{card.name}</strong>
+                    <span>{copies}枚 → {copies + 2}枚</span>
+                    <span className="scenario-reward-selection">
+                      {selectedRewardId === definitionId ? '選択中' : '＋2枚'}
+                    </span>
+                  </button>
+                )
+              })}
+            </div>
+            {selectedReward && (
+              <div className="scenario-reward-detail" aria-live="polite">
+                <h4>{selectedReward.name}</h4>
+                {selectedReward.kind === 'spell' ? (
+                  <p>{selectedReward.text}</p>
+                ) : (
+                  <dl>
+                    {selectedReward.abilities.map((ability, index) => (
+                      <div key={`${ability.type}-${index}`}>
+                        <dt>{formatAbility(ability)}</dt>
+                        <dd>{describeAbility(ability)}</dd>
+                      </div>
+                    ))}
+                  </dl>
+                )}
+              </div>
+            )}
+          </section>
+        )}
         <button
           className="scenario-result-confirm"
           type="button"
-          autoFocus
-          onClick={onConfirm}
+          autoFocus={!hasRewards}
+          disabled={hasRewards && !rewardSelected}
+          onClick={() => onConfirm(hasRewards && rewardSelected ? selectedRewardId : undefined)}
         >
           {result === 'intro'
             ? '対戦開始'
