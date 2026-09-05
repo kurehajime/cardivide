@@ -744,6 +744,12 @@ const getKeepUpManaBonusForState = (
   return abilityMana
 }
 
+const getKeepUpPlayerDamageForState = (state: GameState, playerId: PlayerId): number =>
+  state.board.creatures.reduce((total, _, boardIndex) => {
+    const rules = new CreatureRules(state, boardIndex)
+    return total + (rules.ownerId === playerId ? rules.getKeepUpPlayerDamage() : 0)
+  }, 0)
+
 const getPlacedSpellCard = (
   state: GameState,
   playerId: PlayerId,
@@ -786,6 +792,7 @@ const resolveKeepUpState = (state: GameState): GameState => {
 
   const activePlayer = state.players[state.activePlayerId]
   const bonusMana = getKeepUpManaBonusForState(state, activePlayer.id)
+  const playerDamage = getKeepUpPlayerDamageForState(state, activePlayer.id)
   const nextPlayer = {
     ...drawUpTo(activePlayer, MAX_HAND_SIZE),
     mana: activePlayer.mana + 2 + bonusMana,
@@ -794,6 +801,16 @@ const resolveKeepUpState = (state: GameState): GameState => {
   return {
     ...replacePlayer(state, nextPlayer),
     phase: 'main',
+    pendingCombat: playerDamage > 0
+      ? {
+          damageMarkers: [],
+          destroyedCardIds: [],
+          defendingPlayerId: getOpponentId(activePlayer.id),
+          playerWasHit: true,
+          playerDamage,
+          endsTurnAfterResolution: false,
+        }
+      : null,
   }
 }
 
@@ -1003,7 +1020,7 @@ export const assertValidGameState = (state: GameState): void => {
         throw new Error('Pending combat has the wrong defending player.')
       }
     } else if (state.phase !== 'main' || state.hasAttackedThisTurn) {
-      throw new Error('Pending spell damage requires an unattacked main phase.')
+      throw new Error('Pending effect damage requires an unattacked main phase.')
     }
     if (
       !Number.isInteger(state.pendingCombat.playerDamage) ||
@@ -1100,6 +1117,10 @@ export class GameManager {
     return getKeepUpManaBonusForState(manager.state, playerId)
   }
 
+  static getKeepUpPlayerDamage(manager: GameManager, playerId: PlayerId): number {
+    return getKeepUpPlayerDamageForState(manager.state, playerId)
+  }
+
   static getPlayerBarrier(manager: GameManager, playerId: PlayerId): number {
     return getPlayerBarrierForState(manager.state, playerId)
   }
@@ -1157,6 +1178,14 @@ export class GameManager {
       }
     }
     return reachablePositions
+  }
+
+  static getRequiredMarchForInsert(
+    manager: GameManager,
+    playerId: PlayerId,
+    insertIndex: number,
+  ): number {
+    return getRequiredMarchForInsert(manager.state, playerId, insertIndex, false)
   }
 
   static setPhase(manager: GameManager, phase: Phase): GameManager {

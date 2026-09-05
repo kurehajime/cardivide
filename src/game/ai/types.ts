@@ -15,6 +15,7 @@ export type EvaluationBreakdown = {
   handReserve: number
   deployableHand: number
   upkeepMana: number
+  upkeepDamage: number
   marchControl: number
   myAttackPotential: number
   opponentAttackThreat: number

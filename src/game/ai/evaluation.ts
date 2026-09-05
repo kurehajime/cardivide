@@ -2,6 +2,7 @@ import { GameManager } from '../GameManager'
 import { getOpponentId } from '../boardQueries'
 import type { CardInstanceId, GameAction, GameState, PlayerId } from '../types'
 import type { EvaluationBreakdown, HandPlayCandidate } from './types'
+import { estimateBombardment } from './bombardmentRisk'
 import {
   areScoresEquivalent,
   isMeaningfullyGreater,
@@ -20,6 +21,7 @@ export const AI_EVALUATION_PARAMETERS = {
   spellHandReserve: 2,
   lifeDropletHoldMultiplier: 0.5,
   upkeepManaMultiplier: 1.2,
+  upkeepDamageMultiplier: 0.75,
   captureMarch: 1,
   capturePosition: 0.5,
   futureAttackPotentialMultiplier: 0.75,
@@ -34,6 +36,7 @@ const zeroBreakdown = (): EvaluationBreakdown => ({
   handReserve: 0,
   deployableHand: 0,
   upkeepMana: 0,
+  upkeepDamage: 0,
   marchControl: 0,
   myAttackPotential: 0,
   opponentAttackThreat: 0,
@@ -107,6 +110,10 @@ export const evaluateBase = (
     (GameManager.getKeepUpManaBonus(manager, aiPlayerId) -
       GameManager.getKeepUpManaBonus(manager, opponentId)) *
     AI_EVALUATION_PARAMETERS.upkeepManaMultiplier
+  const upkeepDamage =
+    (estimateBombardment(manager, aiPlayerId).damage -
+      estimateBombardment(manager, opponentId).damage) *
+    AI_EVALUATION_PARAMETERS.hp * AI_EVALUATION_PARAMETERS.upkeepDamageMultiplier
   const aiRestrictedPositions =
     GameManager.countReachableSummonPositions(
       manager,
@@ -142,6 +149,7 @@ export const evaluateBase = (
     handReserve,
     deployableHand: 0,
     upkeepMana,
+    upkeepDamage,
     marchControl,
     myAttackPotential: 0,
     opponentAttackThreat: 0,
@@ -243,18 +251,86 @@ const projectActivePlayerInstallments = (manager: GameManager): GameState => {
 const createBattleView = (
   manager: GameManager,
   attackerId: PlayerId,
+  projectBombardment = false,
+  aiPlayerId = attackerId,
 ): GameManager => {
   const state =
     attackerId === manager.state.activePlayerId
       ? manager.state
       : projectActivePlayerInstallments(manager)
-  return GameManager.from({
+  const battleManager = GameManager.from({
     ...state,
     activePlayerId: attackerId,
     phase: 'battle',
     hasAttackedThisTurn: false,
     pendingCombat: null,
   })
+  return projectBombardment && attackerId !== manager.state.activePlayerId
+    ? projectKeepUpDamage(battleManager, attackerId, attackerId === aiPlayerId)
+    : battleManager
+}
+
+// Project only the next damage trigger; do not draw unknown cards or add search nodes.
+const projectKeepUpDamage = (
+  manager: GameManager,
+  playerId: PlayerId,
+  allowEnemySummon = false,
+): GameManager => {
+  if (GameManager.getWinner(manager) !== null) {
+    return manager
+  }
+  let damage = GameManager.getKeepUpPlayerDamage(manager, playerId)
+  if (damage === 0) {
+    return manager
+  }
+  const targetId = getOpponentId(playerId)
+  const target = manager.state.players[targetId]
+  if (allowEnemySummon) {
+    const estimate = estimateBombardment(manager, playerId)
+    // Uncertain survival must not turn expected damage into a guaranteed victory.
+    damage = estimate.protectedDamage >= target.hp
+      ? estimate.damage
+      : Math.min(estimate.damage, Math.max(0, target.hp - 1))
+  }
+  return GameManager.from({
+    ...manager.state,
+    players: {
+      ...manager.state.players,
+      [targetId]: { ...target, hp: target.hp - damage },
+    },
+  })
+}
+
+const evaluateBombardmentOutcome = (
+  manager: GameManager,
+  aiPlayerId: PlayerId,
+  ignoredHandCardIds: ReadonlySet<CardInstanceId>,
+  isFutureBattle: boolean,
+): EvaluationBreakdown => {
+  if (GameManager.getWinner(manager) !== null) {
+    return evaluateBase(manager, aiPlayerId, ignoredHandCardIds)
+  }
+  const attackerId = manager.state.activePlayerId
+  const nextPlayerId = getOpponentId(attackerId)
+  const afterEndTurn = GameManager.from(projectActivePlayerInstallments(manager))
+  const nextManager = projectKeepUpDamage(afterEndTurn, nextPlayerId, nextPlayerId === aiPlayerId)
+  const evaluation = evaluateBase(nextManager, aiPlayerId, ignoredHandCardIds)
+  if (evaluation.terminal !== 0) {
+    return evaluation
+  }
+  // Each side gets at most one tick in this horizon. A fired tick is HP, not reserve.
+  const creditedPlayers = isFutureBattle ? [attackerId, nextPlayerId] : [nextPlayerId]
+  const creditedValue = creditedPlayers.reduce(
+    (total, playerId) => total + (playerId === aiPlayerId ? 1 : -1) *
+        estimateBombardment(nextManager, playerId).damage *
+        AI_EVALUATION_PARAMETERS.hp * AI_EVALUATION_PARAMETERS.upkeepDamageMultiplier,
+    0,
+  )
+  return {
+    ...evaluation,
+    upkeepDamage: evaluation.upkeepDamage - creditedValue,
+    total: evaluation.total - creditedValue,
+  }
 }
 
 type CombatOutcomeScores = {
@@ -268,13 +344,20 @@ const getNoAttackOutcomeScores = (
   aiPlayerId: PlayerId,
   ignoredHandCardIds: ReadonlySet<CardInstanceId>,
   baseEvaluation: EvaluationBreakdown,
+  projectBombardment = false,
 ): CombatOutcomeScores => {
   const projectedState =
     attackerId === manager.state.activePlayerId
       ? manager.state
       : projectActivePlayerInstallments(manager)
-  const evaluation =
-    projectedState === manager.state
+  const evaluation = projectBombardment
+    ? evaluateBombardmentOutcome(
+        createBattleView(manager, attackerId, true, aiPlayerId),
+        aiPlayerId,
+        ignoredHandCardIds,
+        attackerId !== manager.state.activePlayerId,
+      )
+    : projectedState === manager.state
       ? baseEvaluation
       : evaluateBase(
           GameManager.from(projectedState),
@@ -295,8 +378,9 @@ const getCombatOutcomeScores = (
   attackerId: PlayerId,
   aiPlayerId: PlayerId,
   ignoredHandCardIds: ReadonlySet<CardInstanceId>,
+  projectBombardment = false,
 ): CombatOutcomeScores[] => {
-  const battleManager = createBattleView(manager, attackerId)
+  const battleManager = createBattleView(manager, attackerId, projectBombardment, aiPlayerId)
   return GameManager.getLegalBattleActions(battleManager).map((action) => {
     if (action.type !== 'attackGroup') {
       throw new Error('Battle action must attack a group.')
@@ -307,9 +391,16 @@ const getCombatOutcomeScores = (
       action.endIndex,
     )
     const nextManager = GameManager.from(preview.nextState)
-    const aiEvaluation = evaluateBase(nextManager, aiPlayerId, ignoredHandCardIds)
+    const aiEvaluation = projectBombardment
+      ? evaluateBombardmentOutcome(
+          nextManager,
+          aiPlayerId,
+          ignoredHandCardIds,
+          attackerId !== manager.state.activePlayerId,
+        )
+      : evaluateBase(nextManager, aiPlayerId, ignoredHandCardIds)
     const plunderFutureDeployableHand =
-      attackerId === aiPlayerId
+      attackerId === aiPlayerId && aiEvaluation.terminal === 0
         ? getPlunderFutureDeployableHandValue(
             nextManager,
             aiPlayerId,
@@ -347,23 +438,35 @@ export const evaluateBattleEntry = (
   aiPlayerId: PlayerId,
   ignoredHandCardIds: ReadonlySet<CardInstanceId> = NO_IGNORED_HAND_CARDS,
 ): EvaluationBreakdown => {
+  if (manager.state.pendingCombat?.endsTurnAfterResolution === false) {
+    return evaluateBattleEntry(
+      GameManager.finishCombat(manager),
+      aiPlayerId,
+      ignoredHandCardIds,
+    )
+  }
   const base = evaluateBase(manager, aiPlayerId, ignoredHandCardIds)
   if (base.terminal !== 0) {
     return base
   }
 
   const opponentId = getOpponentId(aiPlayerId)
+  const projectBombardment =
+    GameManager.getKeepUpPlayerDamage(manager, aiPlayerId) > 0 ||
+    GameManager.getKeepUpPlayerDamage(manager, opponentId) > 0
   const myOutcomes = getCombatOutcomeScores(
     manager,
     aiPlayerId,
     aiPlayerId,
     ignoredHandCardIds,
+    projectBombardment,
   )
   const opponentOutcomes = getCombatOutcomeScores(
     manager,
     opponentId,
     aiPlayerId,
     ignoredHandCardIds,
+    projectBombardment,
   )
   const myNoAttackOutcome = getNoAttackOutcomeScores(
     manager,
@@ -371,6 +474,7 @@ export const evaluateBattleEntry = (
     aiPlayerId,
     ignoredHandCardIds,
     base,
+    projectBombardment,
   )
   const opponentNoAttackOutcome = getNoAttackOutcomeScores(
     manager,
@@ -378,6 +482,7 @@ export const evaluateBattleEntry = (
     aiPlayerId,
     ignoredHandCardIds,
     base,
+    projectBombardment,
   )
   const myBestOutcome = Math.max(
     myNoAttackOutcome.aiScore,
@@ -387,6 +492,37 @@ export const evaluateBattleEntry = (
     opponentNoAttackOutcome,
     opponentOutcomes,
   )
+  if (projectBombardment) {
+    const isMyTurn = manager.state.activePlayerId === aiPlayerId
+    const activeOutcome = isMyTurn ? myBestOutcome : opponentBestOutcome.aiScore
+    if (
+      activeOutcome === AI_EVALUATION_PARAMETERS.victory ||
+      activeOutcome === AI_EVALUATION_PARAMETERS.defeat
+    ) {
+      return {
+        ...base,
+        myAttackPotential: activeOutcome === AI_EVALUATION_PARAMETERS.victory
+          ? activeOutcome - base.total : 0,
+        opponentAttackThreat: activeOutcome === AI_EVALUATION_PARAMETERS.defeat
+          ? base.total - activeOutcome : 0,
+        total: activeOutcome,
+      }
+    }
+    const myAttackPotential = isMyTurn
+      ? myBestOutcome - base.total
+      : Math.max(myBestOutcome - myNoAttackOutcome.aiScore, 0) *
+        AI_EVALUATION_PARAMETERS.futureAttackPotentialMultiplier
+    // Losing a possible future cannon victory is not losing the actual position.
+    const opponentAttackThreat = isMyTurn
+      ? Math.max(myNoAttackOutcome.aiScore - opponentBestOutcome.aiScore, 0)
+      : base.total - opponentBestOutcome.aiScore
+    return {
+      ...base,
+      myAttackPotential,
+      opponentAttackThreat,
+      total: base.total + myAttackPotential - opponentAttackThreat,
+    }
+  }
   const myAttackPotentialMultiplier =
     manager.state.activePlayerId === aiPlayerId
       ? 1

@@ -39,6 +39,7 @@ export const CARD_DEFINITION_IDS = {
   THIEF: 'ca42b887-4e49-497e-8472-543c35559ae2',
   SELF_DESTRUCT_ORDER: '4082a8a2-f853-444d-90b7-fde4ff13d96b',
   BRIBERY: 'eb863aef-a524-4d6d-84ed-6d4f7e3b33a1',
+  CANNON: '80c448c1-5eef-42f6-9797-4f083e1fb6b6',
 } as const satisfies Record<string, CardDefinitionId>
 
 export const EXPANSION_CARD_DEFINITION_IDS = [
@@ -47,6 +48,7 @@ export const EXPANSION_CARD_DEFINITION_IDS = [
   CARD_DEFINITION_IDS.THIEF,
   CARD_DEFINITION_IDS.SELF_DESTRUCT_ORDER,
   CARD_DEFINITION_IDS.BRIBERY,
+  CARD_DEFINITION_IDS.CANNON,
 ] as const satisfies readonly CardDefinitionId[]
 
 export const CREATURE_CARDS = [
@@ -379,6 +381,17 @@ export const CREATURE_CARDS = [
     defense: 1,
     march: 1,
     abilities: [{ type: 'plunder', mana: 2 }],
+  },
+  {
+    definitionId: CARD_DEFINITION_IDS.CANNON,
+    name: 'キャノン砲',
+    kind: 'creature',
+    color: 'red',
+    cost: 2,
+    attack: 0,
+    defense: 2,
+    march: 1,
+    abilities: [{ type: 'bombardment', damage: 4 }],
   },
 ] satisfies CreatureCard[]
 

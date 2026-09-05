@@ -74,6 +74,7 @@ type AbilityHandler<TAbility extends KeywordAbility = KeywordAbility> = {
     ability: TAbility,
     context: CreatureRuleContext,
   ) => ActivatedAbilityOption
+  getKeepUpPlayerDamage?: (ability: TAbility, context: CreatureRuleContext) => number
   getActivatedResolution?: (
     ability: TAbility,
     context: CreatureRuleContext,
@@ -212,6 +213,9 @@ const ABILITY_HANDLERS = {
   plunder: {
     getPlayerDamageManaGain: (ability) => ability.mana,
   },
+  bombardment: {
+    getKeepUpPlayerDamage: (ability) => ability.damage,
+  },
 } satisfies AbilityHandlerMap
 
 const getAbilityHandler = (ability: KeywordAbility): AbilityHandler =>
@@ -247,6 +251,8 @@ export const formatAbility = (ability: KeywordAbility): string => {
       return `トリックスター${ability.amount}`
     case 'plunder':
       return `略奪${ability.mana}`
+    case 'bombardment':
+      return `砲撃${ability.damage}`
   }
 }
 
@@ -280,6 +286,8 @@ export const describeAbility = (ability: KeywordAbility): string => {
       return `自プレイヤーのHPが相手より大きい場合は攻撃力を+${ability.amount}し、小さい場合は防御力を+${ability.amount}する。同じ場合は変わらない。`
     case 'plunder':
       return `このクリーチャーが所属するグループが敵プレイヤーに1以上のダメージを与えた場合、マナ${ability.mana}を得る。`
+    case 'bombardment':
+      return `自分のキープアップフェイズに発動する。相手プレイヤーに${ability.damage}ダメージを与える。シールドの影響は受けない。`
   }
 }
 
@@ -376,6 +384,14 @@ export class CreatureRules {
           summoningPlayerId,
           insertIndex,
         ) ?? 0),
+      0,
+    )
+  }
+
+  getKeepUpPlayerDamage(): number {
+    return this.getAbilities().reduce(
+      (total, ability) => total +
+        (getAbilityHandler(ability).getKeepUpPlayerDamage?.(ability, this.context) ?? 0),
       0,
     )
   }

@@ -19,13 +19,18 @@ export const AI_DIFFICULTY_IGNORED_HAND_COUNT: Record<AiDifficulty, number> = {
   hard: 0,
 }
 
+const resolveImmediateDamage = (manager: GameManager): GameManager =>
+  manager.state.pendingCombat?.endsTurnAfterResolution === false
+    ? GameManager.finishCombat(manager)
+    : manager
+
 const resolveBattleOption = (
   manager: GameManager,
   action: GameAction | null,
 ): { manager: GameManager; attackerManaGain: number } => {
   if (action === null) {
     return {
-      manager: GameManager.passPhase(GameManager.passPhase(manager)),
+      manager: resolveImmediateDamage(GameManager.passPhase(GameManager.passPhase(manager))),
       attackerManaGain: 0,
     }
   }
@@ -35,7 +40,7 @@ const resolveBattleOption = (
 
   const pendingManager = GameManager.applyAction(manager, action)
   return {
-    manager: GameManager.finishCombat(pendingManager),
+    manager: resolveImmediateDamage(GameManager.finishCombat(pendingManager)),
     attackerManaGain: pendingManager.state.pendingCombat?.attackerManaGain ?? 0,
   }
 }
@@ -44,10 +49,7 @@ const resolveMainActionForEvaluation = (
   manager: GameManager,
   action: GameAction,
 ): GameManager => {
-  const nextManager = GameManager.applyAction(manager, action)
-  return nextManager.state.pendingCombat?.endsTurnAfterResolution === false
-    ? GameManager.finishCombat(nextManager)
-    : nextManager
+  return resolveImmediateDamage(GameManager.applyAction(manager, action))
 }
 
 const chooseMainAction = (

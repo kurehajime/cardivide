@@ -369,6 +369,7 @@ describe('AI evaluation', () => {
       handReserve: 0,
       deployableHand: 0,
       upkeepMana: 0,
+      upkeepDamage: 0,
       marchControl: 0,
       myAttackPotential: 0,
       opponentAttackThreat: 0,
