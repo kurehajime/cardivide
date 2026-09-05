@@ -654,6 +654,26 @@ const applySelfDestructOrder = (
   }
 }
 
+const applyBribery = (
+  state: GameState,
+  casterId: PlayerId,
+  target: Extract<SpellTarget, { kind: 'creature' }>,
+): GameState => {
+  const instance = getCardInstance(state, target.cardId)
+  const player = state.players[casterId]
+  const payment = instance.card.cost + 1
+  if (player.mana < payment) {
+    throw new Error('Not enough mana to bribe this creature.')
+  }
+  return {
+    ...replacePlayer(state, { ...player, mana: player.mana - payment }),
+    cards: {
+      ...state.cards,
+      [target.cardId]: { ...instance, ownerId: casterId },
+    },
+  }
+}
+
 const applyLifeCycle = (state: GameState, casterId: PlayerId): GameState => {
   const destroyedCardIds = state.board.creatures.flatMap(({ cardId }) => {
     const instance = getCardInstance(state, cardId)
@@ -1274,6 +1294,19 @@ export class GameManager {
               }]
             : []
         })
+      case 'bribery':
+        return manager.state.board.creatures.flatMap(({ cardId: targetCardId }) => {
+          const targetInstance = getCardInstance(manager.state, targetCardId)
+          return targetInstance.ownerId !== activePlayer.id &&
+            targetInstance.card.kind === 'creature' &&
+            activePlayer.mana >= card.cost + targetInstance.card.cost + 1
+            ? [{
+                type: 'playSpell',
+                cardId,
+                target: { kind: 'creature', cardId: targetCardId },
+              }]
+            : []
+        })
       case 'selfDestructOrder':
         return manager.state.board.creatures.flatMap(({ cardId: targetCardId }) => {
           const targetInstance = getCardInstance(manager.state, targetCardId)
@@ -1561,6 +1594,11 @@ export class GameManager {
         return GameManager.from(applyTransfer(stateAfterSpell, target))
       case 'lifeCycle':
         return GameManager.from(applyLifeCycle(stateAfterSpell, activePlayer.id))
+      case 'bribery':
+        if (target?.kind !== 'creature') {
+          throw new Error('Bribery requires a creature target.')
+        }
+        return GameManager.from(applyBribery(stateAfterSpell, activePlayer.id, target))
       case 'selfDestructOrder':
         if (target?.kind !== 'creature') {
           throw new Error('Self-destruct order requires a creature target.')

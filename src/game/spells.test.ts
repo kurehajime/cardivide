@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { CARD_DEFINITION_IDS } from './cards'
 import { STANDARD_DECK_LIST } from './decks'
 import { GameManager, assertValidGameState } from './GameManager'
+import { GameAI } from './ai/GameAI'
 import { THEME_DECK_BY_ID, THEME_DECK_IDS } from './themeDecks'
 import type { CardInstanceId, GameState, PlayerId } from './types'
 
@@ -109,6 +110,104 @@ const createSelfDestructManager = (): GameManager =>
     playerA: [CARD_ID.SELF_DESTRUCT_ORDER, ...STANDARD_DECK_LIST.slice(1)],
     playerB: STANDARD_DECK_LIST,
   })
+
+const createBriberyScenario = (casterId: PlayerId = 'playerA') => {
+  const enemyId: PlayerId = casterId === 'playerA' ? 'playerB' : 'playerA'
+  const initial = GameManager.create(KEEP_ORDER_RANDOM, {
+    playerA: [...STANDARD_DECK_LIST, CARD_ID.BRIBERY],
+    playerB: [...STANDARD_DECK_LIST, CARD_ID.BRIBERY],
+  })
+  const spell = findDefinition(initial.state, casterId, CARD_ID.BRIBERY)
+  const target = findDefinition(initial.state, enemyId, CARD_ID.MIST_RETURNING_MESSENGER)
+  const dragon = findDefinition(initial.state, enemyId, CARD_ID.EXHAUSTED_VOLCANO_DRAGON)
+  const scouts = findCardIds(initial.state, casterId,
+    (id) => initial.state.cards[id].card.definitionId === CARD_ID.TIDEWAY_SCOUT, 2)
+  const configured = configureState(initial, {
+    hands: { [casterId]: [spell] },
+    mana: { [casterId]: 3 },
+    board: [scouts[0], target, scouts[1], dragon],
+  })
+  return {
+    manager: GameManager.from({ ...configured.state, activePlayerId: casterId }),
+    spell, target, dragon, scouts, enemyId,
+  }
+}
+
+describe('bribery', () => {
+  it.each(['playerA', 'playerB'] as const)('changes control for %s without moving or replacing the card', (casterId) => {
+    const { manager, spell, target, scouts, enemyId } = createBriberyScenario(casterId)
+    const original = manager.state.cards[target]
+    const action = { type: 'playSpell', cardId: spell, target: { kind: 'creature', cardId: target } } as const
+    expect(GameManager.getSpellPlayActions(manager, spell)).toEqual([action])
+    expect(GameManager.getBoardGroups(manager)).toHaveLength(4)
+    const bought = GameManager.applyAction(manager, action)
+    expect(bought.state.cards[target]).toEqual({ ...original, ownerId: casterId })
+    expect(manager.state.cards[target].ownerId).toBe(enemyId)
+    expect(manager.state.players[casterId].mana).toBe(3)
+    expect(bought.state.board).toEqual(manager.state.board)
+    expect(bought.state.players[casterId].mana).toBe(0)
+    expect(bought.state.players[enemyId].mana).toBe(0)
+    expect(bought.state.players[casterId].placedSpell?.cardId).toBe(spell)
+    expect(GameManager.getBoardGroups(bought)).toHaveLength(2)
+    expect(GameManager.getBoardGroups(bought)[0]).toMatchObject({ownerId: casterId, startIndex:0, endIndex:2})
+    expect(bought.state.cards[scouts[0]]).toEqual(manager.state.cards[scouts[0]])
+    expect(() => assertValidGameState(bought.state)).not.toThrow()
+  })
+
+  it('rejects friendly, absent and unaffordable targets without spending mana or the spell', () => {
+    const { manager, spell, target, dragon, scouts } = createBriberyScenario()
+    for (const cardId of [scouts[0], dragon, manager.state.players.playerB.deck[0]]) {
+      expect(() => GameManager.playSpell(manager, spell, {kind:'creature',cardId})).toThrow()
+    }
+    const poor = GameManager.from({ ...manager.state, players: {
+      ...manager.state.players,
+      playerA: { ...manager.state.players.playerA, mana: 2 },
+    } })
+    expect(GameManager.getSpellPlayActions(poor, spell)).toEqual([])
+    expect(() => GameManager.playSpell(poor, spell, {kind:'creature',cardId:target})).toThrow()
+    expect(poor.state.players.playerA.hand).toEqual([spell])
+    expect(poor.state.players.playerA.mana).toBe(2)
+    expect(poor.state.cards[target].ownerId).toBe('playerB')
+  })
+
+  it('returns the bought creature and its mana to the new controller', () => {
+    const { manager, spell, target } = createBriberyScenario()
+    const bought = GameManager.playSpell(manager, spell, {kind:'creature',cardId:target})
+    const returned = GameManager.activateAbility(bought, target, 'return')
+    expect(returned.state.players.playerA.hand).toEqual([target])
+    expect(returned.state.players.playerA.mana).toBe(1)
+    expect(returned.state.players.playerB.hand).not.toContain(target)
+    expect(returned.state.cards[target].id).toBe(target)
+    expect(() => assertValidGameState(returned.state)).not.toThrow()
+  })
+
+  it('sends a destroyed bought creature and the refund to the new controller', () => {
+    const { manager, spell, target } = createBriberyScenario()
+    const bought = GameManager.playSpell(manager, spell, {kind:'creature',cardId:target})
+    const enemyTurn = GameManager.from({...bought.state, activePlayerId:'playerB'})
+    const destroyed = GameManager.finishCombat(GameManager.attackGroup(enemyTurn, 3, 3))
+    expect(destroyed.state.players.playerA.discard).toContain(target)
+    expect(destroyed.state.players.playerB.discard).not.toContain(target)
+    // Three cost-2 creatures refund one each, then the new turn adds two mana.
+    expect(destroyed.state.players.playerA.mana).toBe(5)
+    expect(destroyed.state.players.playerB.mana).toBe(0)
+    expect(() => assertValidGameState(destroyed.state)).not.toThrow()
+  })
+
+  it('lets the AI buy a creature and attack for a win while keeping other evaluations unchanged', () => {
+    const { manager, spell, dragon } = createBriberyScenario()
+    const lethal = configureState(manager, {
+      hands: {playerA:[spell]}, board:[dragon], mana:{playerA:6}, hp:{playerB:1},
+    })
+    const action = new GameAI().chooseAction(lethal)
+    expect(action).toEqual({type:'playSpell',cardId:spell,target:{kind:'creature',cardId:dragon}})
+    expect(lethal.state.cards[dragon].ownerId).toBe('playerB')
+    const bought = GameManager.applyAction(lethal, action!)
+    expect(bought.state.players.playerA.mana).toBe(0)
+    const won = GameManager.finishCombat(GameManager.attackGroup(bought,0,0))
+    expect(GameManager.getWinner(won)).toBe('playerA')
+  })
+})
 
 describe('spell rules', () => {
   it('keeps return fire in the spell zone until the caster turn ends', () => {

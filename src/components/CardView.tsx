@@ -23,6 +23,7 @@ type CardViewProps = {
   faceDown?: boolean
   jitterArt?: boolean
   label?: string
+  mobileDetailPlacement?: 'top' | 'bottom'
   nestedInButton?: boolean
   statModifier?: CreatureStatModifier
 }
@@ -290,6 +291,7 @@ const CardView = ({
   faceDown = false,
   jitterArt = false,
   label,
+  mobileDetailPlacement = 'bottom',
   nestedInButton = false,
   statModifier,
 }: CardViewProps) => {
@@ -331,17 +333,27 @@ const CardView = ({
     const mobilePlacement = window.matchMedia('(max-width: 720px)').matches
 
     if (mobilePlacement) {
-      const top = cardRect.bottom + DETAIL_GAP
+      const above = mobileDetailPlacement === 'top'
+      const maxHeight = Math.max(0, above
+        ? cardRect.top - DETAIL_GAP - VIEWPORT_PADDING
+        : window.innerHeight - cardRect.bottom - DETAIL_GAP - VIEWPORT_PADDING)
+      const detailHeight = Math.min(
+        detailElement.scrollHeight + detailRect.height - detailElement.clientHeight,
+        maxHeight,
+      )
+      const top = above
+        ? Math.max(VIEWPORT_PADDING, cardRect.top - DETAIL_GAP - detailHeight)
+        : cardRect.bottom + DETAIL_GAP
 
       setDetailPosition({
-        placement: 'bottom',
+        placement: mobileDetailPlacement,
         top,
         left: clamp(
           cardRect.left + (cardRect.width - detailRect.width) / 2,
           VIEWPORT_PADDING,
           window.innerWidth - detailRect.width - VIEWPORT_PADDING,
         ),
-        maxHeight: Math.max(0, window.innerHeight - top - VIEWPORT_PADDING),
+        maxHeight,
       })
       return
     }
@@ -379,7 +391,7 @@ const CardView = ({
       top: clamp(top, VIEWPORT_PADDING, window.innerHeight - detailHeight - VIEWPORT_PADDING),
       left: clamp(left, VIEWPORT_PADDING, window.innerWidth - detailRect.width - VIEWPORT_PADDING),
     })
-  }, [])
+  }, [mobileDetailPlacement])
 
   useLayoutEffect(() => {
     if (!detailVisible) {

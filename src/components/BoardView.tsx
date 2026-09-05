@@ -521,9 +521,11 @@ const BoardView = ({
         : [],
     ),
   )
-  const selectedSpellName = spellTargetActions[0]
-    ? cards[spellTargetActions[0].cardId].card.name
+  const selectedSpellCard = spellTargetActions[0]
+    ? cards[spellTargetActions[0].cardId].card
     : undefined
+  const selectedSpellName = selectedSpellCard?.name
+  const isBribery = selectedSpellCard?.kind === 'spell' && selectedSpellCard.effect.type === 'bribery'
   const boardCardWidth = 'var(--board-card-width, 140px)'
   const boardInsertSlotWidth = 'var(--board-insert-slot-width, 34px)'
   const gridTemplateColumns =
@@ -666,7 +668,9 @@ const BoardView = ({
                             }
                           }}
                         >
-                          {selectedSpellName ?? '対象'}
+                          {isBribery
+                            ? `買収（${cards[creature.cardId].card.cost + 1}マナ）`
+                            : selectedSpellName ?? '対象'}
                         </button>
                       )}
                     </div>

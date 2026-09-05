@@ -995,23 +995,6 @@
   font-weight: 900;
 }
 
-.scenario-reward-detail {
-  max-width: 570px;
-  margin: 12px auto 0;
-  text-align: left;
-  font-family: 'Shippori Mincho', 'Yu Mincho', serif;
-  font-size: 14px;
-  line-height: 1.6;
-}
-
-.scenario-reward-detail :is(h4, p, dl, dd) {
-  margin: 0;
-}
-
-.scenario-reward-detail dt {
-  font-weight: 800;
-}
-
 .scenario-result-with-rewards .scenario-opponent-icon {
   width: 48px;
   height: 62px;

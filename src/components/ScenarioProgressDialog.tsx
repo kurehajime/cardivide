@@ -2,8 +2,6 @@ import { motion } from 'motion/react'
 import { useState, type CSSProperties } from 'react'
 import {
   CARD_BY_DEFINITION_ID,
-  describeAbility,
-  formatAbility,
   THEME_DECK_BY_ID,
   type CardDefinitionId,
   type CardColor,
@@ -41,7 +39,6 @@ const ScenarioProgressDialog = ({
     playerWon && currentBattleIndex === opponentDeckIds.length - 1
   const hasRewards = playerWon && !scenarioComplete && rewardChoices.length > 0
   const rewardSelected = selectedRewardId !== null && rewardChoices.includes(selectedRewardId)
-  const selectedReward = rewardSelected ? CARD_BY_DEFINITION_ID[selectedRewardId] : undefined
   const nextBattleIndex =
     result === 'intro'
       ? currentBattleIndex
@@ -167,7 +164,7 @@ const ScenarioProgressDialog = ({
                     aria-label={`${card.name}を2枚追加（現在${copies}枚）`}
                     onClick={() => setSelectedRewardId(definitionId)}
                   >
-                    <CardView card={card} nestedInButton />
+                    <CardView card={card} nestedInButton mobileDetailPlacement="top" />
                     <strong>{card.name}</strong>
                     <span>{copies}枚 → {copies + 2}枚</span>
                     <span className="scenario-reward-selection">
@@ -177,23 +174,6 @@ const ScenarioProgressDialog = ({
                 )
               })}
             </div>
-            {selectedReward && (
-              <div className="scenario-reward-detail" aria-live="polite">
-                <h4>{selectedReward.name}</h4>
-                {selectedReward.kind === 'spell' ? (
-                  <p>{selectedReward.text}</p>
-                ) : (
-                  <dl>
-                    {selectedReward.abilities.map((ability, index) => (
-                      <div key={`${ability.type}-${index}`}>
-                        <dt>{formatAbility(ability)}</dt>
-                        <dd>{describeAbility(ability)}</dd>
-                      </div>
-                    ))}
-                  </dl>
-                )}
-              </div>
-            )}
           </section>
         )}
         <button

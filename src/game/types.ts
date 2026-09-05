@@ -61,6 +61,7 @@ export type SpellEffect =
   | { type: 'transfer' }
   | { type: 'lifeCycle' }
   | { type: 'selfDestructOrder' }
+  | { type: 'bribery' }
 
 export type SpellCard = CardBase & {
   kind: 'spell'

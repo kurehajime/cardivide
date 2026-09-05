@@ -38,6 +38,7 @@ export const CARD_DEFINITION_IDS = {
   MAGICIAN: 'b67d6803-0077-4a65-ad0b-68dcc7fcc546',
   THIEF: 'ca42b887-4e49-497e-8472-543c35559ae2',
   SELF_DESTRUCT_ORDER: '4082a8a2-f853-444d-90b7-fde4ff13d96b',
+  BRIBERY: 'eb863aef-a524-4d6d-84ed-6d4f7e3b33a1',
 } as const satisfies Record<string, CardDefinitionId>
 
 export const EXPANSION_CARD_DEFINITION_IDS = [
@@ -45,6 +46,7 @@ export const EXPANSION_CARD_DEFINITION_IDS = [
   CARD_DEFINITION_IDS.MAGICIAN,
   CARD_DEFINITION_IDS.THIEF,
   CARD_DEFINITION_IDS.SELF_DESTRUCT_ORDER,
+  CARD_DEFINITION_IDS.BRIBERY,
 ] as const satisfies readonly CardDefinitionId[]
 
 export const CREATURE_CARDS = [
@@ -443,6 +445,15 @@ export const SPELL_CARDS = [
     duration: 'immediate',
     effect: { type: 'selfDestructOrder' },
     text: '自分のクリーチャー1体を選択する。そのクリーチャーが所属するグループと、その両隣のグループにいるすべてのクリーチャーへ、選んだクリーチャーのコストに等しいダメージを与える。プレイヤーはダメージを受けない。',
+  },
+  {
+    definitionId: CARD_DEFINITION_IDS.BRIBERY,
+    name: '買収',
+    kind: 'spell',
+    cost: 0,
+    duration: 'immediate',
+    effect: { type: 'bribery' },
+    text: '相手クリーチャー1体を選択する。そのクリーチャーのコスト＋1を支払う。支払えた場合、そのクリーチャーのコントロールを得る。',
   },
 ] satisfies SpellCard[]
 
