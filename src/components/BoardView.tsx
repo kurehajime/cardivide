@@ -666,7 +666,7 @@ const BoardView = ({
                             }
                           }}
                         >
-                          テレポート
+                          {selectedSpellName ?? '対象'}
                         </button>
                       )}
                     </div>

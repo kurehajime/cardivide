@@ -37,12 +37,14 @@ export const CARD_DEFINITION_IDS = {
   MEPHISTOPHELES: '094c4047-a55a-4001-ae91-b562f15b66f7',
   MAGICIAN: 'b67d6803-0077-4a65-ad0b-68dcc7fcc546',
   THIEF: 'ca42b887-4e49-497e-8472-543c35559ae2',
+  SELF_DESTRUCT_ORDER: '4082a8a2-f853-444d-90b7-fde4ff13d96b',
 } as const satisfies Record<string, CardDefinitionId>
 
 export const EXPANSION_CARD_DEFINITION_IDS = [
   CARD_DEFINITION_IDS.MEPHISTOPHELES,
   CARD_DEFINITION_IDS.MAGICIAN,
   CARD_DEFINITION_IDS.THIEF,
+  CARD_DEFINITION_IDS.SELF_DESTRUCT_ORDER,
 ] as const satisfies readonly CardDefinitionId[]
 
 export const CREATURE_CARDS = [
@@ -432,6 +434,15 @@ export const SPELL_CARDS = [
     duration: 'immediate',
     effect: { type: 'lifeCycle' },
     text: '自分のすべての緑クリーチャーを破壊する。この効果による破壊では半分ではなく全額のマナが返還される。',
+  },
+  {
+    definitionId: CARD_DEFINITION_IDS.SELF_DESTRUCT_ORDER,
+    name: '自爆命令',
+    kind: 'spell',
+    cost: 0,
+    duration: 'immediate',
+    effect: { type: 'selfDestructOrder' },
+    text: '自分のクリーチャー1体を選択する。そのクリーチャーが所属するグループと、その両隣のグループにいるすべてのクリーチャーへ、選んだクリーチャーのコストに等しいダメージを与える。プレイヤーはダメージを受けない。',
   },
 ] satisfies SpellCard[]
 

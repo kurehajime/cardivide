@@ -9,7 +9,7 @@ describe('card definition ids', () => {
     const registeredIds = Object.values(CARD_DEFINITION_IDS)
     const actualIds = CARD_LIST.map(({ definitionId }) => definitionId)
 
-    expect(registeredIds).toHaveLength(36)
+    expect(registeredIds).toHaveLength(37)
     expect(new Set(registeredIds).size).toBe(registeredIds.length)
     expect(registeredIds.every((definitionId) => UUID_V4_PATTERN.test(definitionId))).toBe(true)
     expect(actualIds.toSorted()).toEqual(registeredIds.toSorted())

@@ -599,6 +599,61 @@ const applyTransfer = (
   }
 }
 
+const applySelfDestructOrder = (
+  state: GameState,
+  casterId: PlayerId,
+  target: Extract<SpellTarget, { kind: 'creature' }>,
+): GameState => {
+  const targetIndex = state.board.creatures.findIndex(
+    ({ cardId }) => cardId === target.cardId,
+  )
+  if (targetIndex < 0) {
+    throw new Error('The self-destruct target is not on the board.')
+  }
+
+  const targetInstance = getCardInstance(state, target.cardId)
+  if (targetInstance.ownerId !== casterId || targetInstance.card.kind !== 'creature') {
+    throw new Error('Self-destruct requires one of the caster\'s creatures.')
+  }
+
+  const groups = collectBoardGroups(state)
+  const targetGroupIndex = groups.findIndex(
+    ({ startIndex, endIndex }) =>
+      startIndex <= targetIndex && targetIndex <= endIndex,
+  )
+  if (targetGroupIndex < 0) {
+    throw new Error('The self-destruct target does not belong to a group.')
+  }
+
+  const firstGroupIndex = Math.max(0, targetGroupIndex - 1)
+  const lastGroupIndex = Math.min(groups.length - 1, targetGroupIndex + 1)
+  const firstBoardIndex = groups[firstGroupIndex].startIndex
+  const lastBoardIndex = groups[lastGroupIndex].endIndex
+  const damage = targetInstance.card.cost
+  const affectedCreatures = state.board.creatures.slice(
+    firstBoardIndex,
+    lastBoardIndex + 1,
+  )
+  const damageMarkers = affectedCreatures.map(({ cardId }) => ({ cardId, damage }))
+  const destroyedCardIds = affectedCreatures.flatMap(({ cardId }) =>
+    damage >= CreatureRules.fromCardId(state, cardId).getEffectiveStats().defense
+      ? [cardId]
+      : [],
+  )
+
+  return {
+    ...state,
+    pendingCombat: {
+      damageMarkers,
+      destroyedCardIds,
+      defendingPlayerId: casterId,
+      playerWasHit: false,
+      playerDamage: 0,
+      endsTurnAfterResolution: false,
+    },
+  }
+}
+
 const applyLifeCycle = (state: GameState, casterId: PlayerId): GameState => {
   const destroyedCardIds = state.board.creatures.flatMap(({ cardId }) => {
     const instance = getCardInstance(state, cardId)
@@ -1219,6 +1274,18 @@ export class GameManager {
               }]
             : []
         })
+      case 'selfDestructOrder':
+        return manager.state.board.creatures.flatMap(({ cardId: targetCardId }) => {
+          const targetInstance = getCardInstance(manager.state, targetCardId)
+          return targetInstance.ownerId === activePlayer.id &&
+            targetInstance.card.kind === 'creature'
+            ? [{
+                type: 'playSpell',
+                cardId,
+                target: { kind: 'creature', cardId: targetCardId },
+              }]
+            : []
+        })
       default:
         return [{ type: 'playSpell', cardId }]
     }
@@ -1494,6 +1561,13 @@ export class GameManager {
         return GameManager.from(applyTransfer(stateAfterSpell, target))
       case 'lifeCycle':
         return GameManager.from(applyLifeCycle(stateAfterSpell, activePlayer.id))
+      case 'selfDestructOrder':
+        if (target?.kind !== 'creature') {
+          throw new Error('Self-destruct order requires a creature target.')
+        }
+        return GameManager.from(
+          applySelfDestructOrder(stateAfterSpell, activePlayer.id, target),
+        )
       default:
         return GameManager.from(stateAfterSpell)
     }

@@ -60,6 +60,7 @@ export type SpellEffect =
   | { type: 'fireballAssault' }
   | { type: 'transfer' }
   | { type: 'lifeCycle' }
+  | { type: 'selfDestructOrder' }
 
 export type SpellCard = CardBase & {
   kind: 'spell'

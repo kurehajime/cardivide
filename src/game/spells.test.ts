@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { CARD_DEFINITION_IDS } from './cards'
+import { STANDARD_DECK_LIST } from './decks'
 import { GameManager, assertValidGameState } from './GameManager'
 import { THEME_DECK_BY_ID, THEME_DECK_IDS } from './themeDecks'
 import type { CardInstanceId, GameState, PlayerId } from './types'
@@ -101,6 +102,12 @@ const createThemeManager = (
   GameManager.create(KEEP_ORDER_RANDOM, {
     playerA: THEME_DECK_BY_ID[playerDeckId].cardDefinitionIds,
     playerB: THEME_DECK_BY_ID[THEME_DECK_IDS.RED_BLUE_SKIRMISH].cardDefinitionIds,
+  })
+
+const createSelfDestructManager = (): GameManager =>
+  GameManager.create(KEEP_ORDER_RANDOM, {
+    playerA: [CARD_ID.SELF_DESTRUCT_ORDER, ...STANDARD_DECK_LIST.slice(1)],
+    playerB: STANDARD_DECK_LIST,
   })
 
 describe('spell rules', () => {
@@ -549,6 +556,108 @@ describe('spell rules', () => {
       expect.arrayContaining([greenCreature, vanishingGreenCreature]),
     )
     expect(manager.state.players.playerA.placedSpell?.cardId).toBe(lifeCycle)
+    expect(() => assertValidGameState(manager.state)).not.toThrow()
+  })
+
+  it('damages the chosen creature group and both adjacent groups with self-destruct order', () => {
+    const initial = createSelfDestructManager()
+    const selfDestructOrder = findDefinition(
+      initial.state,
+      'playerA',
+      CARD_ID.SELF_DESTRUCT_ORDER,
+    )
+    const selectedDragon = findDefinition(
+      initial.state,
+      'playerA',
+      CARD_ID.EXHAUSTED_VOLCANO_DRAGON,
+    )
+    const survivingWhale = findDefinition(
+      initial.state,
+      'playerA',
+      CARD_ID.EPHEMERAL_DEEP_WHALE,
+    )
+    const unaffectedScout = findDefinition(
+      initial.state,
+      'playerA',
+      CARD_ID.TIDEWAY_SCOUT,
+    )
+    const [leftEnemy, rightEnemy] = findCardIds(
+      initial.state,
+      'playerB',
+      (cardId) =>
+        initial.state.cards[cardId].card.definitionId === CARD_ID.SPARK_SWORDSMAN,
+      2,
+    )
+    let manager = configureState(initial, {
+      hands: { playerA: [selfDestructOrder] },
+      board: [
+        leftEnemy,
+        selectedDragon,
+        survivingWhale,
+        rightEnemy,
+        unaffectedScout,
+      ],
+      mana: { playerA: 0 },
+    })
+
+    expect(GameManager.getSpellPlayActions(manager, selfDestructOrder)).toEqual([
+      {
+        type: 'playSpell',
+        cardId: selfDestructOrder,
+        target: { kind: 'creature', cardId: selectedDragon },
+      },
+      {
+        type: 'playSpell',
+        cardId: selfDestructOrder,
+        target: { kind: 'creature', cardId: survivingWhale },
+      },
+      {
+        type: 'playSpell',
+        cardId: selfDestructOrder,
+        target: { kind: 'creature', cardId: unaffectedScout },
+      },
+    ])
+
+    manager = GameManager.playSpell(manager, selfDestructOrder, {
+      kind: 'creature',
+      cardId: selectedDragon,
+    })
+
+    expect(manager.state.players.playerA.mana).toBe(0)
+    expect(manager.state.players.playerA.placedSpell).toEqual({
+      cardId: selfDestructOrder,
+      effectAmount: 0,
+    })
+    expect(manager.state.pendingCombat).toMatchObject({
+      damageMarkers: [
+        { cardId: leftEnemy, damage: 5 },
+        { cardId: selectedDragon, damage: 5 },
+        { cardId: survivingWhale, damage: 5 },
+        { cardId: rightEnemy, damage: 5 },
+      ],
+      destroyedCardIds: [leftEnemy, selectedDragon, rightEnemy],
+      playerWasHit: false,
+      playerDamage: 0,
+      endsTurnAfterResolution: false,
+    })
+    expect(manager.state.players.playerA.hp).toBe(20)
+    expect(manager.state.players.playerB.hp).toBe(20)
+
+    manager = GameManager.finishCombat(manager)
+
+    expect(manager.state.turn).toBe(10)
+    expect(manager.state.activePlayerId).toBe('playerA')
+    expect(manager.state.phase).toBe('main')
+    expect(manager.state.board.creatures.map(({ cardId }) => cardId)).toEqual([
+      survivingWhale,
+      unaffectedScout,
+    ])
+    expect(manager.state.players.playerA.mana).toBe(0)
+    expect(manager.state.players.playerB.mana).toBe(2)
+    expect(manager.state.players.playerA.discard).toContain(selectedDragon)
+    expect(manager.state.players.playerB.discard).toEqual(
+      expect.arrayContaining([leftEnemy, rightEnemy]),
+    )
     expect(() => assertValidGameState(manager.state)).not.toThrow()
   })
 })
