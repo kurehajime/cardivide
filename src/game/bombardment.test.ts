@@ -67,8 +67,8 @@ const passTurn = (manager: GameManager): GameManager => {
 describe('bombardment rules', () => {
   it('registers Cannon as a scenario reward and describes its shared keyword', () => {
     expect(EXPANSION_CARD_DEFINITION_IDS).toContain(ID.CANNON)
-    expect(formatAbility({ type: 'bombardment', damage: 5 })).toBe('砲撃5')
-    expect(describeAbility({ type: 'bombardment', damage: 5 })).toContain('シールドの影響は受けない')
+    expect(formatAbility({ type: 'bombardment', damage: 6 })).toBe('砲撃6')
+    expect(describeAbility({ type: 'bombardment', damage: 6 })).toContain('シールドの影響は受けない')
   })
 
   it('fires only on the next own upkeep, once, and shows damage before resolving it', () => {
@@ -82,13 +82,13 @@ describe('bombardment rules', () => {
     const pending = passTurn(opponentTurn)
     expect(pending.state.activePlayerId).toBe('playerA')
     expect(pending.state.pendingCombat).toMatchObject({
-      playerWasHit: true, playerDamage: 5,
+      playerWasHit: true, playerDamage: 6,
       defendingPlayerId: 'playerB', endsTurnAfterResolution: false,
     })
     expect(pending.state.players.playerB.hp).toBe(20)
     expect(GameManager.getLegalActions(pending)).toEqual([{ type: 'finishCombat' }])
     const resolved = GameManager.finishCombat(pending)
-    expect(resolved.state.players.playerB.hp).toBe(15)
+    expect(resolved.state.players.playerB.hp).toBe(14)
     expect(resolved.state.phase).toBe('main')
     expect(resolved.state.activePlayerId).toBe('playerA')
     expect(resolved.state.turn).toBe(pending.state.turn)
@@ -105,9 +105,9 @@ describe('bombardment rules', () => {
       activePlayerId: owner, phase: 'keepUp',
     })
     expect(GameManager.getPlayerBarrier(manager, other)).toBe(2)
-    expect(GameManager.getKeepUpPlayerDamage(manager, owner)).toBe(10)
+    expect(GameManager.getKeepUpPlayerDamage(manager, owner)).toBe(12)
     const resolved = GameManager.finishCombat(GameManager.resolveKeepUp(manager))
-    expect(resolved.state.players[other].hp).toBe(10)
+    expect(resolved.state.players[other].hp).toBe(8)
     expect(resolved.state.players[owner].hp).toBe(20)
     expect(() => assertValidGameState(resolved.state)).not.toThrow()
   })
@@ -115,11 +115,11 @@ describe('bombardment rules', () => {
   it('ends the game on lethal bombardment without another action or another tick', () => {
     const manager = createPosition({
       board: [['playerA', ID.CANNON], ['playerB', ID.CANNON]],
-      phase: 'keepUp', hp: [5, 5],
+      phase: 'keepUp', hp: [6, 6],
     })
     const resolved = GameManager.finishCombat(GameManager.resolveKeepUp(manager))
     expect(GameManager.getWinner(resolved)).toBe('playerA')
-    expect(resolved.state.players.playerA.hp).toBe(5)
+    expect(resolved.state.players.playerA.hp).toBe(6)
     expect(new GameAI().chooseAction(resolved)).toBeNull()
   })
 
@@ -133,6 +133,21 @@ describe('bombardment rules', () => {
     expect(resolved.state.pendingCombat).toBeNull()
     expect(GameManager.getKeepUpPlayerDamage(resolved, 'playerB')).toBe(0)
     expect(resolved.state.players.playerB.discard).toHaveLength(1)
+  })
+
+  it('refunds one mana for a destroyed cannon in both the AI preview and real combat', () => {
+    const manager = createPosition({
+      board: [['playerA', ID.SPARK_SWORDSMAN], ['playerB', ID.CANNON]], mana: 4,
+    })
+    const cannon = manager.state.board.creatures[1].cardId
+    expect(GameManager.getDestructionManaRefund(manager, cannon)).toBe(1)
+    const preview = GameManager.previewCombat(manager, 0, 0)
+    expect(preview.nextState.players.playerB.mana).toBe(5)
+    expect(preview.nextState.players.playerB.discard).toContain(cannon)
+    const resolved = GameManager.finishCombat(GameManager.attackGroup(manager, 0, 0))
+    expect(resolved.state.players.playerB.mana).toBe(7)
+    expect(resolved.state.players.playerB.discard).toContain(cannon)
+    expect(resolved.state.pendingCombat).toBeNull()
   })
 
   it('does not start an enemy upkeep after a winning attack', () => {
@@ -155,13 +170,13 @@ describe('bombardment rules', () => {
     const bought = GameManager.playSpell(manager, manager.state.players.playerA.hand[0], {
       kind: 'creature', cardId: cannon,
     })
-    expect(GameManager.getKeepUpPlayerDamage(bought, 'playerA')).toBe(5)
+    expect(GameManager.getKeepUpPlayerDamage(bought, 'playerA')).toBe(6)
     expect(GameManager.getKeepUpPlayerDamage(bought, 'playerB')).toBe(0)
     const enemyTurn = passTurn(bought)
     expect(enemyTurn.state.pendingCombat).toBeNull()
     const fired = GameManager.finishCombat(passTurn(enemyTurn))
     expect(fired.state.players.playerA.hp).toBe(20)
-    expect(fired.state.players.playerB.hp).toBe(15)
+    expect(fired.state.players.playerB.hp).toBe(14)
     expect(new CreatureRules(bought.state, 0).ownerId).toBe('playerA')
   })
 })
@@ -172,11 +187,12 @@ describe('bombardment AI', () => {
       board: [['playerA', ID.CANNON]], enemyHand: [enemyCard],
     })
     const manager = make(ID.SPARK_SWORDSMAN)
-    expect(estimateBombardment(manager, 'playerA')).toEqual({ damage: 0.5, protectedDamage: 0 })
+    expect(estimateBombardment(manager, 'playerA').damage).toBeCloseTo(0.6)
+    expect(estimateBombardment(manager, 'playerA').protectedDamage).toBe(0)
     expect(estimateBombardment(make(ID.RETURN_FIRE), 'playerA')).toEqual(
       estimateBombardment(manager, 'playerA'),
     )
-    expect(evaluateBase(manager, 'playerA').upkeepDamage).toBeCloseTo(1.5)
+    expect(evaluateBase(manager, 'playerA').upkeepDamage).toBeCloseTo(1.8)
     expect(manager.state.players.playerB.hp).toBe(20)
   })
 
@@ -188,12 +204,12 @@ describe('bombardment AI', () => {
     const manager = createPosition({
       board, hand: [ID.SPARK_SWORDSMAN], enemyHand: [ID.SPARK_SWORDSMAN],
     })
-    expect(estimateBombardment(manager, owner)).toEqual({ damage: 5, protectedDamage: 5 })
+    expect(estimateBombardment(manager, owner)).toEqual({ damage: 6, protectedDamage: 6 })
     const withoutFront = createPosition({
       board: board.filter((_, index) => index !== (owner === 'playerA' ? 2 : 0)),
       hand: [ID.SPARK_SWORDSMAN], enemyHand: [ID.SPARK_SWORDSMAN],
     })
-    expect(estimateBombardment(withoutFront, owner).damage).toBe(0.5)
+    expect(estimateBombardment(withoutFront, owner).damage).toBeCloseTo(0.6)
   })
 
   it('uses capture when judging whether a defender can be bypassed', () => {
@@ -202,7 +218,7 @@ describe('bombardment AI', () => {
       enemyHand: [ID.SPARK_SWORDSMAN],
     })
     expect(GameManager.getRequiredMarchForInsert(manager, 'playerB', 1)).toBe(2)
-    expect(estimateBombardment(manager, 'playerA').damage).toBe(5)
+    expect(estimateBombardment(manager, 'playerA').damage).toBe(6)
   })
 
   it('counts unknown draws as reinforcement risk, but not an empty hand and deck', () => {
@@ -217,9 +233,9 @@ describe('bombardment AI', () => {
         playerB: { ...enemy, hand: [], deck: enemy.hand },
       },
     })
-    expect(estimateBombardment(beforeDraw, 'playerA').damage).toBe(0.5)
+    expect(estimateBombardment(beforeDraw, 'playerA').damage).toBeCloseTo(0.6)
     const exhausted = createPosition({ board: [['playerA', ID.CANNON]] })
-    expect(estimateBombardment(exhausted, 'playerA').damage).toBe(5)
+    expect(estimateBombardment(exhausted, 'playerA').damage).toBe(6)
   })
 
   it('prefers an immediate attacker over an unsupported opening cannon', () => {
@@ -236,9 +252,9 @@ describe('bombardment AI', () => {
       board: [['playerA', ID.CANNON]], enemyHand: [ID.SPARK_SWORDSMAN],
     })
     const snapshot = JSON.stringify(manager.state)
-    expect(evaluateBattleEntry(manager, 'playerA').total).toBeCloseTo(3.5)
+    expect(evaluateBattleEntry(manager, 'playerA').total).toBeCloseTo(3.8)
     const enemyTurn = GameManager.from({ ...manager.state, activePlayerId: 'playerB' })
-    expect(evaluateBattleEntry(enemyTurn, 'playerA').total).toBeCloseTo(4)
+    expect(evaluateBattleEntry(enemyTurn, 'playerA').total).toBeCloseTo(4.4)
     expect(JSON.stringify(manager.state)).toBe(snapshot)
   })
 
@@ -250,7 +266,7 @@ describe('bombardment AI', () => {
       ],
       enemyHand: [ID.SPARK_SWORDSMAN],
     })
-    expect(estimateBombardment(manager, 'playerA')).toEqual({ damage: 5.5, protectedDamage: 5 })
+    expect(estimateBombardment(manager, 'playerA')).toEqual({ damage: 6.6, protectedDamage: 6 })
   })
 
   it('does not call an exposed future bombardment a guaranteed victory', () => {
@@ -263,20 +279,20 @@ describe('bombardment AI', () => {
 
   it('does not discount actual upkeep damage or a lethal shot immediately after its attack', () => {
     const manager = createPosition({
-      board: [['playerB', ID.CANNON]], hand: [ID.SPARK_SWORDSMAN], hp: [5, 20], phase: 'battle',
+      board: [['playerB', ID.CANNON]], hand: [ID.SPARK_SWORDSMAN], hp: [6, 20], phase: 'battle',
     })
     expect(evaluateBattleEntry(manager, 'playerA').total).toBe(-10_000)
     const pending = passTurn(manager)
-    expect(pending.state.pendingCombat?.playerDamage).toBe(5)
+    expect(pending.state.pendingCombat?.playerDamage).toBe(6)
     expect(GameManager.getWinner(GameManager.finishCombat(pending))).toBe('playerB')
   })
 
   it('values a future tick at 0.75, then counts an imminent tick only as HP', () => {
     const ownTurn = createPosition({ board: [['playerA', ID.CANNON]] })
-    expect(evaluateBase(ownTurn, 'playerA').upkeepDamage).toBe(15)
-    expect(evaluateBattleEntry(ownTurn, 'playerA').total).toBe(17)
+    expect(evaluateBase(ownTurn, 'playerA').upkeepDamage).toBe(18)
+    expect(evaluateBattleEntry(ownTurn, 'playerA').total).toBe(20)
     const enemyTurn = GameManager.from({ ...ownTurn.state, activePlayerId: 'playerB' })
-    expect(evaluateBattleEntry(enemyTurn, 'playerA').total).toBe(22)
+    expect(evaluateBattleEntry(enemyTurn, 'playerA').total).toBe(26)
     expect(ownTurn.state.players.playerB.hp).toBe(20)
   })
 
