@@ -296,7 +296,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.ASH_DISMANTLER,
-    name: '攻城砲',
+    name: '巨大なワーム',
     kind: 'creature',
     color: 'red',
     cost: 4,
@@ -384,7 +384,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.CANNON,
-    name: 'キャノン砲',
+    name: '攻城砲',
     kind: 'creature',
     color: 'red',
     cost: 2,
