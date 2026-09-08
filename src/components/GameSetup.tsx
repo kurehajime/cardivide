@@ -8,6 +8,7 @@ import {
   type ThemeDeck,
   type ThemeDeckId,
 } from '../game'
+import { getDeckBackgroundStyle } from './deckBackground'
 
 export type BattleMode = 'scenario' | 'free'
 
@@ -172,7 +173,10 @@ const GameSetup = ({
   const [difficulty, setDifficulty] = useState<AiDifficulty>(initialDifficulty)
 
   return (
-    <main className="setup-shell">
+    <main
+      className="setup-shell"
+      style={getDeckBackgroundStyle(playerDeckId)}
+    >
       <header className="setup-header">
         <h1>CARDIVIDE</h1>
         <span>対戦設定</span>

@@ -1,22 +1,8 @@
 :root {
-  --table-background:
-    radial-gradient(ellipse 51% 75% at 53% 32%, #01cffc, transparent 70%),
-    radial-gradient(ellipse 64% 66% at -7% 54%, #26da73, transparent 70%),
-    radial-gradient(ellipse 65% 70% at 54% 37%, #f534c0, transparent 70%),
-    radial-gradient(ellipse 59% 88% at 20% 65%, #f534c0, transparent 70%),
-    radial-gradient(ellipse 68% 87% at 32% 12%, #26da73, transparent 70%),
-    radial-gradient(ellipse 81% 60% at -4% 39%, #26da73, transparent 70%),
-    radial-gradient(ellipse 49% 56% at 27% 86%, #ecc1a3, transparent 70%),
-    radial-gradient(ellipse 54% 76% at 7% 64%, #ecc1a3, transparent 70%),
-    radial-gradient(ellipse 48% 89% at 2% 22%, #ecc1a3, transparent 70%),
-    radial-gradient(ellipse 85% 77% at 10% 56%, #f534c0, transparent 70%),
-    radial-gradient(ellipse 48% 62% at 75% 52%, #01cffc, transparent 70%),
-    radial-gradient(ellipse 83% 88% at 43% 36%, #01cffc, transparent 70%);
-
   font: 16px/1.45 system-ui, 'Segoe UI', Roboto, sans-serif;
   letter-spacing: 0;
   color: #17140f;
-  background: #01cffc;
+  background: #b9e6f2;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -37,17 +23,6 @@ body {
   min-height: 100dvh;
   margin: 0;
   overflow-x: hidden;
-}
-
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  background-color: #01cffc;
-  background-image: var(--table-background);
-  filter: saturate(125%);
-  pointer-events: none;
 }
 
 button {

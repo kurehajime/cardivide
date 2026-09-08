@@ -25,6 +25,7 @@ import GameSetup, {
 import HandView from './HandView'
 import PhaseBar from './PhaseBar'
 import ScenarioProgressDialog from './ScenarioProgressDialog'
+import { getDeckBackgroundStyle } from './deckBackground'
 
 const COMBAT_EFFECT_DURATION_MS = 500
 const AI_ACTION_DELAY_MS = 700
@@ -363,7 +364,10 @@ const GameSession = ({
       transition={{ type: 'spring', stiffness: 420, damping: 36, mass: 0.8 }}
     >
       <LayoutGroup id="game-card-layout">
-        <main className="game-shell">
+        <main
+          className="game-shell"
+          style={getDeckBackgroundStyle(comDeckId)}
+        >
           <header className="game-header">
             <h1>CARDIVIDE</h1>
             <div className="game-header-controls">
