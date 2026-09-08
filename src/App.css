@@ -58,8 +58,8 @@
     calc(24px + env(safe-area-inset-right, 0px))
     calc(24px + env(safe-area-inset-bottom, 0px))
     calc(24px + env(safe-area-inset-left, 0px));
-  background: var(--table-background);
-  color: #f8f3ec;
+  background: transparent;
+  color: #243e43;
 }
 
 .setup-header,
@@ -86,7 +86,7 @@
 }
 
 .setup-header span {
-  color: #eadfd4;
+  color: #4b666b;
   font-size: 14px;
   font-weight: 700;
 }
@@ -460,8 +460,8 @@
     calc(18px + env(safe-area-inset-right, 0px))
     calc(18px + env(safe-area-inset-bottom, 0px))
     calc(18px + env(safe-area-inset-left, 0px));
-  background: var(--table-background);
-  color: #f8f3ec;
+  background: transparent;
+  color: #243e43;
 }
 
 .game-shell::before {
@@ -472,7 +472,7 @@
   background-image: var(--surface-noise);
   background-size: 80px 80px;
   mix-blend-mode: soft-light;
-  opacity: 0.42;
+  opacity: 0.12;
   pointer-events: none;
 }
 
@@ -485,7 +485,7 @@
 .board-lane-scroll,
 .board-lane-grid,
 .hand-panel {
-  scrollbar-color: #432d22 rgb(73 43 29 / 32%);
+  scrollbar-color: #577c83 rgb(66 107 116 / 14%);
   scrollbar-width: auto;
 }
 
@@ -502,7 +502,7 @@
 .board-lane-grid::-webkit-scrollbar-track,
 .hand-panel::-webkit-scrollbar-track {
   border-radius: 5px;
-  background: rgb(73 43 29 / 32%);
+  background: rgb(66 107 116 / 14%);
 }
 
 .board-panel::-webkit-scrollbar-thumb,
@@ -511,16 +511,16 @@
 .hand-panel::-webkit-scrollbar-thumb {
   min-width: 48px;
   min-height: 48px;
-  border: 2px solid #9e745b;
+  border: 2px solid #c7e7eb;
   border-radius: 5px;
-  background: #432d22;
+  background: #577c83;
 }
 
 .board-panel::-webkit-scrollbar-thumb:hover,
 .board-lane-scroll::-webkit-scrollbar-thumb:hover,
 .board-lane-grid::-webkit-scrollbar-thumb:hover,
 .hand-panel::-webkit-scrollbar-thumb:hover {
-  background: #5b3b2b;
+  background: #3d626a;
 }
 
 .board-panel::-webkit-scrollbar-corner,
@@ -1238,7 +1238,7 @@
 }
 
 .board-spell-empty>.card-empty {
-  border: 2px dashed rgb(255 255 255 / 45%);
+  border: 2px dashed rgb(66 107 116 / 45%);
   background: transparent;
   box-shadow: none;
 }
@@ -1291,7 +1291,7 @@
   background-repeat: repeat-x;
   background-position: calc(-1 * var(--board-lane-arrow-size)) center;
   background-size: var(--board-lane-arrow-size) var(--board-lane-arrow-size);
-  opacity: 0.14;
+  opacity: 0.24;
   pointer-events: none;
   animation: board-lane-flow 1.8s linear infinite;
 }
