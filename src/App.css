@@ -1966,6 +1966,88 @@
   fill: #fcfdff;
 }
 
+.card-foil-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.card-foil-rainbow {
+  background-image: repeating-linear-gradient(
+    125deg,
+    #ff85cb 0%, #ffe879 8%, #83f4bc 16%,
+    #7cdeff 24%, #b19aff 32%, #ff85cb 40%
+  );
+  background-size: 180% 180%;
+  mix-blend-mode: multiply;
+  filter: brightness(1.18);
+  background-position: 15% 25%;
+  opacity: 0.04;
+  animation:
+    card-foil-color-shift 8s ease-in-out infinite,
+    card-foil-color-flash 2.4s ease-in-out infinite;
+}
+
+.card-foil-grain {
+  background-image:
+    repeating-linear-gradient(35deg, #fff9 0 1px, #172d5433 1px 3px, transparent 3px 7px),
+    repeating-linear-gradient(125deg, #fff8 0 1px, transparent 1px 6px),
+    linear-gradient(120deg, #486bbb, #e9a9da, #95dfd5, #eee1a0, #6e8bd5);
+  background-size: 9px 13px, 13px 9px, 250% 250%;
+  background-blend-mode: soft-light, soft-light, normal;
+  mix-blend-mode: soft-light;
+  opacity: 0.08;
+  animation: card-foil-texture-shift 11s ease-in-out infinite;
+}
+
+.card-foil-glare {
+  background-image: radial-gradient(ellipse at center, #fff 0%, #ffffffaa 9%, #ffffff00 34%);
+  background-size: 200% 200%;
+  background-position: 15% 25%;
+  background-repeat: no-repeat;
+  mix-blend-mode: screen;
+  opacity: 0.06;
+  animation: card-foil-reflection 2.4s ease-in-out infinite;
+}
+
+@keyframes card-foil-color-shift {
+  0%, 100% { background-position: 15% 25%; }
+  50% { background-position: 85% 75%; }
+}
+
+@keyframes card-foil-color-flash {
+  0%, 40%, 100% { opacity: 0.04; }
+  10% { opacity: 0.06; }
+  18% { opacity: 0.32; }
+  28% { opacity: 0.1; }
+}
+
+@keyframes card-foil-texture-shift {
+  0%, 100% { background-position: 0 0, 0 0, 20% 30%; }
+  50% { background-position: 5px 8px, -8px 5px, 80% 70%; }
+}
+
+@keyframes card-foil-reflection {
+  0%, 100% { background-position: 0% 15%; opacity: 0.06; }
+  10% { background-position: 15% 25%; opacity: 0.08; }
+  18% { background-position: 40% 40%; opacity: 0.68; }
+  28% { background-position: 85% 65%; opacity: 0.15; }
+  40%, 75% { background-position: 100% 85%; opacity: 0.04; }
+}
+
+.hand-card-unavailable > .card-foil {
+  filter: none;
+  opacity: 1;
+  background: transparent;
+}
+
+.hand-card-unavailable > .card-foil > .card-face {
+  filter: grayscale(0.85);
+  opacity: 0.42;
+}
+
 .card-face-cost-circle {
   fill: var(--card-accent);
 }
@@ -2902,6 +2984,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .card-foil-layer {
+    animation: none;
+  }
+
   .board-lane-flow {
     animation: none;
     background-position-x: center;

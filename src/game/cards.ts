@@ -153,6 +153,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.EXHAUSTED_VOLCANO_DRAGON,
+    foil: true,
     name: 'ドラゴン',
     kind: 'creature',
     color: 'red',
@@ -307,6 +308,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.DEEP_TIDE_INTERCEPTOR,
+    foil: true,
     name: 'クラーケン',
     kind: 'creature',
     color: 'blue',
@@ -329,6 +331,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.FOREST_CAGE_BEASTMASTER,
+    foil: true,
     name: '大蜘蛛',
     kind: 'creature',
     color: 'green',
@@ -351,6 +354,7 @@ export const CREATURE_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.MEPHISTOPHELES,
+    foil: true,
     name: 'メフィストフェレス',
     kind: 'creature',
     color: 'red',
@@ -443,6 +447,7 @@ export const SPELL_CARDS = [
   },
   {
     definitionId: CARD_DEFINITION_IDS.LIFE_CYCLE,
+    foil: true,
     name: '生命の循環',
     kind: 'spell',
     cost: 0,

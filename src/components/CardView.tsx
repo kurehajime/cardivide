@@ -8,6 +8,7 @@ import {
   type CSSProperties,
 } from 'react'
 import { createPortal } from 'react-dom'
+import CardFoil from './CardFoil'
 import {
   describeAbility,
   formatAbility,
@@ -499,7 +500,7 @@ const CardView = ({
   return (
     <article
       ref={cardRef}
-      className={`card-view card-${colorClass} ${compact ? 'card-compact' : ''}`}
+      className={`card-view card-${colorClass} ${card.foil ? 'card-foil' : ''} ${compact ? 'card-compact' : ''}`}
       aria-describedby={detailVisible ? detailId : undefined}
       aria-label={`${card.name}${hasStatModifier ? `、${modifierLabel}` : ''}`}
       tabIndex={nestedInButton ? undefined : 0}
@@ -516,6 +517,7 @@ const CardView = ({
         jitterArt={jitterArt}
         statModifier={statModifier}
       />
+      {card.foil && <CardFoil />}
       {detailVisible &&
         createPortal(
           <div

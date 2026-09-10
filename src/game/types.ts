@@ -38,6 +38,7 @@ export type ActivatedAbilityType = Extract<
 
 export type CardBase = {
   definitionId: CardDefinitionId
+  foil?: boolean
   name: string
   kind: CardKind
   cost: number
