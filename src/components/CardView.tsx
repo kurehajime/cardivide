@@ -9,6 +9,7 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import CardFoil from './CardFoil'
+import CardSurface from './CardSurface'
 import {
   describeAbility,
   formatAbility,
@@ -500,7 +501,7 @@ const CardView = ({
   return (
     <article
       ref={cardRef}
-      className={`card-view card-${colorClass} ${card.foil ? 'card-foil' : ''} ${compact ? 'card-compact' : ''}`}
+      className={`card-view card-front card-${colorClass} ${card.foil ? 'card-foil' : ''} ${compact ? 'card-compact' : ''}`}
       aria-describedby={detailVisible ? detailId : undefined}
       aria-label={`${card.name}${hasStatModifier ? `、${modifierLabel}` : ''}`}
       tabIndex={nestedInButton ? undefined : 0}
@@ -510,14 +511,16 @@ const CardView = ({
       onPointerEnter={openDetail}
       onPointerLeave={closeDetail}
     >
-      <CardFace
-        artAttackAnimation={artAttackAnimation}
-        card={card}
-        colorLabel={colorLabel}
-        jitterArt={jitterArt}
-        statModifier={statModifier}
-      />
-      {card.foil && <CardFoil />}
+      <CardSurface cardRef={cardRef} foil={card.foil === true}>
+        <CardFace
+          artAttackAnimation={artAttackAnimation}
+          card={card}
+          colorLabel={colorLabel}
+          jitterArt={jitterArt}
+          statModifier={statModifier}
+        />
+        {card.foil && <CardFoil />}
+      </CardSurface>
       {detailVisible &&
         createPortal(
           <div

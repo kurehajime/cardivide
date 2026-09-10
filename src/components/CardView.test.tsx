@@ -20,6 +20,8 @@ describe('card foil', () => {
   it.each(CARD_LIST)('keeps $name artwork and only adds foil to designated fronts', (card) => {
     const html = renderToStaticMarkup(<CardView card={card} />)
     expect(html).toContain('card-face-art-image')
+    expect(html).toContain('card-surface')
+    expect(html.includes('card-reflection')).toBe(card.foil !== true)
     expect(html.includes('card-foil-rainbow')).toBe(card.foil === true)
     expect(html.includes('card-foil-glare')).toBe(card.foil === true)
   })
@@ -28,5 +30,7 @@ describe('card foil', () => {
     const card = CARD_LIST.find((candidate) => candidate.foil)!
     expect(renderToStaticMarkup(<CardView card={card} faceDown />)).not.toContain('card-foil')
     expect(renderToStaticMarkup(<CardView card={null} />)).not.toContain('card-foil')
+    expect(renderToStaticMarkup(<CardView card={card} faceDown />)).not.toContain('card-surface')
+    expect(renderToStaticMarkup(<CardView card={null} />)).not.toContain('card-reflection')
   })
 })

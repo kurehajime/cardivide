@@ -1250,7 +1250,7 @@
 .board-spell>.card-view {
   width: 140px;
   max-width: 100%;
-  box-shadow: 0 9px 20px rgb(18 22 19 / 48%);
+  --card-surface-shadow: 0 9px 20px rgb(18 22 19 / 48%);
 }
 
 .board-spell-empty>.card-empty {
@@ -1376,7 +1376,7 @@
 
 .board-card-content>.card-view {
   width: 100%;
-  box-shadow: 0 9px 20px rgb(18 22 19 / 48%);
+  --card-surface-shadow: 0 9px 20px rgb(18 22 19 / 48%);
 }
 
 .board-ability-actions {
@@ -1911,7 +1911,8 @@
   isolation: isolate;
 }
 
-.card-view:not(.card-empty)::after {
+.card-back::after,
+.card-surface::after {
   content: '';
   position: absolute;
   z-index: 2;
@@ -1966,6 +1967,50 @@
   fill: #fcfdff;
 }
 
+.card-front {
+  perspective: 700px;
+  background: transparent;
+}
+
+.card-surface {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  isolation: isolate;
+  pointer-events: none;
+  box-shadow: var(--card-surface-shadow, none);
+}
+
+.card-reflection {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image: radial-gradient(ellipse at var(--card-pointer-x, 50%) var(--card-pointer-y, 50%), #fff 0%, #ffffff88 18%, transparent 65%);
+  mix-blend-mode: screen;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.card-surface[data-hovered] > .card-reflection {
+  opacity: 0.34;
+}
+
+.card-surface[data-hovered] > .card-foil-layer {
+  background-position: var(--card-pointer-x) var(--card-pointer-y);
+}
+
+.card-surface[data-hovered] > .card-foil-rainbow {
+  opacity: 0.28;
+}
+
+.card-surface[data-hovered] > .card-foil-glare {
+  background-image: radial-gradient(ellipse at var(--card-pointer-x) var(--card-pointer-y), #fff 0%, #ffffffaa 9%, transparent 55%);
+  background-size: 100% 100%;
+  opacity: 0.4;
+}
+
 .card-foil-layer {
   position: absolute;
   inset: 0;
@@ -1985,9 +2030,6 @@
   filter: brightness(1.18);
   background-position: 15% 25%;
   opacity: 0.04;
-  animation:
-    card-foil-color-shift 8s ease-in-out infinite,
-    card-foil-color-flash 2.4s ease-in-out infinite;
 }
 
 .card-foil-grain {
@@ -1999,7 +2041,6 @@
   background-blend-mode: soft-light, soft-light, normal;
   mix-blend-mode: soft-light;
   opacity: 0.08;
-  animation: card-foil-texture-shift 11s ease-in-out infinite;
 }
 
 .card-foil-glare {
@@ -2009,32 +2050,6 @@
   background-repeat: no-repeat;
   mix-blend-mode: screen;
   opacity: 0.06;
-  animation: card-foil-reflection 2.4s ease-in-out infinite;
-}
-
-@keyframes card-foil-color-shift {
-  0%, 100% { background-position: 15% 25%; }
-  50% { background-position: 85% 75%; }
-}
-
-@keyframes card-foil-color-flash {
-  0%, 40%, 100% { opacity: 0.04; }
-  10% { opacity: 0.06; }
-  18% { opacity: 0.32; }
-  28% { opacity: 0.1; }
-}
-
-@keyframes card-foil-texture-shift {
-  0%, 100% { background-position: 0 0, 0 0, 20% 30%; }
-  50% { background-position: 5px 8px, -8px 5px, 80% 70%; }
-}
-
-@keyframes card-foil-reflection {
-  0%, 100% { background-position: 0% 15%; opacity: 0.06; }
-  10% { background-position: 15% 25%; opacity: 0.08; }
-  18% { background-position: 40% 40%; opacity: 0.68; }
-  28% { background-position: 85% 65%; opacity: 0.15; }
-  40%, 75% { background-position: 100% 85%; opacity: 0.04; }
 }
 
 .hand-card-unavailable > .card-foil {
@@ -2043,7 +2058,7 @@
   background: transparent;
 }
 
-.hand-card-unavailable > .card-foil > .card-face {
+.hand-card-unavailable > .card-foil > .card-surface > .card-face {
   filter: grayscale(0.85);
   opacity: 0.42;
 }
@@ -2836,7 +2851,7 @@
   .board-spell > .card-view {
     width: 52px;
     max-width: 100%;
-    box-shadow: 0 4px 9px rgb(18 22 19 / 42%);
+    --card-surface-shadow: 0 4px 9px rgb(18 22 19 / 42%);
   }
 
   .board-spell {
@@ -2881,7 +2896,7 @@
   }
 
   .board-card-content > .card-view {
-    box-shadow: 0 4px 9px rgb(18 22 19 / 42%);
+    --card-surface-shadow: 0 4px 9px rgb(18 22 19 / 42%);
   }
 
   .board-insert-slot {
@@ -2984,10 +2999,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .card-foil-layer {
-    animation: none;
-  }
-
   .board-lane-flow {
     animation: none;
     background-position-x: center;
