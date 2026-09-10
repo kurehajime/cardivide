@@ -1903,7 +1903,7 @@
   padding: 0;
   border: 0;
   border-radius: 8px;
-  background: #f7f5ee;
+  background: #fcfdff;
   color: #171a17;
   font-family: 'Shippori Mincho', 'Yu Mincho', 'Hiragino Mincho ProN', serif;
   text-align: left;
@@ -1925,27 +1925,27 @@
 }
 
 .card-red {
-  --card-accent: #ad493d;
-  --card-accent-dark: #642920;
-  --card-tint: #f0d5cf;
+  --card-accent: #b83a50;
+  --card-accent-dark: #922d43;
+  --card-tint: #ffe2e8;
 }
 
 .card-blue {
-  --card-accent: #4675ad;
-  --card-accent-dark: #274665;
-  --card-tint: #d7e4f1;
+  --card-accent: #176fba;
+  --card-accent-dark: #17558b;
+  --card-tint: #dff2ff;
 }
 
 .card-green {
-  --card-accent: #4d805f;
-  --card-accent-dark: #294b35;
-  --card-tint: #d8e8dc;
+  --card-accent: #087e62;
+  --card-accent-dark: #09634d;
+  --card-tint: #dbf6ea;
 }
 
 .card-neutral {
-  --card-accent: #8254a3;
-  --card-accent-dark: #4e2c65;
-  --card-tint: #e7d7ee;
+  --card-accent: #8050b6;
+  --card-accent-dark: #62358f;
+  --card-tint: #eee4ff;
 }
 
 .card-view:focus-visible {
@@ -1963,7 +1963,7 @@
 }
 
 .card-face-base {
-  fill: #f7f5ee;
+  fill: #fcfdff;
 }
 
 .card-face-cost-circle {
