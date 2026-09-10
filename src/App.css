@@ -1250,7 +1250,7 @@
 .board-spell>.card-view {
   width: 140px;
   max-width: 100%;
-  --card-surface-shadow: 0 9px 20px rgb(18 22 19 / 48%);
+  --card-surface-shadow: 0 12px 24px rgb(18 22 19 / 68%);
 }
 
 .board-spell-empty>.card-empty {
@@ -1376,7 +1376,7 @@
 
 .board-card-content>.card-view {
   width: 100%;
-  --card-surface-shadow: 0 9px 20px rgb(18 22 19 / 48%);
+  --card-surface-shadow: 0 12px 24px rgb(18 22 19 / 68%);
 }
 
 .board-ability-actions {
@@ -1867,9 +1867,17 @@
   top: -32px;
 }
 
+.hand-panel-bottom .hand-card-selected > .card-front {
+  --card-surface-shadow: 0 14px 24px rgb(18 22 19 / 65%);
+}
+
 @media (hover: hover) {
   .hand-panel-bottom .hand-card-button:hover:not(.hand-card-selected) {
     top: -6px;
+  }
+
+  .hand-panel-bottom .hand-card-button:hover > .card-front {
+    --card-surface-shadow: 0 14px 24px rgb(18 22 19 / 65%);
   }
 }
 
@@ -1979,6 +1987,7 @@
   isolation: isolate;
   pointer-events: none;
   box-shadow: var(--card-surface-shadow, none);
+  transition: box-shadow 180ms ease;
 }
 
 .card-reflection {
@@ -2851,7 +2860,7 @@
   .board-spell > .card-view {
     width: 52px;
     max-width: 100%;
-    --card-surface-shadow: 0 4px 9px rgb(18 22 19 / 42%);
+    --card-surface-shadow: 0 6px 12px rgb(18 22 19 / 65%);
   }
 
   .board-spell {
@@ -2896,7 +2905,7 @@
   }
 
   .board-card-content > .card-view {
-    --card-surface-shadow: 0 4px 9px rgb(18 22 19 / 42%);
+    --card-surface-shadow: 0 6px 12px rgb(18 22 19 / 65%);
   }
 
   .board-insert-slot {
