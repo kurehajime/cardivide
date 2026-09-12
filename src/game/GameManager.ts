@@ -292,6 +292,32 @@ const getRequiredMarchForInsert = (
   return distance
 }
 
+const getRequiredMarchByInsert = (
+  state: GameState,
+  ownerId: PlayerId,
+  ignoreCapture: boolean,
+): number[] => {
+  const boardLength = state.board.creatures.length
+  const requiredMarch = Array<number>(boardLength + 1)
+  let distance = 0
+
+  // Sweep from our player; either side of an allied creature is a new anchor.
+  for (let offset = 0; offset <= boardLength; offset += 1) {
+    const insertIndex = ownerId === 'playerA' ? offset : boardLength - offset
+    const nextIndex = ownerId === 'playerA' ? insertIndex : insertIndex - 1
+    const hasNext = nextIndex >= 0 && nextIndex < boardLength
+    const nextIsAlly = hasNext && getCreatureOwnerAt(state, nextIndex) === ownerId
+    if (nextIsAlly) distance = 0
+    requiredMarch[insertIndex] = distance
+    if (hasNext && !nextIsAlly) {
+      distance += 1 + (ignoreCapture
+        ? 0
+        : new CreatureRules(state, nextIndex).getOpponentMarchCost(ownerId))
+    }
+  }
+  return requiredMarch
+}
+
 const getSummonOptionsForState = (
   state: GameState,
   ownerId: PlayerId,
@@ -299,21 +325,13 @@ const getSummonOptionsForState = (
   availableMana: number,
 ): SummonOption[] => {
   const board = state.board.creatures
+  const requiredMarchByInsert = getRequiredMarchByInsert(state, ownerId, false)
+  const boardRules = board.map((_, boardIndex) => new CreatureRules(state, boardIndex))
 
   return Array.from({ length: board.length + 1 }, (_, insertIndex) => {
-    const requiredMarch = getRequiredMarchForInsert(
-      state,
-      ownerId,
-      insertIndex,
-      false,
-    )
-    const costModifier = board.reduce(
-      (total, _, boardIndex) =>
-        total +
-        new CreatureRules(state, boardIndex).getSummonCostModifier(
-          ownerId,
-          insertIndex,
-        ),
+    const requiredMarch = requiredMarchByInsert[insertIndex]
+    const costModifier = boardRules.reduce(
+      (total, rules) => total + rules.getSummonCostModifier(ownerId, insertIndex),
       0,
     )
     const effectiveCost = Math.max(0, card.cost + costModifier)
@@ -1176,24 +1194,8 @@ export class GameManager {
     march: number,
     ignoreCapture = false,
   ): number {
-    let reachablePositions = 0
-    for (
-      let insertIndex = 0;
-      insertIndex <= manager.state.board.creatures.length;
-      insertIndex += 1
-    ) {
-      if (
-        getRequiredMarchForInsert(
-          manager.state,
-          playerId,
-          insertIndex,
-          ignoreCapture,
-        ) <= march
-      ) {
-        reachablePositions += 1
-      }
-    }
-    return reachablePositions
+    return getRequiredMarchByInsert(manager.state, playerId, ignoreCapture)
+      .reduce((total, requiredMarch) => total + Number(requiredMarch <= march), 0)
   }
 
   static getRequiredMarchForInsert(

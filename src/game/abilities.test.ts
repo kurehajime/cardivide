@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { GameManager } from './GameManager'
-import { describeAbility } from './CreatureRules'
+import { CreatureRules, describeAbility } from './CreatureRules'
 import {
   getCrossedIndexes,
   isAdjacentInsertToAnchor,
@@ -159,6 +159,18 @@ describe('board march distance', () => {
 })
 
 describe('CreatureRules position modifiers', () => {
+  it('keeps rejecting invalid positions, missing cards, and spells on the board', () => {
+    const manager = createTestManager()
+    expect(() => new CreatureRules(manager.state, -1)).toThrow(/No creature exists/)
+    const [spellId] = findCardIds(manager.state, 'playerA', CARD_ID.RETURN_FIRE)
+    for (const cardId of [0, spellId]) {
+      expect(() => new CreatureRules({
+        ...manager.state,
+        board: { creatures: [{ cardId, summonedTurn: 1 }] },
+      }, 0)).toThrow(/does not contain a creature card/)
+    }
+  })
+
   it.each([
     ['playerA', CARD_ID.SOLITARY_PEAK_SWORDSMAN],
     ['playerB', CARD_ID.SOLITARY_PEAK_SWORDSMAN],
@@ -376,6 +388,70 @@ describe('CreatureRules position modifiers', () => {
 })
 
 describe('summon modifiers', () => {
+  it.each(['playerA', 'playerB'] as const)(
+    'matches individual position queries across all short capture/beachhead boards for %s',
+    (ownerId) => {
+      const boardCards = [CARD_ID.TIDEFRONT_FORTIFIER, CARD_ID.VINE_SNARE_HUNTER]
+      const deck = [CARD_ID.SPARK_SWORDSMAN, ...Array.from({ length: 4 }, () => boardCards).flat()]
+      const initial = withHandSize(withHandSize(
+        GameManager.create(KEEP_ORDER_RANDOM, { playerA: deck, playerB: deck }),
+        'playerA', 0,
+      ), 'playerB', 0)
+      const [summonId] = findCardIds(initial.state, ownerId, CARD_ID.SPARK_SWORDSMAN)
+      const summonCard = initial.state.cards[summonId].card as CreatureCard
+      const pools = (['playerA', 'playerB'] as const).flatMap((playerId) =>
+        boardCards.map((definitionId) => findCardIds(initial.state, playerId, definitionId, 4)),
+      )
+
+      for (let length = 0; length <= 4; length += 1) {
+        for (let pattern = 0; pattern < 4 ** length; pattern += 1) {
+          const used = [0, 0, 0, 0]
+          const board = Array.from({ length }, (_, index) => {
+            const type = Math.floor(pattern / 4 ** index) % 4
+            return { cardId: pools[type][used[type]++] }
+          })
+          const availableMana = [0, 1, 2, 4][pattern % 4]
+          const manager = configureManager(initial, {
+            board, activePlayerId: ownerId, handAdditions: [summonId],
+            mana: { [ownerId]: availableMana },
+          })
+          const withoutCapture = GameManager.from({
+            ...manager.state,
+            cards: Object.fromEntries(Object.entries(manager.state.cards).map(([id, instance]) => [
+              id, {
+                ...instance,
+                card: instance.card.kind === 'creature' ? {
+                  ...instance.card,
+                  abilities: instance.card.abilities.filter((ability) => ability.type !== 'capture'),
+                } : instance.card,
+              },
+            ])),
+          })
+          const expected = Array.from({ length: length + 1 }, (_, insertIndex) => {
+            const requiredMarch = GameManager.getRequiredMarchForInsert(manager, ownerId, insertIndex)
+            const costModifier = board.reduce((total, _, index) => total +
+              new CreatureRules(manager.state, index).getSummonCostModifier(ownerId, insertIndex), 0)
+            const effectiveCost = Math.max(0, summonCard.cost + costModifier)
+            const canReach = requiredMarch <= summonCard.march
+            const affordable = effectiveCost <= availableMana
+            return { insertIndex, requiredMarch, effectiveCost, canReach, affordable,
+              canSummon: canReach && affordable }
+          })
+          expect(GameManager.getSummonOptions(manager, summonId)).toEqual(expected)
+          for (const ignoreCapture of [false, true]) {
+            const reference = ignoreCapture ? withoutCapture : manager
+            const distances = Array.from({ length: length + 1 }, (_, insertIndex) =>
+              GameManager.getRequiredMarchForInsert(reference, ownerId, insertIndex))
+            for (const march of [-1, 0, 1, 2, 3, 4, 8, Infinity, NaN]) {
+              expect(GameManager.countReachableSummonPositions(manager, ownerId, march, ignoreCapture))
+                .toBe(distances.filter((distance) => distance <= march).length)
+            }
+          }
+        }
+      }
+    },
+  )
+
   it('keeps march zero creatures at the starting edge when they have no ally anchor', () => {
     const initial = withHandSize(createTestManager(), 'playerA', 4)
     const [enemy] = findCardIds(

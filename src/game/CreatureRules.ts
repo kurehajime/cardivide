@@ -1,7 +1,6 @@
 import {
   findCreatureIndex,
   getCreatureAt,
-  getCreatureCardAt,
   getCreatureOwnerAt,
   getFrontIndex,
   getGroupAt,
@@ -299,13 +298,16 @@ export class CreatureRules {
 
   constructor(state: GameState, boardIndex: number) {
     const creature = getCreatureAt(state, boardIndex)
-    const card = getCreatureCardAt(state, boardIndex)
+    const instance = state.cards[creature.cardId]
+    if (!instance || instance.card.kind !== 'creature') {
+      throw new Error(`Board position ${boardIndex} does not contain a creature card.`)
+    }
     this.context = {
       state,
       boardIndex,
       cardId: creature.cardId,
-      card,
-      ownerId: getCreatureOwnerAt(state, boardIndex),
+      card: instance.card,
+      ownerId: instance.ownerId,
     }
   }
 
@@ -363,18 +365,22 @@ export class CreatureRules {
   }
 
   getCounterAttack(): number {
+    if (!this.getAbilities().some((ability) => ability.type === 'counter')) {
+      return 0
+    }
     const group = getGroupAt(this.context.state, this.context.boardIndex)
     const isFront = getFrontIndex(group) === this.context.boardIndex
-    const hasCounter = this.getAbilities().some((ability) => ability.type === 'counter')
-    return isFront && hasCounter ? this.getEffectiveStats().attack : 0
+    return isFront ? this.getEffectiveStats().attack : 0
   }
 
   getKeepUpManaModifier(): KeepUpManaContribution[] {
-    return this.getAbilities().flatMap((ability) => {
+    const contributions: KeepUpManaContribution[] = []
+    for (const ability of this.getAbilities()) {
       const contribution =
         getAbilityHandler(ability).getKeepUpManaContribution?.(ability, this.context) ?? null
-      return contribution === null ? [] : [contribution]
-    })
+      if (contribution !== null) contributions.push(contribution)
+    }
+    return contributions
   }
 
   getSummonCostModifier(summoningPlayerId: PlayerId, insertIndex: number): number {
