@@ -961,48 +961,46 @@ const getValidatedCardCount = (cards: GameState['cards']): number => {
   return registeredCardCount
 }
 
+const locateCard = (
+  cards: GameState['cards'],
+  locations: Uint8Array,
+  cardId: CardInstanceId,
+  ownerId: PlayerId,
+  location: CardLocation,
+  expectedKind?: CardInstance['card']['kind'],
+): void => {
+  if (!Number.isInteger(cardId) || cardId <= 0 || cardId >= locations.length) {
+    throw new Error(`Game state references unknown card instance ${cardId}.`)
+  }
+  const instance = cards[cardId]
+  if (!instance) {
+    throw new Error(`Game state references unknown card instance ${cardId}.`)
+  }
+  if (instance.ownerId !== ownerId) {
+    throw new Error(
+      `Card instance ${cardId} is in ${ownerId}'s ${CARD_LOCATION_LABELS[location]} but belongs to ${instance.ownerId}.`,
+    )
+  }
+  if (expectedKind && instance.card.kind !== expectedKind) {
+    throw new Error(
+      `Card instance ${cardId} at ${CARD_LOCATION_LABELS[location]} must be a ${expectedKind}.`,
+    )
+  }
+
+  const previousLocation = locations[cardId]
+  if (previousLocation !== CARD_LOCATION_NONE) {
+    throw new Error(
+      `Card instance ${cardId} exists in both ${CARD_LOCATION_LABELS[previousLocation]} and ${CARD_LOCATION_LABELS[location]}.`,
+    )
+  }
+  locations[cardId] = location
+}
+
 export const assertValidGameState = (state: GameState): void => {
   const registeredCardCount = getValidatedCardCount(state.cards)
   const locations = new Uint8Array(registeredCardCount + 1)
 
-  const locate = (
-    cardId: CardInstanceId,
-    ownerId: PlayerId,
-    location: CardLocation,
-    expectedKind?: CardInstance['card']['kind'],
-  ) => {
-    if (
-      !Number.isInteger(cardId) ||
-      cardId <= 0 ||
-      cardId > registeredCardCount
-    ) {
-      throw new Error(`Game state references unknown card instance ${cardId}.`)
-    }
-    const instance = state.cards[cardId]
-    if (!instance) {
-      throw new Error(`Game state references unknown card instance ${cardId}.`)
-    }
-    if (instance.ownerId !== ownerId) {
-      throw new Error(
-        `Card instance ${cardId} is in ${ownerId}'s ${CARD_LOCATION_LABELS[location]} but belongs to ${instance.ownerId}.`,
-      )
-    }
-    if (expectedKind && instance.card.kind !== expectedKind) {
-      throw new Error(
-        `Card instance ${cardId} at ${CARD_LOCATION_LABELS[location]} must be a ${expectedKind}.`,
-      )
-    }
-
-    const previousLocation = locations[cardId]
-    if (previousLocation !== CARD_LOCATION_NONE) {
-      throw new Error(
-        `Card instance ${cardId} exists in both ${CARD_LOCATION_LABELS[previousLocation]} and ${CARD_LOCATION_LABELS[location]}.`,
-      )
-    }
-    locations[cardId] = location
-  }
-
-  PLAYER_IDS.forEach((playerId) => {
+  for (const playerId of PLAYER_IDS) {
     const player = state.players[playerId]
     if (player.id !== playerId) {
       throw new Error(`Player registry key ${playerId} does not match player id ${player.id}.`)
@@ -1010,14 +1008,22 @@ export const assertValidGameState = (state: GameState): void => {
     if (player.hand.length > MAX_HAND_SIZE) {
       throw new Error(`${player.name}'s hand cannot contain more than ${MAX_HAND_SIZE} cards.`)
     }
-    player.deck.forEach((cardId) => locate(cardId, playerId, CARD_LOCATION_DECK))
-    player.hand.forEach((cardId) => locate(cardId, playerId, CARD_LOCATION_HAND))
-    player.discard.forEach((cardId) =>
-      locate(cardId, playerId, CARD_LOCATION_DISCARD),
-    )
-    player.exile.forEach((cardId) => locate(cardId, playerId, CARD_LOCATION_EXILE))
+    for (const cardId of player.deck) {
+      locateCard(state.cards, locations, cardId, playerId, CARD_LOCATION_DECK)
+    }
+    for (const cardId of player.hand) {
+      locateCard(state.cards, locations, cardId, playerId, CARD_LOCATION_HAND)
+    }
+    for (const cardId of player.discard) {
+      locateCard(state.cards, locations, cardId, playerId, CARD_LOCATION_DISCARD)
+    }
+    for (const cardId of player.exile) {
+      locateCard(state.cards, locations, cardId, playerId, CARD_LOCATION_EXILE)
+    }
     if (player.placedSpell !== null) {
-      locate(
+      locateCard(
+        state.cards,
+        locations,
         player.placedSpell.cardId,
         playerId,
         CARD_LOCATION_PLACED_SPELL,
@@ -1034,15 +1040,15 @@ export const assertValidGameState = (state: GameState): void => {
         throw new Error('Only spells can occupy the placed spell zone.')
       }
     }
-  })
+  }
 
-  state.board.creatures.forEach((creature) => {
+  for (const creature of state.board.creatures) {
     const instance = state.cards[creature.cardId]
     if (!instance) {
       throw new Error(`Board references unknown card instance ${creature.cardId}.`)
     }
-    locate(creature.cardId, instance.ownerId, CARD_LOCATION_BOARD, 'creature')
-  })
+    locateCard(state.cards, locations, creature.cardId, instance.ownerId, CARD_LOCATION_BOARD, 'creature')
+  }
 
   if (state.pendingCombat) {
     const endsTurnAfterResolution = state.pendingCombat.endsTurnAfterResolution !== false
@@ -1073,7 +1079,7 @@ export const assertValidGameState = (state: GameState): void => {
       throw new Error('Combat attacker mana gain must be a non-negative integer.')
     }
     const combatFlags = new Uint8Array(registeredCardCount + 1)
-    state.pendingCombat.damageMarkers.forEach(({ cardId, damage }) => {
+    for (const { cardId, damage } of state.pendingCombat.damageMarkers) {
       if (locations[cardId] !== CARD_LOCATION_BOARD) {
         throw new Error(`Damage marker references card ${cardId} outside the board.`)
       }
@@ -1084,9 +1090,9 @@ export const assertValidGameState = (state: GameState): void => {
         throw new Error(`Card ${cardId} has more than one damage marker.`)
       }
       combatFlags[cardId] |= COMBAT_FLAG_DAMAGE_MARKED
-    })
+    }
 
-    state.pendingCombat.destroyedCardIds.forEach((cardId) => {
+    for (const cardId of state.pendingCombat.destroyedCardIds) {
       if (locations[cardId] !== CARD_LOCATION_BOARD) {
         throw new Error(`Destroyed card ${cardId} is outside the board.`)
       }
@@ -1100,18 +1106,18 @@ export const assertValidGameState = (state: GameState): void => {
         throw new Error(`Destroyed card ${cardId} is listed more than once.`)
       }
       combatFlags[cardId] |= COMBAT_FLAG_DESTROYED
-    })
-    Object.entries(state.pendingCombat.destructionManaRefunds ?? {}).forEach(
-      ([cardIdText, refund]) => {
-        const cardId = Number(cardIdText)
-        if ((combatFlags[cardId] & COMBAT_FLAG_DESTROYED) === 0) {
-          throw new Error(`Mana refund references card ${cardId} that is not destroyed.`)
-        }
-        if (refund === undefined || !Number.isInteger(refund) || refund < 0) {
-          throw new Error(`Mana refund for card ${cardId} must be a non-negative integer.`)
-        }
-      },
-    )
+    }
+    for (const [cardIdText, refund] of Object.entries(
+      state.pendingCombat.destructionManaRefunds ?? {},
+    )) {
+      const cardId = Number(cardIdText)
+      if ((combatFlags[cardId] & COMBAT_FLAG_DESTROYED) === 0) {
+        throw new Error(`Mana refund references card ${cardId} that is not destroyed.`)
+      }
+      if (refund === undefined || !Number.isInteger(refund) || refund < 0) {
+        throw new Error(`Mana refund for card ${cardId} must be a non-negative integer.`)
+      }
+    }
   } else if (state.hasAttackedThisTurn && state.phase !== 'battle') {
     throw new Error('A resolved attack must remain in the battle phase.')
   }
@@ -1658,7 +1664,7 @@ export class GameManager {
     }
   }
 
-  static attackGroup(manager: GameManager, startIndex: number, endIndex: number): GameManager {
+  private static getAttackState(manager: GameManager, startIndex: number, endIndex: number): GameState {
     assertGameInProgress(manager.state)
     if (manager.state.phase !== 'main' && manager.state.phase !== 'battle') {
       throw new Error('Groups can only attack during the main or battle phase.')
@@ -1710,7 +1716,7 @@ export class GameManager {
                 0,
               )
           : 0
-      return GameManager.from({
+      return {
         ...manager.state,
         phase: 'battle',
         hasAttackedThisTurn: true,
@@ -1722,7 +1728,7 @@ export class GameManager {
           playerDamage,
           ...(attackerManaGain > 0 ? { attackerManaGain } : {}),
         },
-      })
+      }
     }
     if (getCreatureOwner(manager.state, board[targetIndex]) !== defenderId) {
       throw new Error('The attacking group is not adjacent to an enemy group or player.')
@@ -1803,7 +1809,7 @@ export class GameManager {
       }
     }
 
-    return GameManager.from({
+    return {
       ...manager.state,
       phase: 'battle',
       hasAttackedThisTurn: true,
@@ -1815,7 +1821,11 @@ export class GameManager {
         playerDamage,
         ...(attackerManaGain > 0 ? { attackerManaGain } : {}),
       },
-    })
+    }
+  }
+
+  static attackGroup(manager: GameManager, startIndex: number, endIndex: number): GameManager {
+    return GameManager.from(GameManager.getAttackState(manager, startIndex, endIndex))
   }
 
   static previewCombat(
@@ -1824,13 +1834,15 @@ export class GameManager {
     endIndex: number,
   ): CombatPreview & { nextManager: GameManager } {
     const attackerId = manager.state.activePlayerId
-    const pendingManager = GameManager.attackGroup(manager, startIndex, endIndex)
-    const pendingCombat = pendingManager.state.pendingCombat
+    const pendingState = GameManager.getAttackState(manager, startIndex, endIndex)
+    // Validate the intermediate result without copying a state used only by this preview.
+    assertValidGameState(pendingState)
+    const pendingCombat = pendingState.pendingCombat
     if (!pendingCombat) {
       throw new Error('Combat preview did not produce combat results.')
     }
 
-    const resolvedState = resolvePendingCombatState(pendingManager.state)
+    const resolvedState = resolvePendingCombatState(pendingState)
     const refundedMana = Object.fromEntries(
       PLAYER_IDS.flatMap((playerId) => {
         const refund = resolvedState.players[playerId].mana - manager.state.players[playerId].mana

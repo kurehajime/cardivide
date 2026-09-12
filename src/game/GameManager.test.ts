@@ -286,9 +286,45 @@ describe('GameManager card instance tracking', () => {
     expect(manager.state).toEqual(snapshot)
 
     preview.nextState.players.playerA.hand.pop()
+    preview.nextState.players.playerA.deck.pop()
+    preview.nextState.players.playerA.discard.push(1)
+    preview.nextState.players.playerA.exile.push(2)
     preview.nextState.players.playerB.hp = 1
     preview.nextState.board.creatures[0].summonedTurn = -1
     expect(manager.state).toEqual(snapshot)
+  })
+
+  it('copies only the final state in a combat preview', () => {
+    const initial = createTestManager()
+    const manager = GameManager.summonCreature(initial, initial.state.players.playerA.hand[0], 0)
+    const from = vi.spyOn(GameManager, 'from')
+    try {
+      GameManager.previewCombat(manager, 0, 0)
+      expect(from).toHaveBeenCalledTimes(1)
+    } finally {
+      from.mockRestore()
+    }
+  })
+
+  it('still validates zones before previewing a destruction that would hide a duplicate', () => {
+    let manager = createTestManager()
+    const defenderId = manager.state.players.playerA.hand[0]
+    manager = GameManager.summonCreature(manager, defenderId, 0)
+    manager = passTurnWithoutAttack(manager)
+    manager = GameManager.summonCreature(manager, manager.state.players.playerB.hand[0], 1)
+    manager.state.board.creatures.push({ ...manager.state.board.creatures[0] })
+
+    expect(() => GameManager.previewCombat(manager, 1, 1)).toThrow(/exists in both/)
+  })
+
+  it('keeps attack eligibility checks in previews', () => {
+    const initial = createTestManager()
+    const manager = GameManager.summonCreature(initial, initial.state.players.playerA.hand[0], 0)
+    expect(() => GameManager.previewCombat(manager, 1, 1)).toThrow(/whole attacking group/)
+    const pending = GameManager.attackGroup(manager, 0, 0)
+    expect(() => GameManager.previewCombat(pending, 0, 0)).toThrow(/still resolving/)
+    const attacked = GameManager.from({ ...manager.state, phase: 'battle', hasAttackedThisTurn: true })
+    expect(() => GameManager.previewCombat(attacked, 0, 0)).toThrow(/Only one group/)
   })
 
   it('requires card instance ids to be consecutive from one', () => {
@@ -306,6 +342,12 @@ describe('GameManager card instance tracking', () => {
     expect(() => GameManager.from({ ...manager.state, cards })).toThrow(
       /consecutive ids starting at 1/,
     )
+  })
+
+  it.each([0, -1, 1.5, 97, Number.NaN])('rejects invalid zone card id %s', (cardId) => {
+    const state = createTestManager().state
+    state.players.playerA.deck[0] = cardId
+    expect(() => assertValidGameState(state)).toThrow(/unknown card instance/)
   })
 
   it('reuses registry validation without enumerating frozen card IDs again', () => {
@@ -365,5 +407,56 @@ describe('GameManager card instance tracking', () => {
         playerB,
       },
     })).toThrow(/must be a spell/)
+  })
+})
+
+describe('pending combat validation', () => {
+  const invalidCases: [string, (state: GameState) => void, RegExp][] = [
+    ['wrong phase', (state) => { state.phase = 'main' }, /requires the battle phase/],
+    ['missing attack flag', (state) => { state.hasAttackedThisTurn = false }, /completed attack/],
+    ['wrong defender', (state) => { state.pendingCombat!.defendingPlayerId = 'playerA' }, /wrong defending player/],
+    ['negative player damage', (state) => { state.pendingCombat!.playerDamage = -1 }, /non-negative integer/],
+    ['fractional player damage', (state) => { state.pendingCombat!.playerDamage = 0.5 }, /non-negative integer/],
+    ['unreached player', (state) => { state.pendingCombat!.playerWasHit = false }, /did not reach/],
+    ['invalid plunder mana', (state) => { state.pendingCombat!.attackerManaGain = -1 }, /mana gain must be/],
+    ['off-board damage', (state) => {
+      state.pendingCombat!.damageMarkers = [{ cardId: state.players.playerA.hand[0], damage: 1 }]
+    }, /outside the board/],
+    ['zero creature damage', (state) => {
+      state.pendingCombat!.damageMarkers = [{ cardId: state.board.creatures[0].cardId, damage: 0 }]
+    }, /positive integer damage/],
+    ['duplicate damage', (state) => {
+      const marker = { cardId: state.board.creatures[0].cardId, damage: 1 }
+      state.pendingCombat!.damageMarkers = [marker, marker]
+    }, /more than one damage marker/],
+    ['off-board destruction', (state) => {
+      state.pendingCombat!.destroyedCardIds = [state.players.playerA.hand[0]]
+    }, /outside the board/],
+    ['unmarked destruction', (state) => {
+      state.pendingCombat!.destroyedCardIds = [state.board.creatures[0].cardId]
+    }, /does not have a damage marker/],
+    ['duplicate destruction', (state) => {
+      const cardId = state.board.creatures[0].cardId
+      state.pendingCombat!.damageMarkers = [{ cardId, damage: 1 }]
+      state.pendingCombat!.destroyedCardIds = [cardId, cardId]
+    }, /listed more than once/],
+    ['refund without destruction', (state) => {
+      state.pendingCombat!.destructionManaRefunds = { [state.board.creatures[0].cardId]: 1 }
+    }, /not destroyed/],
+    ['negative refund', (state) => {
+      const cardId = state.board.creatures[0].cardId
+      state.pendingCombat!.damageMarkers = [{ cardId, damage: 1 }]
+      state.pendingCombat!.destroyedCardIds = [cardId]
+      state.pendingCombat!.destructionManaRefunds = { [cardId]: -1 }
+    }, /refund .* must be a non-negative integer/],
+  ]
+
+  it.each(invalidCases)('rejects %s', (_name, mutate, error) => {
+    const initial = createTestManager()
+    const manager = GameManager.summonCreature(initial, initial.state.players.playerA.hand[0], 0)
+    const state = GameManager.attackGroup(manager, 0, 0).state
+    expect(() => assertValidGameState(state)).not.toThrow()
+    mutate(state)
+    expect(() => assertValidGameState(state)).toThrow(error)
   })
 })
