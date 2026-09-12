@@ -123,7 +123,10 @@ const ABILITY_HANDLERS = {
   },
   loneWarrior: {
     getPositionStatModifier: (ability, context) =>
-      isCreatureFlankedByEnemies(context.state, context.boardIndex)
+      (context.boardIndex === 0 ||
+        getCreatureOwnerAt(context.state, context.boardIndex - 1) !== context.ownerId) &&
+      (context.boardIndex === context.state.board.creatures.length - 1 ||
+        getCreatureOwnerAt(context.state, context.boardIndex + 1) !== context.ownerId)
         ? { attack: ability.attack, defense: ability.defense }
         : NO_STAT_MODIFIER,
   },
@@ -263,7 +266,7 @@ export const describeAbility = (ability: KeywordAbility): string => {
     case 'vanish':
       return 'このクリーチャーが破壊された場合、通常の破壊によるマナ返還は発生しない。'
     case 'loneWarrior':
-      return `このクリーチャーの両隣が敵クリーチャーまたは敵プレイヤーの場合、攻撃力+${ability.attack}、防御力+${ability.defense}する。`
+      return `このクリーチャーの所属するグループが1体の場合、攻撃力+${ability.attack}、防御力+${ability.defense}する。`
     case 'withdraw':
       return '起動型能力。このクリーチャーを破壊する。この能力による破壊では半分ではなく全額のマナが返還される。'
     case 'assassin':

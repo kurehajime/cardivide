@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { GameManager } from './GameManager'
+import { describeAbility } from './CreatureRules'
 import {
   getCrossedIndexes,
   isAdjacentInsertToAnchor,
@@ -158,6 +159,48 @@ describe('board march distance', () => {
 })
 
 describe('CreatureRules position modifiers', () => {
+  it.each([
+    ['playerA', CARD_ID.SOLITARY_PEAK_SWORDSMAN],
+    ['playerB', CARD_ID.SOLITARY_PEAK_SWORDSMAN],
+    ['playerA', CARD_ID.LONE_ARMY_GENERAL],
+    ['playerB', CARD_ID.LONE_ARMY_GENERAL],
+  ] as const)('activates lone warrior for any singleton group: %s %s', (ownerId, definitionId) => {
+    const initial = createTestManager()
+    const opponentId = ownerId === 'playerA' ? 'playerB' : 'playerA'
+    const [source] = findCardIds(initial.state, ownerId, definitionId)
+    const [ally] = findCardIds(initial.state, ownerId, CARD_ID.SPARK_SWORDSMAN)
+    const [enemyLeft, enemyRight] = findCardIds(initial.state, opponentId, CARD_ID.SPARK_SWORDSMAN, 2)
+    const card = initial.state.cards[source].card as CreatureCard
+    const ability = card.abilities.find((candidate) => candidate.type === 'loneWarrior')!
+    const positions = [
+      { ids: [source], active: true },
+      { ids: [source, enemyRight], active: true },
+      { ids: [enemyLeft, source], active: true },
+      { ids: [enemyLeft, source, enemyRight], active: true },
+      { ids: [ally, enemyLeft, source], active: true },
+      { ids: [source, ally], active: false },
+      { ids: [ally, source], active: false },
+      { ids: [enemyLeft, source, ally, enemyRight], active: false },
+    ]
+    for (const { ids, active } of positions) {
+      const manager = configureManager(initial, { board: ids.map((cardId) => ({ cardId })) })
+      expect(GameManager.getCreatureStatModifier(manager, source), `board: ${ids}`).toEqual({
+        attack: active ? ability.attack : 0,
+        defense: active ? ability.defense : 0,
+      })
+      expect(GameManager.getCreatureStats(manager, source), `board: ${ids}`).toEqual({
+        attack: card.attack + (active ? ability.attack : 0),
+        defense: card.defense + (active ? ability.defense : 0),
+        march: card.march,
+      })
+    }
+  })
+
+  it('describes the singleton group condition for lone warrior', () => {
+    expect(describeAbility({ type: 'loneWarrior', attack: 2, defense: 1 }))
+      .toBe('このクリーチャーの所属するグループが1体の場合、攻撃力+2、防御力+1する。')
+  })
+
   it('applies position abilities without giving every creature summon sickness', () => {
     const initial = createTestManager()
     const [loneWarrior] = findCardIds(
