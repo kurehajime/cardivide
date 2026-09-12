@@ -312,7 +312,10 @@ const evaluateBombardmentOutcome = (
   }
   const attackerId = manager.state.activePlayerId
   const nextPlayerId = getOpponentId(attackerId)
-  const afterEndTurn = GameManager.from(projectActivePlayerInstallments(manager))
+  const afterEndTurnState = projectActivePlayerInstallments(manager)
+  const afterEndTurn = afterEndTurnState === manager.state
+    ? manager
+    : GameManager.from(afterEndTurnState)
   const nextManager = projectKeepUpDamage(afterEndTurn, nextPlayerId, nextPlayerId === aiPlayerId)
   const evaluation = evaluateBase(nextManager, aiPlayerId, ignoredHandCardIds)
   if (evaluation.terminal !== 0) {
@@ -390,7 +393,7 @@ const getCombatOutcomeScores = (
       action.startIndex,
       action.endIndex,
     )
-    const nextManager = GameManager.from(preview.nextState)
+    const nextManager = preview.nextManager
     const aiEvaluation = projectBombardment
       ? evaluateBombardmentOutcome(
           nextManager,

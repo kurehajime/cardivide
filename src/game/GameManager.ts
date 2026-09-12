@@ -1820,7 +1820,7 @@ export class GameManager {
     manager: GameManager,
     startIndex: number,
     endIndex: number,
-  ): CombatPreview {
+  ): CombatPreview & { nextManager: GameManager } {
     const attackerId = manager.state.activePlayerId
     const pendingManager = GameManager.attackGroup(manager, startIndex, endIndex)
     const pendingCombat = pendingManager.state.pendingCombat
@@ -1835,6 +1835,7 @@ export class GameManager {
         return refund > 0 ? [[playerId, refund]] : []
       }),
     ) as Partial<Record<PlayerId, number>>
+    const nextManager = GameManager.from(resolvedState)
 
     return {
       attackerId,
@@ -1843,7 +1844,8 @@ export class GameManager {
       refundedMana,
       playerDamage: pendingCombat.playerDamage,
       attackerManaGain: pendingCombat.attackerManaGain ?? 0,
-      nextState: GameManager.from(resolvedState).state,
+      nextState: nextManager.state,
+      nextManager,
     }
   }
 

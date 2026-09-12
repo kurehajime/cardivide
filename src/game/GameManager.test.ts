@@ -273,6 +273,24 @@ describe('GameManager card instance tracking', () => {
     expect(Object.isFrozen(manager.state.cards[1])).toBe(true)
   })
 
+  it('returns a validated combat manager isolated from the original position', () => {
+    const initial = createTestManager()
+    const manager = GameManager.summonCreature(initial, initial.state.players.playerA.hand[0], 0)
+    const snapshot = structuredClone(manager.state)
+    const preview = GameManager.previewCombat(manager, 0, 0)
+
+    expect(preview.nextManager.state).toBe(preview.nextState)
+    expect(preview.nextState.pendingCombat).toBeNull()
+    expect(preview.nextState.players.playerB.hp).toBe(snapshot.players.playerB.hp - preview.playerDamage)
+    expect(() => assertValidGameState(preview.nextManager.state)).not.toThrow()
+    expect(manager.state).toEqual(snapshot)
+
+    preview.nextState.players.playerA.hand.pop()
+    preview.nextState.players.playerB.hp = 1
+    preview.nextState.board.creatures[0].summonedTurn = -1
+    expect(manager.state).toEqual(snapshot)
+  })
+
   it('requires card instance ids to be consecutive from one', () => {
     const manager = createTestManager()
     const cardCount = Object.keys(manager.state.cards).length
