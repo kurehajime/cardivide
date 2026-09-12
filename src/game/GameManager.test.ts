@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import { CARD_DEFINITION_IDS } from './cards'
 import { GameManager, assertValidGameState } from './GameManager'
 import type { CardInstanceId, GameState } from './types'
@@ -288,5 +288,64 @@ describe('GameManager card instance tracking', () => {
     expect(() => GameManager.from({ ...manager.state, cards })).toThrow(
       /consecutive ids starting at 1/,
     )
+  })
+
+  it('reuses registry validation without enumerating frozen card IDs again', () => {
+    const manager = createTestManager()
+    const keys = vi.spyOn(Object, 'keys')
+    try {
+      assertValidGameState(manager.state)
+      GameManager.passPhase(manager)
+      expect(keys).not.toHaveBeenCalled()
+    } finally {
+      keys.mockRestore()
+    }
+  })
+
+  it('does not cache validation of external mutable card registries', () => {
+    const manager = createTestManager()
+    const cards = { ...manager.state.cards }
+    cards[1] = { ...cards[1] }
+    const state = { ...manager.state, cards }
+    assertValidGameState(state)
+
+    cards[1] = { ...cards[1], id: 2 }
+    expect(() => assertValidGameState(state)).toThrow(/does not match instance id/)
+    cards[1] = { ...cards[1], id: 1 }
+    assertValidGameState(state)
+    delete cards[2]
+    expect(() => assertValidGameState(state)).toThrow(/consecutive ids starting at 1/)
+  })
+
+  it('validates a replacement registry even when the card count is unchanged', () => {
+    const manager = createTestManager()
+    const cards = { ...manager.state.cards, 1: { ...manager.state.cards[1], id: 2 } }
+    expect(() => GameManager.from({ ...manager.state, cards })).toThrow(
+      /does not match instance id/,
+    )
+  })
+
+  it('still checks ownership and card kinds when the registry is cached', () => {
+    const manager = createTestManager()
+    const { playerA, playerB } = manager.state.players
+    const cardId = playerA.hand[0]
+    expect(() => GameManager.from({
+      ...manager.state,
+      players: {
+        playerA: { ...playerA, hand: playerA.hand.slice(1) },
+        playerB: { ...playerB, deck: [...playerB.deck, cardId] },
+      },
+    })).toThrow(/belongs to playerA/)
+    expect(() => GameManager.from({
+      ...manager.state,
+      players: {
+        playerA: {
+          ...playerA,
+          hand: playerA.hand.slice(1),
+          placedSpell: { cardId, effectAmount: 0 },
+        },
+        playerB,
+      },
+    })).toThrow(/must be a spell/)
   })
 })

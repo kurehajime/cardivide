@@ -98,7 +98,8 @@ const clonePlayer = (player: PlayerState): PlayerState => ({
   placedSpell: player.placedSpell ? { ...player.placedSpell } : null,
 })
 
-const immutableCardRegistries = new WeakSet<GameState['cards']>()
+// null marks a frozen registry whose IDs have not been validated yet.
+const immutableCardRegistries = new WeakMap<GameState['cards'], number | null>()
 
 const getImmutableCardRegistry = (
   cards: GameState['cards'],
@@ -114,7 +115,7 @@ const getImmutableCardRegistry = (
     ]),
   ) as GameState['cards']
   Object.freeze(clonedCards)
-  immutableCardRegistries.add(clonedCards)
+  immutableCardRegistries.set(clonedCards, null)
   return clonedCards
 }
 
@@ -917,12 +918,16 @@ type CardLocation =
   | typeof CARD_LOCATION_PLACED_SPELL
   | typeof CARD_LOCATION_BOARD
 
-export const assertValidGameState = (state: GameState): void => {
-  const registeredCardCount = Object.keys(state.cards).length
-  const locations = new Uint8Array(registeredCardCount + 1)
+const getValidatedCardCount = (cards: GameState['cards']): number => {
+  const validatedCount = immutableCardRegistries.get(cards)
+  if (validatedCount !== undefined && validatedCount !== null) {
+    return validatedCount
+  }
+
+  const registeredCardCount = Object.keys(cards).length
 
   for (let cardId = 1; cardId <= registeredCardCount; cardId += 1) {
-    const instance = state.cards[cardId]
+    const instance = cards[cardId]
     if (!instance) {
       throw new Error(`Card registry must use consecutive ids starting at 1. Missing ${cardId}.`)
     }
@@ -930,6 +935,17 @@ export const assertValidGameState = (state: GameState): void => {
       throw new Error(`Card registry key ${cardId} does not match instance id ${instance.id}.`)
     }
   }
+
+  // Only internally frozen registries and instances can safely reuse validation.
+  if (immutableCardRegistries.has(cards)) {
+    immutableCardRegistries.set(cards, registeredCardCount)
+  }
+  return registeredCardCount
+}
+
+export const assertValidGameState = (state: GameState): void => {
+  const registeredCardCount = getValidatedCardCount(state.cards)
+  const locations = new Uint8Array(registeredCardCount + 1)
 
   const locate = (
     cardId: CardInstanceId,
