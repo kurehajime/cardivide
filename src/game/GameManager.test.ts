@@ -102,6 +102,18 @@ describe('GameManager card instance tracking', () => {
     expectCardsConserved(nextManager)
   })
 
+  it.each([-1, 1, 0.5, Number.NaN, Infinity, -Infinity])(
+    'rejects invalid summon position %s on an empty board',
+    (insertIndex) => {
+      const manager = createTestManager()
+      const snapshot = structuredClone(manager.state)
+      expect(() => GameManager.summonCreature(
+        manager, manager.state.players.playerA.hand[0], insertIndex,
+      )).toThrow('The creature cannot be summoned at this position.')
+      expect(manager.state).toEqual(snapshot)
+    },
+  )
+
   it('draws only enough cards to reach five on later keep-up phases', () => {
     let manager = createTestManager()
     const summonedCardId = manager.state.players.playerA.hand[0]
@@ -272,6 +284,45 @@ describe('GameManager card instance tracking', () => {
     expect(Object.isFrozen(manager.state.cards)).toBe(true)
     expect(Object.isFrozen(manager.state.cards[1])).toBe(true)
   })
+
+  it('rejects duplicates even when the total number of zone entries is correct', () => {
+    const manager = createTestManager()
+    const player = manager.state.players.playerA
+    player.deck[0] = player.hand[0]
+    expect(collectZoneIds(manager.state)).toHaveLength(96)
+    expect(() => assertValidGameState(manager.state)).toThrow(/exists in both/)
+  })
+
+  it.each(['deck', 'hand', 'discard', 'exile', 'placedSpell', 'board'] as const)(
+    'identifies the missing card after removing it from %s',
+    (zone) => {
+      const manager = createTestManager()
+      const state = manager.state
+      for (const player of Object.values(state.players)) {
+        const spellId = player.deck.find((cardId) => state.cards[cardId].card.kind === 'spell')!
+        player.deck.splice(player.deck.indexOf(spellId), 1)
+        player.placedSpell = { cardId: spellId, effectAmount: 0 }
+        player.discard.push(player.deck.shift()!)
+        player.exile.push(player.deck.shift()!)
+        state.board.creatures.push({ cardId: player.deck.shift()!, summonedTurn: 0 })
+      }
+      expectCardsConserved(manager)
+
+      const player = state.players.playerA
+      let missingId: CardInstanceId
+      if (zone === 'board') {
+        missingId = state.board.creatures.shift()!.cardId
+      } else if (zone === 'placedSpell') {
+        missingId = player.placedSpell!.cardId
+        player.placedSpell = null
+      } else {
+        missingId = player[zone].shift()!
+      }
+      expect(() => assertValidGameState(state)).toThrow(
+        `Card instance ${missingId} is not in any game zone.`,
+      )
+    },
+  )
 
   it('returns a validated combat manager isolated from the original position', () => {
     const initial = createTestManager()

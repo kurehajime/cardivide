@@ -318,6 +318,16 @@ const getRequiredMarchByInsert = (
   return requiredMarch
 }
 
+const getEffectiveSummonCost = (
+  card: CreatureCard,
+  ownerId: PlayerId,
+  insertIndex: number,
+  boardRules: readonly CreatureRules[],
+): number => Math.max(0, card.cost + boardRules.reduce(
+  (total, rules) => total + rules.getSummonCostModifier(ownerId, insertIndex),
+  0,
+))
+
 const getSummonOptionsForState = (
   state: GameState,
   ownerId: PlayerId,
@@ -330,11 +340,7 @@ const getSummonOptionsForState = (
 
   return Array.from({ length: board.length + 1 }, (_, insertIndex) => {
     const requiredMarch = requiredMarchByInsert[insertIndex]
-    const costModifier = boardRules.reduce(
-      (total, rules) => total + rules.getSummonCostModifier(ownerId, insertIndex),
-      0,
-    )
-    const effectiveCost = Math.max(0, card.cost + costModifier)
+    const effectiveCost = getEffectiveSummonCost(card, ownerId, insertIndex, boardRules)
     const canReach = requiredMarch <= card.march
     const affordable = effectiveCost <= availableMana
 
@@ -999,6 +1005,7 @@ const locateCard = (
 export const assertValidGameState = (state: GameState): void => {
   const registeredCardCount = getValidatedCardCount(state.cards)
   const locations = new Uint8Array(registeredCardCount + 1)
+  let locatedCardCount = 0
 
   for (const playerId of PLAYER_IDS) {
     const player = state.players[playerId]
@@ -1010,15 +1017,19 @@ export const assertValidGameState = (state: GameState): void => {
     }
     for (const cardId of player.deck) {
       locateCard(state.cards, locations, cardId, playerId, CARD_LOCATION_DECK)
+      locatedCardCount += 1
     }
     for (const cardId of player.hand) {
       locateCard(state.cards, locations, cardId, playerId, CARD_LOCATION_HAND)
+      locatedCardCount += 1
     }
     for (const cardId of player.discard) {
       locateCard(state.cards, locations, cardId, playerId, CARD_LOCATION_DISCARD)
+      locatedCardCount += 1
     }
     for (const cardId of player.exile) {
       locateCard(state.cards, locations, cardId, playerId, CARD_LOCATION_EXILE)
+      locatedCardCount += 1
     }
     if (player.placedSpell !== null) {
       locateCard(
@@ -1029,6 +1040,7 @@ export const assertValidGameState = (state: GameState): void => {
         CARD_LOCATION_PLACED_SPELL,
         'spell',
       )
+      locatedCardCount += 1
       if (
         !Number.isInteger(player.placedSpell.effectAmount) ||
         player.placedSpell.effectAmount < 0
@@ -1048,6 +1060,7 @@ export const assertValidGameState = (state: GameState): void => {
       throw new Error(`Board references unknown card instance ${creature.cardId}.`)
     }
     locateCard(state.cards, locations, creature.cardId, instance.ownerId, CARD_LOCATION_BOARD, 'creature')
+    locatedCardCount += 1
   }
 
   if (state.pendingCombat) {
@@ -1121,6 +1134,9 @@ export const assertValidGameState = (state: GameState): void => {
   } else if (state.hasAttackedThisTurn && state.phase !== 'battle') {
     throw new Error('A resolved attack must remain in the battle phase.')
   }
+
+  // Every located ID is unique and in range, so equal counts prove none are missing.
+  if (locatedCardCount === registeredCardCount) return
 
   for (let cardId = 1; cardId <= registeredCardCount; cardId += 1) {
     if (locations[cardId] === CARD_LOCATION_NONE) {
@@ -1535,13 +1551,19 @@ export class GameManager {
     if (card.kind !== 'creature') {
       throw new Error('Selected card is not a creature.')
     }
-    const summonOption = GameManager.getSummonOptions(manager, cardId).find(
-      (option) => option.insertIndex === insertIndex,
-    )
-    if (!summonOption?.canReach) {
+    if (
+      !Number.isInteger(insertIndex) ||
+      insertIndex < 0 ||
+      insertIndex > manager.state.board.creatures.length ||
+      !(getRequiredMarchForInsert(manager.state, activePlayer.id, insertIndex, false) <= card.march)
+    ) {
       throw new Error('The creature cannot be summoned at this position.')
     }
-    if (!summonOption.affordable) {
+    const boardRules = manager.state.board.creatures.map(
+      (_, boardIndex) => new CreatureRules(manager.state, boardIndex),
+    )
+    const effectiveCost = getEffectiveSummonCost(card, activePlayer.id, insertIndex, boardRules)
+    if (!(effectiveCost <= activePlayer.mana)) {
       throw new Error('Not enough mana to summon this creature.')
     }
 
@@ -1552,7 +1574,7 @@ export class GameManager {
     const playerWithoutCard = removeHandCard(activePlayer, cardId)
     const nextPlayer = {
       ...playerWithoutCard,
-      mana: playerWithoutCard.mana - summonOption.effectiveCost,
+      mana: playerWithoutCard.mana - effectiveCost,
     }
     const nextCreatures = [
       ...manager.state.board.creatures.slice(0, insertIndex),

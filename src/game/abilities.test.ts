@@ -438,6 +438,22 @@ describe('summon modifiers', () => {
               canSummon: canReach && affordable }
           })
           expect(GameManager.getSummonOptions(manager, summonId)).toEqual(expected)
+          const originalState = structuredClone(manager.state)
+          for (const option of expected) {
+            if (!option.canReach) {
+              expect(() => GameManager.summonCreature(manager, summonId, option.insertIndex))
+                .toThrow('The creature cannot be summoned at this position.')
+            } else if (!option.affordable) {
+              expect(() => GameManager.summonCreature(manager, summonId, option.insertIndex))
+                .toThrow('Not enough mana to summon this creature.')
+            } else {
+              const next = GameManager.summonCreature(manager, summonId, option.insertIndex)
+              expect(next.state.players[ownerId].mana).toBe(availableMana - option.effectiveCost)
+              expect(next.state.players[ownerId].hand).not.toContain(summonId)
+              expect(next.state.board.creatures[option.insertIndex].cardId).toBe(summonId)
+            }
+          }
+          expect(manager.state).toEqual(originalState)
           for (const ignoreCapture of [false, true]) {
             const reference = ignoreCapture ? withoutCapture : manager
             const distances = Array.from({ length: length + 1 }, (_, insertIndex) =>
