@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import matchupWinRates from './ai/deck-matchup-win-rates.json'
+import expansionWinRateGains from './ai/deck-expansion-win-rate-gains.json'
 import {
   addScenarioReward,
+  getScenarioComDeck,
   getScenarioRewardChoices,
   getScenarioOpponentDeckIds,
   resolveScenarioBattle,
@@ -16,6 +18,43 @@ const winRates = matchupWinRates as Record<
 >
 
 describe('scenario battles', () => {
+  it.each(THEME_DECKS)('$name gets ranked COM expansions for all five battles', (deck) => {
+    const ranked = [...EXPANSION_CARD_DEFINITION_IDS].sort((a, b) =>
+      expansionWinRateGains[deck.id][b] - expansionWinRateGains[deck.id][a],
+    )
+    const [first, second, third] = ranked
+    const expected = [
+      [],
+      [third, third],
+      [second, second, third, third],
+      [first, first, second, second, third, third],
+      [first, first, first, first, second, second, second, second],
+    ]
+    for (let battle = 0; battle < 5; battle += 1) {
+      expect(getScenarioComDeck(deck.id, 'easy', battle)).toEqual(deck.cardDefinitionIds)
+      for (const difficulty of ['normal', 'hard'] as const) {
+        const cards = getScenarioComDeck(deck.id, difficulty, battle)
+        expect(cards.slice(0, 40)).toEqual(deck.cardDefinitionIds)
+        expect(cards.slice(40)).toEqual(expected[battle])
+        const manager = GameManager.create(() => 0.5, {
+          playerA: THEME_DECKS[0].cardDefinitionIds,
+          playerB: cards,
+        })
+        const comCards = Object.values(manager.state.cards).filter((card) => card.ownerId === 'playerB')
+        expect(comCards).toHaveLength(40 + expected[battle].length)
+        expect(comCards.map(({ card }) => card.definitionId).sort()).toEqual([...cards].sort())
+        expect(() => assertValidGameState(manager.state)).not.toThrow()
+      }
+    }
+    expect(deck.cardDefinitionIds).toHaveLength(40)
+  })
+
+  it('rejects invalid scenario battle numbers', () => {
+    for (const battle of [-1, 5, 1.5, NaN]) {
+      expect(() => getScenarioComDeck(THEME_DECKS[0].id, 'hard', battle)).toThrow()
+    }
+  })
+
   it.each(THEME_DECKS)('$name receives every other deck once in descending win-rate order', (deck) => {
     const opponents = getScenarioOpponentDeckIds(deck.id)
     const rates = opponents.map((opponentId) => winRates[deck.id][opponentId])

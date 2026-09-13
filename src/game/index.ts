@@ -44,6 +44,7 @@ export {
 } from './themeDecks'
 export {
   addScenarioReward,
+  getScenarioComDeck,
   getScenarioRewardChoices,
   getScenarioOpponentDeckIds,
   resolveScenarioBattle,

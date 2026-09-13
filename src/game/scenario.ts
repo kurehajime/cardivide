@@ -1,4 +1,6 @@
 import matchupWinRates from './ai/deck-matchup-win-rates.json'
+import expansionWinRateGains from './ai/deck-expansion-win-rate-gains.json'
+import type { AiDifficulty } from './ai/types'
 import { EXPANSION_CARD_DEFINITION_IDS } from './cards'
 import { THEME_DECK_BY_ID, THEME_DECKS } from './themeDecks'
 import type { ThemeDeckId } from './themeDecks'
@@ -39,6 +41,39 @@ export const addScenarioReward = (
 }
 
 const MAX_SCENARIO_BATTLES = 5
+// Counts by rank (first, second, third), indexed by the zero-based battle number.
+const COM_EXPANSION_COPIES = [
+  [0, 0, 0],
+  [0, 0, 2],
+  [0, 2, 2],
+  [2, 2, 2],
+  [4, 4, 0],
+] as const
+
+export const getScenarioComDeck = (
+  deckId: ThemeDeckId,
+  difficulty: AiDifficulty,
+  battleIndex: number,
+): CardDefinitionId[] => {
+  if (!Number.isInteger(battleIndex) || battleIndex < 0 || battleIndex >= MAX_SCENARIO_BATTLES) {
+    throw new Error('Scenario battle progress is invalid.')
+  }
+  const baseDeck = THEME_DECK_BY_ID[deckId].cardDefinitionIds
+  if (difficulty === 'easy' || battleIndex === 0) return [...baseDeck]
+
+  const gains: Partial<Record<CardDefinitionId, number>> = expansionWinRateGains[deckId]
+  if (EXPANSION_CARD_DEFINITION_IDS.some((id) => !Number.isFinite(gains?.[id]))) {
+    throw new Error('Scenario expansion win rate gains are missing for the COM deck.')
+  }
+  const rankedCards = [...EXPANSION_CARD_DEFINITION_IDS]
+    .sort((first, second) => gains[second]! - gains[first]!)
+    .slice(0, 3)
+  const additions = rankedCards.flatMap((id, rank) =>
+    Array<CardDefinitionId>(COM_EXPANSION_COPIES[battleIndex][rank]).fill(id),
+  )
+  return [...baseDeck, ...additions]
+}
+
 const winRates = matchupWinRates as Record<
   ThemeDeckId,
   Partial<Record<ThemeDeckId, number | null>>

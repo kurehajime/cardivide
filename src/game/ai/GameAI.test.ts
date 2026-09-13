@@ -777,8 +777,8 @@ describe('AI evaluation', () => {
 describe('GameAI action selection', () => {
   it('uses the configured number of ignored hand cards for each difficulty', () => {
     expect(AI_DIFFICULTY_IGNORED_HAND_COUNT).toEqual({
-      easy: 3,
-      normal: 1,
+      easy: 2,
+      normal: 2,
       hard: 0,
     })
   })

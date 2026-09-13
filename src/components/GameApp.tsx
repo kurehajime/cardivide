@@ -6,6 +6,7 @@ import {
   THEME_DECK_BY_ID,
   THEME_DECK_IDS,
   addScenarioReward,
+  getScenarioComDeck,
   getScenarioRewardChoices,
   getScenarioOpponentDeckIds,
   resolveScenarioBattle,
@@ -63,11 +64,14 @@ type GameSessionProps = GameSelection & {
 const createGameUiState = ({
   playerDeckId,
   comDeckId,
+  difficulty,
   scenarioRun,
 }: GameSelection & { scenarioRun: ScenarioRun | null }): GameUiState => ({
   manager: GameManager.create(Math.random, {
     playerA: scenarioRun?.playerCardDefinitionIds ?? THEME_DECK_BY_ID[playerDeckId].cardDefinitionIds,
-    playerB: THEME_DECK_BY_ID[comDeckId].cardDefinitionIds,
+    playerB: scenarioRun
+      ? getScenarioComDeck(comDeckId, difficulty, scenarioRun.currentBattleIndex)
+      : THEME_DECK_BY_ID[comDeckId].cardDefinitionIds,
   }),
   selectedCardId: null,
   message: null,
