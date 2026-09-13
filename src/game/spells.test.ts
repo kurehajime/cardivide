@@ -133,6 +133,90 @@ const createBriberyScenario = (casterId: PlayerId = 'playerA') => {
   }
 }
 
+describe('cataclysm', () => {
+  const createScenario = (casterId: PlayerId = 'playerA') => {
+    const initial = GameManager.create(KEEP_ORDER_RANDOM, {
+      playerA: [...STANDARD_DECK_LIST, CARD_ID.CATACLYSM, CARD_ID.CATACLYSM],
+      playerB: [...STANDARD_DECK_LIST, CARD_ID.CATACLYSM, CARD_ID.CATACLYSM],
+    })
+    const spells = findCardIds(initial.state, casterId,
+      (id) => initial.state.cards[id].card.definitionId === CARD_ID.CATACLYSM, 2)
+    const board = [
+      findDefinition(initial.state, 'playerA', CARD_ID.SPARK_SWORDSMAN),
+      findDefinition(initial.state, 'playerA', CARD_ID.GEODE_MINER),
+      findDefinition(initial.state, 'playerB', CARD_ID.ROOTED_ANCIENT),
+      findDefinition(initial.state, 'playerA', CARD_ID.EXHAUSTED_VOLCANO_DRAGON),
+      findDefinition(initial.state, 'playerB', CARD_ID.VINE_SNARE_HUNTER),
+    ]
+    const configured = configureState(initial, {
+      hands: { [casterId]: spells }, mana: { [casterId]: 4 }, board,
+    })
+    return { manager: GameManager.from({ ...configured.state, activePlayerId: casterId }), spells, board }
+  }
+
+  it.each(['playerA', 'playerB'] as const)('reverses the whole board for %s without changing card identity', (casterId) => {
+    const { manager, spells, board } = createScenario(casterId)
+    expect(GameManager.getSpellPlayActions(manager, spells[0])).toEqual([
+      { type: 'playSpell', cardId: spells[0] },
+    ])
+    const reversed = GameManager.playSpell(manager, spells[0])
+    expect(reversed.state.board.creatures).toEqual(manager.state.board.creatures.toReversed())
+    expect(reversed.state.cards).toEqual(manager.state.cards)
+    expect(manager.state.board.creatures.map(({ cardId }) => cardId)).toEqual(board)
+    expect(manager.state.players[casterId].mana).toBe(4)
+    expect(reversed.state.players[casterId].mana).toBe(4)
+    expect(reversed.state.players[casterId].hand).toEqual([spells[1]])
+    expect(reversed.state.players[casterId].placedSpell?.cardId).toBe(spells[0])
+    expect(GameManager.getBoardGroups(reversed).map(({ ownerId }) => ownerId))
+      .toEqual(GameManager.getBoardGroups(manager).map(({ ownerId }) => ownerId).toReversed())
+    const restored = GameManager.playSpell(reversed, spells[1])
+    expect(restored.state.board).toEqual(manager.state.board)
+    expect(restored.state.players[casterId].discard).toContain(spells[0])
+    const cleanup = GameManager.passPhase(GameManager.passPhase(restored))
+    const ended = GameManager.passPhase(cleanup)
+    expect(ended.state.players[casterId].placedSpell).toBeNull()
+    expect(ended.state.players[casterId].discard).toContain(spells[1])
+    expect(() => assertValidGameState(ended.state)).not.toThrow()
+  })
+
+  it.each([0, 1])('can be used on a board with %i creatures', (size) => {
+    const { manager, spells, board } = createScenario()
+    const configured = configureState(manager, {
+      hands: { playerA: spells }, mana: { playerA: 0 }, board: board.slice(0, size),
+    })
+    const played = GameManager.playSpell(configured, spells[0])
+    expect(played.state.board).toEqual(configured.state.board)
+    expect(played.state.players.playerA.mana).toBe(0)
+  })
+
+  it('can be used with no mana and rejects unnecessary targets', () => {
+    const { manager, spells, board } = createScenario()
+    const poor = configureState(manager, { hands: { playerA: spells }, mana: { playerA: 0 }, board })
+    expect(GameManager.getSpellPlayActions(poor, spells[0])).toEqual([
+      { type: 'playSpell', cardId: spells[0] },
+    ])
+    const played = GameManager.playSpell(poor, spells[0])
+    expect(played.state.players.playerA.mana).toBe(0)
+    expect(played.state.board.creatures.map(({ cardId }) => cardId)).toEqual(board.toReversed())
+    expect(() => GameManager.playSpell(manager, spells[0], { kind: 'creature', cardId: board[0] }))
+      .toThrow('The selected spell target is not valid.')
+  })
+
+  it('lets the AI reverse a blocked attacker into a winning position', () => {
+    const { manager, spells, board } = createScenario()
+    const configured = configureState(manager, {
+      hands: { playerA: [spells[0]] }, mana: { playerA: 0 },
+      board: [board[3], findDefinition(manager.state, 'playerB', CARD_ID.GREAT_TREE_GUARDIAN)],
+      hp: { playerB: 1 },
+    })
+    const action = new GameAI().chooseAction(configured)
+    expect(action).toEqual({ type: 'playSpell', cardId: spells[0] })
+    const reversed = GameManager.applyAction(configured, action!)
+    const won = GameManager.finishCombat(GameManager.attackGroup(reversed, 1, 1))
+    expect(GameManager.getWinner(won)).toBe('playerA')
+  })
+})
+
 describe('bribery', () => {
   it.each(['playerA', 'playerB'] as const)('changes control for %s without moving or replacing the card', (casterId) => {
     const { manager, spell, target, scouts, enemyId } = createBriberyScenario(casterId)

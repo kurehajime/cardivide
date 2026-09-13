@@ -40,6 +40,7 @@ export const CARD_DEFINITION_IDS = {
   SELF_DESTRUCT_ORDER: '4082a8a2-f853-444d-90b7-fde4ff13d96b',
   BRIBERY: 'eb863aef-a524-4d6d-84ed-6d4f7e3b33a1',
   CANNON: '80c448c1-5eef-42f6-9797-4f083e1fb6b6',
+  CATACLYSM: '2ef4e015-72dc-4538-892e-a31bab369607',
 } as const satisfies Record<string, CardDefinitionId>
 
 export const EXPANSION_CARD_DEFINITION_IDS = [
@@ -49,6 +50,7 @@ export const EXPANSION_CARD_DEFINITION_IDS = [
   CARD_DEFINITION_IDS.SELF_DESTRUCT_ORDER,
   CARD_DEFINITION_IDS.BRIBERY,
   CARD_DEFINITION_IDS.CANNON,
+  CARD_DEFINITION_IDS.CATACLYSM,
 ] as const satisfies readonly CardDefinitionId[]
 
 export const CREATURE_CARDS = [
@@ -472,6 +474,16 @@ export const SPELL_CARDS = [
     duration: 'immediate',
     effect: { type: 'bribery' },
     text: '相手クリーチャー1体を選択する。そのクリーチャーのコスト＋1を支払う。支払えた場合、そのクリーチャーのコントロールを得る。',
+  },
+  {
+    definitionId: CARD_DEFINITION_IDS.CATACLYSM,
+    name: '天変地異',
+    kind: 'spell',
+    cost: 0,
+    foil: true,
+    duration: 'immediate',
+    effect: { type: 'cataclysm' },
+    text: 'すべてのクリーチャーの並びを逆順に並び替える。',
   },
 ] satisfies SpellCard[]
 

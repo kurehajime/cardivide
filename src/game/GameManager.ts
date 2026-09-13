@@ -1651,6 +1651,14 @@ export class GameManager {
     const stateAfterSpell = replacePlayer(manager.state, nextPlayer)
 
     switch (instance.card.effect.type) {
+      case 'cataclysm':
+        return GameManager.from({
+          ...stateAfterSpell,
+          board: {
+            ...stateAfterSpell.board,
+            creatures: stateAfterSpell.board.creatures.toReversed(),
+          },
+        })
       case 'returnFire':
         return GameManager.from(
           applyReturnFire(stateAfterSpell, activePlayer.id, effectAmount),
