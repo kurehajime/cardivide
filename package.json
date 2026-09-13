@@ -7,8 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "ai:tournament": "node --import tsx scripts/ai-tournament.ts",
+    "ai:export-expansion-gains": "node --import tsx scripts/export-expansion-win-rate-gains.ts",
     "lint": "oxlint",
-    "test": "vitest run --dir src/game",
+    "test": "vitest run src/game scripts/*.test.ts",
     "preview": "vite preview"
   },
   "dependencies": {
