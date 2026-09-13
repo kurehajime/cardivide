@@ -73,7 +73,7 @@ export const CREATURE_CARDS = [
     cost: 2,
     attack: 2,
     defense: 2,
-    march: 2,
+    march: 3,
     abilities: [],
   },
   {
