@@ -15,7 +15,7 @@ import { isMeaningfullyGreater } from './scoreComparison'
 
 export const AI_DIFFICULTY_IGNORED_HAND_COUNT: Record<AiDifficulty, number> = {
   easy: 2,
-  normal: 2,
+  normal: 1,
   hard: 0,
 }
 
