@@ -1294,6 +1294,7 @@
 .board-lane-scroll {
   min-width: 0;
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .board-lane-flow {
@@ -1339,6 +1340,7 @@
   justify-content: safe center;
   padding-bottom: 12px;
   overflow-x: auto;
+  overflow-y: hidden;
 }
 
 .board-slot {
