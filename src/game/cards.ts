@@ -61,6 +61,7 @@ export const CREATURE_CARDS = [
   {
     definitionId: CARD_DEFINITION_IDS.WORLD_SERPENT,
     name: '世界蛇',
+    foil: true,
     kind: 'creature',
     color: 'green',
     cost: 6,
@@ -506,7 +507,6 @@ export const SPELL_CARDS = [
     name: '天変地異',
     kind: 'spell',
     cost: 0,
-    foil: true,
     duration: 'immediate',
     effect: { type: 'cataclysm' },
     text: 'すべてのクリーチャーの並びを逆順に並び替える。',
