@@ -1727,6 +1727,24 @@ export class GameManager {
         0,
       )
 
+    const discardCount = board.slice(startIndex, endIndex + 1).reduce(
+      (total, creature) => total + CreatureRules.fromCardId(
+        manager.state, creature.cardId,
+      ).getAttackDeckDiscardCount(attackPower),
+      0,
+    )
+    const attacker = manager.state.players[attackerId]
+    const players = discardCount > 0 && attacker.deck.length > 0
+      ? {
+          ...manager.state.players,
+          [attackerId]: {
+            ...attacker,
+            deck: attacker.deck.slice(discardCount),
+            discard: [...attacker.discard, ...attacker.deck.slice(0, discardCount)],
+          },
+        }
+      : manager.state.players
+
     if (targetIndex < 0 || targetIndex >= board.length) {
       const playerDamage = Math.max(
         0,
@@ -1758,6 +1776,7 @@ export class GameManager {
           playerDamage,
           ...(attackerManaGain > 0 ? { attackerManaGain } : {}),
         },
+        players,
       }
     }
     if (getCreatureOwner(manager.state, board[targetIndex]) !== defenderId) {
@@ -1851,6 +1870,7 @@ export class GameManager {
         playerDamage,
         ...(attackerManaGain > 0 ? { attackerManaGain } : {}),
       },
+      players,
     }
   }
 

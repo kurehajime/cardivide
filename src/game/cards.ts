@@ -41,6 +41,8 @@ export const CARD_DEFINITION_IDS = {
   BRIBERY: 'eb863aef-a524-4d6d-84ed-6d4f7e3b33a1',
   CANNON: '80c448c1-5eef-42f6-9797-4f083e1fb6b6',
   CATACLYSM: '2ef4e015-72dc-4538-892e-a31bab369607',
+  GIANT_FROG: 'bcf14485-d233-4a0e-bb1e-bc93338e4aa9',
+  WORLD_SERPENT: '108c96ea-99a7-4fff-aca0-8105915327db',
 } as const satisfies Record<string, CardDefinitionId>
 
 export const EXPANSION_CARD_DEFINITION_IDS = [
@@ -51,9 +53,33 @@ export const EXPANSION_CARD_DEFINITION_IDS = [
   CARD_DEFINITION_IDS.BRIBERY,
   CARD_DEFINITION_IDS.CANNON,
   CARD_DEFINITION_IDS.CATACLYSM,
+  CARD_DEFINITION_IDS.GIANT_FROG,
+  CARD_DEFINITION_IDS.WORLD_SERPENT,
 ] as const satisfies readonly CardDefinitionId[]
 
 export const CREATURE_CARDS = [
+  {
+    definitionId: CARD_DEFINITION_IDS.WORLD_SERPENT,
+    name: '世界蛇',
+    kind: 'creature',
+    color: 'green',
+    cost: 6,
+    attack: 8,
+    defense: 8,
+    march: 3,
+    abilities: [{ type: 'vanish' }],
+  },
+  {
+    definitionId: CARD_DEFINITION_IDS.GIANT_FROG,
+    name: '大蛙',
+    kind: 'creature',
+    color: 'blue',
+    cost: 2,
+    attack: 3,
+    defense: 3,
+    march: 1,
+    abilities: [{ type: 'gluttony' }],
+  },
   {
     definitionId: CARD_DEFINITION_IDS.SPARK_SWORDSMAN,
     name: '山賊',

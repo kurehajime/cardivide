@@ -283,10 +283,10 @@ describe('CreatureRules position modifiers', () => {
     expect(GameManager.getCreatureStats(manager, allyA).attack).toBe(2)
     const currentCreatureCards: readonly CreatureCard[] = CREATURE_CARDS
     expect(
-      currentCreatureCards.every((card) =>
-        card.abilities.every((ability) => ability.type !== 'summoningSickness'),
-      ),
-    ).toBe(true)
+      currentCreatureCards.filter((card) =>
+        card.abilities.some((ability) => ability.type === 'summoningSickness'),
+      ).map(card => card.definitionId),
+    ).toEqual([])
 
     const allyInstance = manager.state.cards[allyA]
     if (allyInstance.card.kind !== 'creature') {

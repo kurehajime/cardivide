@@ -28,6 +28,7 @@ export type KeywordAbility =
   | { type: 'trickster'; amount: number }
   | { type: 'plunder'; mana: number }
   | { type: 'bombardment'; damage: number }
+  | { type: 'gluttony' }
 
 export type KeywordAbilityType = KeywordAbility['type']
 

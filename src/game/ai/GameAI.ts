@@ -58,6 +58,25 @@ const chooseMainAction = (
   actions: readonly GameAction[],
   ignoredHandCardIds: ReadonlySet<CardInstanceId>,
 ): GameAction => {
+  const hand = manager.state.players[aiPlayerId].hand
+  if (
+    hand.length === 5 &&
+    !actions.some(action => action.type === 'summonCreature' || action.type === 'playSpell')
+  ) {
+    let discardAction: Extract<GameAction, { type: 'discardFromHand' }> | null = null
+    for (const action of actions) {
+      if (
+        action.type === 'discardFromHand' &&
+        (discardAction === null ||
+          manager.state.cards[action.cardId].card.cost >
+            manager.state.cards[discardAction.cardId].card.cost)
+      ) {
+        discardAction = action
+      }
+    }
+    if (discardAction !== null) return discardAction
+  }
+
   const passScore = evaluateBattleEntry(
     manager,
     aiPlayerId,

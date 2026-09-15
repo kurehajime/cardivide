@@ -18,6 +18,7 @@ export const AI_EVALUATION_PARAMETERS = {
   mana: 1,
   boardMaterial: 1,
   creatureHandReserve: 0.3,
+  summoningSicknessReserve: 0.75,
   spellHandReserve: 2,
   lifeDropletHoldMultiplier: 0.5,
   upkeepManaMultiplier: 1.2,
@@ -76,7 +77,18 @@ export const evaluateBase = (
   const boardMaterial = manager.state.board.creatures.reduce((total, creature) => {
     const instance = manager.state.cards[creature.cardId]
     const direction = instance.ownerId === aiPlayerId ? 1 : -1
-    return total + direction * instance.card.cost * AI_EVALUATION_PARAMETERS.boardMaterial
+    const card = instance.card
+    // Credit delayed attack only until sickness expires; combat previews remove
+    // this reserve along with the creature if the opponent can destroy it.
+    const delayedAttackReserve =
+      creature.summonedTurn === manager.state.turn &&
+      card.kind === 'creature' &&
+      card.abilities.some(ability => ability.type === 'summoningSickness')
+        ? card.attack * AI_EVALUATION_PARAMETERS.summoningSicknessReserve
+        : 0
+    return total + direction * (
+      card.cost * AI_EVALUATION_PARAMETERS.boardMaterial + delayedAttackReserve
+    )
   }, 0)
   const evaluatedHand = aiPlayer.hand.filter(
     (cardId) => !ignoredHandCardIds.has(cardId),

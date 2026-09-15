@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { CARD_DEFINITION_IDS } from '../cards'
+import { CARD_DEFINITION_IDS, CARD_BY_DEFINITION_ID } from '../cards'
 import { GameManager } from '../GameManager'
 import { THEME_DECK_BY_ID, THEME_DECK_IDS } from '../themeDecks'
 import type { CardInstanceId, GameState, PlayerId } from '../types'
@@ -942,5 +942,60 @@ describe('GameAI action selection', () => {
     const battle = GameManager.setPhase(createTestManager(), 'battle')
 
     expect(new GameAI().chooseAction(battle)).toEqual({ type: 'passPhase' })
+  })
+})
+
+describe('full unplayable hand', () => {
+  const createBlockedHand = () => {
+    const initial = GameManager.create(KEEP_ORDER_RANDOM, {
+      playerA: [CARD_ID.WORLD_SERPENT, CARD_ID.SPARK_SWORDSMAN, CARD_ID.WORLD_SERPENT, CARD_ID.SPARK_SWORDSMAN, CARD_ID.SPARK_SWORDSMAN],
+      playerB: [CARD_ID.SPARK_SWORDSMAN],
+    })
+    return withState(initial, state => ({
+      ...state, phase: 'main',
+      players: { ...state.players, playerA: { ...state.players.playerA, mana: 0 } },
+    }))
+  }
+
+  it('discards the highest cost card, breaking ties by hand order, only once', () => {
+    const manager = createBlockedHand()
+    const cardId = manager.state.players.playerA.hand[0]
+    const ai = new GameAI()
+    const action = ai.chooseAction(manager)
+    expect(action).toEqual({ type: 'discardFromHand', cardId })
+    const next = GameManager.applyAction(manager, action!)
+    expect(next.state.players.playerA.hand).toHaveLength(4)
+    expect(next.state.players.playerA.discard).toContain(cardId)
+    expect(ai.chooseAction(next)).toEqual({ type: 'passPhase' })
+  })
+
+  it('does not discard when the turn discard has already been used', () => {
+    const manager = withState(createBlockedHand(), state => ({ ...state, hasDiscardedThisTurn: true }))
+    expect(new GameAI().chooseAction(manager)).toEqual({ type: 'passPhase' })
+  })
+
+  it('does not force a discard if a creature can be summoned', () => {
+    const manager = withState(createBlockedHand(), state => ({
+      ...state, players: { ...state.players, playerA: { ...state.players.playerA, mana: 2 } },
+    }))
+    expect(new GameAI().chooseAction(manager)?.type).toBe('summonCreature')
+  })
+
+  it('does not force a discard if a spell can be played', () => {
+    const manager = withState(createBlockedHand(), state => {
+      const cardId = state.players.playerA.hand[1]
+      return { ...state, cards: { ...state.cards, [cardId]: {
+        ...state.cards[cardId], card: CARD_BY_DEFINITION_ID[CARD_ID.CATACLYSM]!,
+      } } }
+    })
+    expect(GameManager.getLegalMainActions(manager).some(action => action.type === 'playSpell')).toBe(true)
+    expect(new GameAI().chooseAction(manager)?.type).not.toBe('discardFromHand')
+  })
+
+  it('excludes the ignored highest-cost card on normal difficulty', () => {
+    const manager = createBlockedHand()
+    expect(new GameAI({ difficulty: 'normal', random: () => 0 }).chooseAction(manager)).toEqual({
+      type: 'discardFromHand', cardId: manager.state.players.playerA.hand[2],
+    })
   })
 })
