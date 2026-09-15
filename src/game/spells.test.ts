@@ -254,15 +254,16 @@ describe('bribery', () => {
     expect(poor.state.cards[target].ownerId).toBe('playerB')
   })
 
-  it('returns the bought creature and its mana to the new controller', () => {
-    const { manager, spell, target } = createBriberyScenario()
+  it.each(['playerA', 'playerB'] as const)('rallies a bought creature for its new controller %s', (casterId) => {
+    const { manager, spell, target, scouts, dragon } = createBriberyScenario(casterId)
     const bought = GameManager.playSpell(manager, spell, {kind:'creature',cardId:target})
-    const returned = GameManager.activateAbility(bought, target, 'return')
-    expect(returned.state.players.playerA.hand).toEqual([target])
-    expect(returned.state.players.playerA.mana).toBe(1)
-    expect(returned.state.players.playerB.hand).not.toContain(target)
-    expect(returned.state.cards[target].id).toBe(target)
-    expect(() => assertValidGameState(returned.state)).not.toThrow()
+    const rallied = GameManager.activateAbility(bought, target, 'rally')
+    expect(rallied.state.board.creatures.map(({ cardId }) => cardId)).toEqual(
+      casterId === 'playerA' ? [target, ...scouts, dragon] : [...scouts, target, dragon],
+    )
+    expect(rallied.state.players).toEqual(bought.state.players)
+    expect(rallied.state.cards[target]).toEqual(bought.state.cards[target])
+    expect(() => assertValidGameState(rallied.state)).not.toThrow()
   })
 
   it('sends a destroyed bought creature and the refund to the new controller', () => {

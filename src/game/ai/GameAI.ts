@@ -101,15 +101,15 @@ const chooseMainAction = (
   return bestAction ?? { type: 'passPhase' }
 }
 
-const isReturnAction = (
+const isRallyAction = (
   action: GameAction,
 ): action is Extract<GameAction, { type: 'activateAbility' }> =>
-  action.type === 'activateAbility' && action.abilityType === 'return'
+  action.type === 'activateAbility' && action.abilityType === 'rally'
 
 export class AiTurnActionMemory {
   private turn: number | null = null
   private playerId: PlayerId | null = null
-  private readonly returnedCardIds = new Set<CardInstanceId>()
+  private readonly ralliedCardIds = new Set<CardInstanceId>()
   private readonly ignoredHandCardIds = new Set<CardInstanceId>()
   private handMaskInitialized = false
 
@@ -121,7 +121,7 @@ export class AiTurnActionMemory {
 
     this.turn = turn
     this.playerId = activePlayerId
-    this.returnedCardIds.clear()
+    this.ralliedCardIds.clear()
     this.ignoredHandCardIds.clear()
     this.handMaskInitialized = false
   }
@@ -154,15 +154,15 @@ export class AiTurnActionMemory {
   allows(manager: GameManager, action: GameAction): boolean {
     this.syncTurn(manager)
     return (
-      !isReturnAction(action) ||
-      !this.returnedCardIds.has(action.sourceCardId)
+      !isRallyAction(action) ||
+      !this.ralliedCardIds.has(action.sourceCardId)
     )
   }
 
   remember(manager: GameManager, action: GameAction): void {
     this.syncTurn(manager)
-    if (isReturnAction(action)) {
-      this.returnedCardIds.add(action.sourceCardId)
+    if (isRallyAction(action)) {
+      this.ralliedCardIds.add(action.sourceCardId)
     }
   }
 }

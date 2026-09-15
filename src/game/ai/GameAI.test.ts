@@ -842,31 +842,31 @@ describe('GameAI action selection', () => {
     )
   })
 
-  it('considers each physical card for return only once per turn', () => {
+  it('considers each physical card for rally only once per turn', () => {
     const manager = createTestManager()
     const [sourceCardId, otherCardId] = manager.state.players.playerA.hand
-    const returnAction = {
+    const rallyAction = {
       type: 'activateAbility',
       sourceCardId,
-      abilityType: 'return',
+      abilityType: 'rally',
     } as const
-    const otherReturnAction = {
-      ...returnAction,
+    const otherRallyAction = {
+      ...rallyAction,
       sourceCardId: otherCardId,
     }
     const memory = new AiTurnActionMemory()
 
-    expect(memory.allows(manager, returnAction)).toBe(true)
-    memory.remember(manager, returnAction)
-    expect(memory.allows(manager, returnAction)).toBe(false)
-    expect(memory.allows(manager, otherReturnAction)).toBe(true)
+    expect(memory.allows(manager, rallyAction)).toBe(true)
+    memory.remember(manager, rallyAction)
+    expect(memory.allows(manager, rallyAction)).toBe(false)
+    expect(memory.allows(manager, otherRallyAction)).toBe(true)
 
     const nextTurn = withState(manager, (state) => ({
       ...state,
       turn: state.turn + 1,
       activePlayerId: 'playerB',
     }))
-    expect(memory.allows(nextTurn, returnAction)).toBe(true)
+    expect(memory.allows(nextTurn, rallyAction)).toBe(true)
   })
 
   it('completes a turn using only enumerated legal actions', () => {

@@ -267,7 +267,7 @@ export const CREATURE_CARDS = [
     attack: 3,
     defense: 1,
     march: 1,
-    abilities: [{ type: 'return' }],
+    abilities: [{ type: 'rally' }],
   },
   {
     definitionId: CARD_DEFINITION_IDS.TIDEFRONT_FORTIFIER,
@@ -356,7 +356,7 @@ export const CREATURE_CARDS = [
     attack: 4,
     defense: 3,
     march: 2,
-    abilities: [{ type: 'return' }],
+    abilities: [{ type: 'rally' }],
   },
   {
     definitionId: CARD_DEFINITION_IDS.FOREST_CAGE_BEASTMASTER,
@@ -402,7 +402,7 @@ export const CREATURE_CARDS = [
     attack: 1,
     defense: 1,
     march: 2,
-    abilities: [{ type: 'trickster', amount: 4 }, { type: 'return' }],
+    abilities: [{ type: 'trickster', amount: 4 }, { type: 'rally' }],
   },
   {
     definitionId: CARD_DEFINITION_IDS.THIEF,

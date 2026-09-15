@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { GameManager } from './GameManager'
+import { GameManager, assertValidGameState } from './GameManager'
+import { GameAI } from './ai/GameAI'
 import { CreatureRules, describeAbility } from './CreatureRules'
 import {
   getCrossedIndexes,
@@ -823,73 +824,115 @@ describe('activated abilities', () => {
     expect(manager.state.players.playerA.mana).toBe(2)
   })
 
-  it('returns to a four-card hand and rejects a full hand', () => {
-    const initial = withHandSize(createTestManager(), 'playerA', 4)
-    const [source] = findCardIds(
-      initial.state,
-      'playerA',
-      CARD_ID.MIST_RETURNING_MESSENGER,
-    )
-    let manager = configureManager(initial, {
-      board: [{ cardId: source }],
-      mana: { playerA: 0 },
-    })
-    manager = GameManager.activateAbility(manager, source, 'return')
-    expect(manager.state.players.playerA.hand).toHaveLength(5)
-    expect(manager.state.players.playerA.hand).toContain(source)
-    expect(manager.state.players.playerA.mana).toBe(1)
-    expect(manager.state.cards[source].card).toMatchObject({
-      name: '傭兵',
-      attack: 3,
-      defense: 1,
-      march: 1,
-    })
+  it.each(['playerA', 'playerB'] as const)(
+    'rallies each affected card across enemies to the foremost friendly group for %s',
+    (ownerId) => {
+      for (const definitionId of [CARD_ID.MIST_RETURNING_MESSENGER, CARD_ID.WAVE_RETURN_MAGE, CARD_ID.MAGICIAN]) {
+        const initial = withHandSize(createExpansionTestManager(), ownerId, 0)
+        const enemyId = ownerId === 'playerA' ? 'playerB' : 'playerA'
+        const [source] = findCardIds(initial.state, ownerId, definitionId)
+        const [middle, front] = findCardIds(initial.state, ownerId, CARD_ID.TIDEWAY_SCOUT, 2)
+        const [enemy1, enemy2] = findCardIds(initial.state, enemyId, CARD_ID.TIDEWAY_SCOUT, 2)
+        const ids = [source, enemy1, middle, enemy2, front]
+        if (ownerId === 'playerB') ids.reverse()
+        const manager = configureManager(initial, {
+          board: ids.map((cardId) => ({ cardId, summonedTurn: 10 })),
+          handAdditions: initial.state.players[ownerId].deck.filter((id) => !ids.includes(id)).slice(0, 5),
+          activePlayerId: ownerId,
+          mana: { [ownerId]: 0 },
+        })
+        expect(manager.state.players[ownerId].hand).toHaveLength(5)
+        const action = { type: 'activateAbility', sourceCardId: source, abilityType: 'rally' } as const
+        expect(GameManager.getLegalMainActions(manager)).toContainEqual(action)
+        const next = GameManager.applyAction(manager, action)
+        const expected = [enemy1, middle, enemy2, source, front]
+        if (ownerId === 'playerB') expected.reverse()
+        expect(next.state.board.creatures.map(({ cardId }) => cardId)).toEqual(expected)
+        expect(next.state.board.creatures.find(({ cardId }) => cardId === source)?.summonedTurn).toBe(10)
+        expect(next.state.players).toEqual(manager.state.players)
+        expect(next.state.cards).toEqual(manager.state.cards)
+        expect(manager.state.board.creatures.map(({ cardId }) => cardId)).toEqual(ids)
+        expect(GameManager.getLegalMainActions(next)).not.toContainEqual(action)
+        expect(() => assertValidGameState(next.state)).not.toThrow()
+      }
+    },
+  )
 
-    const [fullHandSource] = findCardIds(
-      initial.state,
-      'playerA',
-      CARD_ID.WAVE_RETURN_MAGE,
-    )
-    const extraHandCard = initial.state.players.playerA.deck[0]
-    manager = configureManager(initial, {
-      board: [{ cardId: fullHandSource }],
-      handAdditions: [extraHandCard],
-    })
-    expect(
-      GameManager.getActivatedAbilities(manager).find(
-        ({ sourceCardId }) => sourceCardId === fullHandSource,
-      ),
-    ).toMatchObject({ enabled: false })
-    expect(() => GameManager.activateAbility(manager, fullHandSource, 'return')).toThrow(
-      /手札が5枚/,
-    )
+  it.each(['playerA', 'playerB'] as const)('can move within its foremost group for %s', (ownerId) => {
+    const initial = createTestManager()
+    const [source] = findCardIds(initial.state, ownerId, CARD_ID.MIST_RETURNING_MESSENGER)
+    const [rear, middle] = findCardIds(initial.state, ownerId, CARD_ID.TIDEWAY_SCOUT, 2)
+    for (const ids of [[rear, middle, source], [rear, source, middle]]) {
+      const board = ownerId === 'playerA' ? ids : ids.toReversed()
+      const manager = configureManager(initial, {
+        board: board.map((cardId) => ({ cardId })), activePlayerId: ownerId,
+      })
+      const next = GameManager.activateAbility(manager, source, 'rally')
+      const expected = [source, rear, middle]
+      expect(next.state.board.creatures.map(({ cardId }) => cardId))
+        .toEqual(ownerId === 'playerA' ? expected : expected.toReversed())
+    }
   })
 
-  it('allows a human player to return the same physical card repeatedly in one turn', () => {
-    const initial = withHandSize(createTestManager(), 'playerA', 4)
-    const [source] = findCardIds(
-      initial.state,
-      'playerA',
-      CARD_ID.MIST_RETURNING_MESSENGER,
-    )
-    let manager = configureManager(initial, {
-      board: [{ cardId: source }],
-      mana: { playerA: 3 },
-    })
-
-    manager = GameManager.activateAbility(manager, source, 'return')
-    expect(manager.state.players.playerA.mana).toBe(4)
-
-    const summonOption = GameManager.getSummonOptions(manager, source).find(
-      ({ canSummon }) => canSummon,
-    )
-    expect(summonOption).toBeDefined()
-    manager = GameManager.summonCreature(manager, source, summonOption!.insertIndex)
-    manager = GameManager.activateAbility(manager, source, 'return')
-
-    expect(manager.state.players.playerA.hand).toContain(source)
-    expect(manager.state.players.playerA.mana).toBe(3)
+  it.each(['playerA', 'playerB'] as const)('does not move a foremost singleton backward for %s', (ownerId) => {
+    const initial = createTestManager()
+    const [source] = findCardIds(initial.state, ownerId, CARD_ID.MIST_RETURNING_MESSENGER)
+    const [rear] = findCardIds(initial.state, ownerId, CARD_ID.TIDEWAY_SCOUT)
+    const [enemy] = findCardIds(initial.state, ownerId === 'playerA' ? 'playerB' : 'playerA', CARD_ID.TIDEWAY_SCOUT)
+    for (const ids of [[source], [rear, enemy, source], [source, rear]]) {
+      const board = ownerId === 'playerA' ? ids : ids.toReversed()
+      const manager = configureManager(initial, {
+        board: board.map((cardId) => ({ cardId })), activePlayerId: ownerId,
+      })
+      expect(() => GameManager.activateAbility(manager, source, 'rally')).toThrow(/すでに/)
+    }
   })
+
+  it('rejects rally outside its controller main phase and during pending combat', () => {
+    const initial = createTestManager()
+    const [source, front] = findCardIds(initial.state, 'playerA', CARD_ID.MIST_RETURNING_MESSENGER, 2)
+    const manager = configureManager(initial, { board: [{ cardId: front }, { cardId: source }] })
+    for (const state of [
+      { ...manager.state, phase: 'battle' as const },
+      { ...manager.state, activePlayerId: 'playerB' as const },
+      GameManager.attackGroup(manager, 0, 1).state,
+    ]) {
+      expect(() => GameManager.activateAbility(GameManager.from(state), source, 'rally')).toThrow(/メインフェイズ/)
+    }
+  })
+
+  it('lets humans rally again after another creature changes the group order', () => {
+    const initial = createTestManager()
+    const [source, other] = findCardIds(initial.state, 'playerA', CARD_ID.MIST_RETURNING_MESSENGER, 2)
+    let manager = configureManager(initial, { board: [{ cardId: other }, { cardId: source }] })
+    manager = GameManager.activateAbility(manager, source, 'rally')
+    manager = GameManager.activateAbility(manager, other, 'rally')
+    manager = GameManager.activateAbility(manager, source, 'rally')
+    expect(manager.state.board.creatures.map(({ cardId }) => cardId)).toEqual([source, other])
+  })
+
+  it.each(['playerA', 'playerB'] as const)('lets the AI rally into a winning attack for %s', (ownerId) => {
+    const initial = withHandSize(createTestManager(), ownerId, 0)
+    const enemyId = ownerId === 'playerA' ? 'playerB' : 'playerA'
+    const [source] = findCardIds(initial.state, ownerId, CARD_ID.MIST_RETURNING_MESSENGER)
+    const [front] = findCardIds(initial.state, ownerId, CARD_ID.TIDEWAY_SCOUT)
+    const [blocker] = findCardIds(initial.state, enemyId, CARD_ID.GREAT_TREE_GUARDIAN)
+    const ids = [source, blocker, front]
+    if (ownerId === 'playerB') ids.reverse()
+    const manager = configureManager(initial, {
+      board: ids.map((cardId) => ({ cardId })),
+      activePlayerId: ownerId, mana: { [ownerId]: 0 }, hp: { [enemyId]: 1 },
+    })
+    const originalState = structuredClone(manager.state)
+    const action = new GameAI().chooseAction(manager)
+    expect(action).toEqual({ type: 'activateAbility', sourceCardId: source, abilityType: 'rally' })
+    const moved = GameManager.applyAction(manager, action!)
+    const group = GameManager.getBoardGroups(moved).find((candidate) => candidate.ownerId === ownerId)!
+    const won = GameManager.finishCombat(GameManager.attackGroup(moved, group.startIndex, group.endIndex))
+    expect(GameManager.getWinner(won)).toBe(ownerId)
+    expect(manager.state).toEqual(originalState)
+  })
+
 })
 
 describe('end-turn abilities', () => {

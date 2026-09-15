@@ -19,7 +19,7 @@ export type KeywordAbility =
   | { type: 'withdraw' }
   | { type: 'assassin'; attack: number }
   | { type: 'counter' }
-  | { type: 'return' }
+  | { type: 'rally' }
   | { type: 'beachhead'; costReduction: number }
   | { type: 'capture'; marchTax: number }
   | { type: 'mining'; mana: number }
@@ -34,7 +34,7 @@ export type KeywordAbilityType = KeywordAbility['type']
 
 export type ActivatedAbilityType = Extract<
   KeywordAbilityType,
-  'withdraw' | 'return'
+  'withdraw' | 'rally'
 >
 
 export type CardBase = {
@@ -125,10 +125,9 @@ export type ActivatedAbilityOption = {
   reason?: string
 }
 
-export type ActivatedAbilityResolution = {
-  destination: 'discard' | 'hand'
-  mana: number
-}
+export type ActivatedAbilityResolution =
+  | { destination: 'discard'; mana: number }
+  | { destination: 'board'; boardIndex: number }
 
 export type EffectiveBoardGroup = {
   ownerId: PlayerId

@@ -4,6 +4,7 @@ import {
   getCreatureOwnerAt,
   getFrontIndex,
   getGroupAt,
+  getRallyDestinationIndex,
   getRearNeighborIndex,
   isAdjacentToEnemyPlayer,
   isCreatureFlankedByEnemies,
@@ -145,20 +146,19 @@ const ABILITY_HANDLERS = {
         : NO_STAT_MODIFIER,
   },
   counter: {},
-  return: {
+  rally: {
     getActivatedAbility: (_ability, context) => {
-      const handHasRoom = context.state.players[context.ownerId].hand.length <= 4
       return createActivatedOption(
         context,
-        'return',
-        '帰還',
-        handHasRoom,
-        '手札が5枚あるため帰還できません。',
+        'rally',
+        '招集',
+        getRallyDestinationIndex(context.state, context.boardIndex) !== context.boardIndex,
+        'すでに最も前方の自グループの末尾にいます。',
       )
     },
     getActivatedResolution: (_ability, context) => ({
-      destination: 'hand',
-      mana: Math.floor(context.card.cost / 2),
+      destination: 'board',
+      boardIndex: getRallyDestinationIndex(context.state, context.boardIndex),
     }),
   },
   beachhead: {
@@ -243,8 +243,8 @@ export const formatAbility = (ability: KeywordAbility): string => {
       return `刺客${ability.attack}`
     case 'counter':
       return '反撃'
-    case 'return':
-      return '帰還'
+    case 'rally':
+      return '招集'
     case 'beachhead':
       return `橋頭堡${ability.costReduction}`
     case 'capture':
@@ -280,8 +280,8 @@ export const describeAbility = (ability: KeywordAbility): string => {
       return `このクリーチャーの隣が敵プレイヤーの場合、攻撃力を+${ability.attack}する。`
     case 'counter':
       return 'このクリーチャーが先頭にいる場合、攻撃グループの先頭にいるクリーチャー1体へ、自身の攻撃力と同じ攻撃を与える。'
-    case 'return':
-      return '起動型能力。手札が4枚以下のとき、このクリーチャーを手札に戻す。コストの半分が変換される。'
+    case 'rally':
+      return '起動型能力。最も前方にある自グループの末尾に移動する。'
     case 'beachhead':
       return `このクリーチャーの両隣が敵クリーチャーまたは敵プレイヤーの場合、このクリーチャーの隣に召喚する味方のコストは${ability.costReduction}減少する。`
     case 'capture':

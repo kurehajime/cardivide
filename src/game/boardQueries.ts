@@ -85,6 +85,17 @@ export const getGroupAt = (state: GameState, boardIndex: number): BoardGroupRang
   return group
 }
 
+// Return the destination index after removing the rallying creature.
+export const getRallyDestinationIndex = (state: GameState, boardIndex: number): number => {
+  const ownerId = getCreatureOwnerAt(state, boardIndex)
+  const groups = collectBoardGroups(state)
+  const group = ownerId === 'playerA'
+    ? groups.findLast((candidate) => candidate.ownerId === ownerId)!
+    : groups.find((candidate) => candidate.ownerId === ownerId)!
+  const insertIndex = ownerId === 'playerA' ? group.startIndex : group.endIndex + 1
+  return insertIndex - (boardIndex < insertIndex ? 1 : 0)
+}
+
 const getEndpointOwner = (
   state: GameState,
   adjacentIndex: number,

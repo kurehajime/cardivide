@@ -1942,6 +1942,13 @@ export class GameManager {
     }
 
     const resolution = rules.getActivatedAbilityResolution(abilityType)
+    if (resolution.destination === 'board') {
+      const creatures = [...manager.state.board.creatures]
+      const sourceIndex = creatures.findIndex(({ cardId }) => cardId === sourceCardId)
+      const [source] = creatures.splice(sourceIndex, 1)
+      creatures.splice(resolution.boardIndex, 0, source)
+      return GameManager.from({ ...manager.state, board: { creatures } })
+    }
     const owner = manager.state.players[rules.ownerId]
     const nextOwner = {
       ...owner,
