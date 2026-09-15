@@ -2040,7 +2040,7 @@
   mix-blend-mode: multiply;
   filter: brightness(1.18);
   background-position: 15% 25%;
-  opacity: 0.04;
+  opacity: 0.12;
 }
 
 .card-foil-grain {
@@ -2060,7 +2060,7 @@
   background-position: 15% 25%;
   background-repeat: no-repeat;
   mix-blend-mode: screen;
-  opacity: 0.06;
+  opacity: 0.1;
 }
 
 .hand-card-unavailable > .card-foil {
