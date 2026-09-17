@@ -73,6 +73,10 @@ type PlayerDamageLevel = 'normal' | 'large' | 'critical'
 
 const BOARD_SCROLL_PADDING = 12
 
+// Keep the opponent farther up and our cards closer, with buttons outside them.
+const getBoardCardGridRow = (ownerId: PlayerId): string =>
+  ownerId === 'playerA' ? '3 / 5' : '2 / 4'
+
 const DAMAGE_MARKER_STYLE = {
   '--damage-marker-icon': `url("${import.meta.env.BASE_URL}damage.svg")`,
 } as CSSProperties
@@ -363,7 +367,7 @@ const BoardGroupButton = ({
       className={`board-group-button board-group-${group.ownerId} ${spellTargetAction ? 'board-group-spell-target' : ''}`}
       style={{
         gridColumn: `${group.startIndex * 2 + 2} / ${group.endIndex * 2 + 3}`,
-        gridRow: group.ownerId === 'playerB' ? 1 : 3,
+        gridRow: group.ownerId === 'playerB' ? 1 : 5,
       }}
       animate={animationControls}
       type="button"
@@ -581,6 +585,10 @@ const BoardView = ({
           >
             {board.creatures.map((creature, index) => {
               const summonOption = summonOptionByIndex.get(index)
+              const ownerId = cards[creature.cardId].ownerId
+              const cardGridRow = getBoardCardGridRow(ownerId)
+              const isInsideGroup = index > 0 &&
+                cards[board.creatures[index - 1].cardId].ownerId === ownerId
               return (
                 <Fragment key={creature.cardId}>
                 <button
@@ -588,7 +596,10 @@ const BoardView = ({
                   className={getSummonSlotClassName(summonOption)}
                   data-insert-index={index}
                   data-summon-state={getSummonSlotState(summonOption) ?? undefined}
-                  style={{ gridColumn: index * 2 + 1, gridRow: 2 }}
+                  style={{
+                    gridColumn: index * 2 + 1,
+                    gridRow: index === 0 || isInsideGroup ? cardGridRow : undefined,
+                  }}
                   type="button"
                   disabled={!summonOption?.canSummon}
                   title={getSummonSlotTitle(summonOption)}
@@ -601,7 +612,10 @@ const BoardView = ({
                   layoutId={`card-${creature.cardId}`}
                   data-card-id={creature.cardId}
                   className="board-slot"
-                  style={{ gridColumn: index * 2 + 2, gridRow: 2 }}
+                  style={{
+                    gridColumn: index * 2 + 2,
+                    gridRow: cardGridRow,
+                  }}
                 >
                   <SummonImpact enabled={cards[creature.cardId].card.cost >= 4}>
                     <motion.div
@@ -693,7 +707,12 @@ const BoardView = ({
               className={getSummonSlotClassName(lastSummonOption)}
               data-insert-index={board.creatures.length}
               data-summon-state={getSummonSlotState(lastSummonOption) ?? undefined}
-              style={{ gridColumn: board.creatures.length * 2 + 1, gridRow: 2 }}
+              style={{
+                gridColumn: board.creatures.length * 2 + 1,
+                gridRow: getBoardCardGridRow(
+                  cards[board.creatures[board.creatures.length - 1].cardId].ownerId,
+                ),
+              }}
               type="button"
               disabled={!lastSummonOption?.canSummon}
               title={getSummonSlotTitle(lastSummonOption)}
