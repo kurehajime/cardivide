@@ -178,7 +178,7 @@ const GameSetup = ({
       style={getDeckBackgroundStyle(playerDeckId)}
     >
       <header className="setup-header">
-        <h1>CARDIVIDE</h1>
+        <h1>NUSA</h1>
         <span>対戦設定</span>
       </header>
       <section className="setup-panel" aria-label="デッキ選択">

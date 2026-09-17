@@ -370,7 +370,7 @@ const GameSession = ({
           style={getDeckBackgroundStyle(comDeckId)}
         >
           <header className="game-header">
-            <h1>CARDIVIDE</h1>
+            <h1>NUSA</h1>
           </header>
           {message && winnerId === null && (
             <div className="game-message" role="status">
