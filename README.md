@@ -1,6 +1,6 @@
 # NUSA
 
-https://kurehajime.github.io/cardivide/
+https://kurehajime.github.io/nusa/
 
 NUSAは、COM対戦できるカードゲームです。
 
