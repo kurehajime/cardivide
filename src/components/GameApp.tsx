@@ -24,7 +24,6 @@ import GameSetup, {
   type GameSetupSelection,
 } from './GameSetup'
 import HandView from './HandView'
-import PhaseBar from './PhaseBar'
 import ScenarioProgressDialog from './ScenarioProgressDialog'
 import { getDeckBackgroundStyle } from './deckBackground'
 
@@ -57,7 +56,6 @@ type ScenarioRun = {
 
 type GameSessionProps = GameSelection & {
   scenarioRun: ScenarioRun | null
-  onExit: () => void
   onResultConfirm: (winnerId: PlayerId, rewardId?: CardDefinitionId) => void
 }
 
@@ -105,7 +103,6 @@ const GameSession = ({
   comDeckId,
   difficulty,
   scenarioRun,
-  onExit,
   onResultConfirm,
 }: GameSessionProps) => {
   const aiRef = useRef<GameAI | null>(null)
@@ -374,22 +371,6 @@ const GameSession = ({
         >
           <header className="game-header">
             <h1>CARDIVIDE</h1>
-            <div className="game-header-controls">
-              {scenarioRun && (
-                <div className="scenario-progress" aria-label="シナリオ進行状況">
-                  Battle {scenarioRun.currentBattleIndex + 1} /{' '}
-                  {scenarioRun.opponentDeckIds.length}
-                </div>
-              )}
-              <PhaseBar phase={state.phase} turn={state.turn} activePlayer={currentPlayer.name} />
-              <button
-                className="game-action-button game-action-secondary"
-                type="button"
-                onClick={onExit}
-              >
-                メニューに戻る
-              </button>
-            </div>
           </header>
           {message && winnerId === null && (
             <div className="game-message" role="status">
@@ -648,7 +629,6 @@ const GameApp = () => {
       }
       {...selection}
       scenarioRun={scenarioRun}
-      onExit={returnToSetup}
       onResultConfirm={handleResultConfirm}
     />
   )

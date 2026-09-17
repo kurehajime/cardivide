@@ -564,74 +564,6 @@
   letter-spacing: 0;
 }
 
-.game-header-controls {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.phase-bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 8px 12px;
-  border: 1px solid #9aa596;
-  border-radius: 8px;
-  background: #fbfcf8;
-  color: #4e594f;
-  font-size: 14px;
-  white-space: nowrap;
-}
-
-.phase-bar strong {
-  color: #171a17;
-}
-
-.scenario-progress {
-  min-height: 36px;
-  display: flex;
-  align-items: center;
-  padding: 0 12px;
-  border: 1px solid rgb(248 243 236 / 55%);
-  border-radius: 6px;
-  background: rgb(38 52 47 / 82%);
-  color: #f8f3ec;
-  font-size: 13px;
-  font-weight: 800;
-  white-space: nowrap;
-}
-
-.game-action-button {
-  min-height: 36px;
-  padding: 0 14px;
-  border: 1px solid #2d3f38;
-  border-radius: 8px;
-  background: #26342f;
-  color: #f8fbf5;
-  font-weight: 700;
-}
-
-.game-action-button:not(:disabled) {
-  cursor: pointer;
-}
-
-.game-action-button:disabled {
-  border-color: #b9c2b5;
-  background: #d9dfd4;
-  color: #778174;
-}
-
-.game-action-button:focus-visible {
-  outline: 3px solid #276fbf;
-  outline-offset: 3px;
-}
-
-.game-action-secondary {
-  border-color: #788278;
-  background: #fbfcf8;
-  color: #354038;
-}
-
 .game-message {
   padding: 8px 12px;
   border: 1px solid #b96554;
@@ -2496,15 +2428,25 @@
 }
 
 @media (min-width: 721px) {
+  .game-shell {
+    padding-bottom: calc(6px + env(safe-area-inset-bottom, 0px));
+  }
+
   .board-panel {
+    /* The opponent can use the header space to the right of the title. */
+    margin-top: -56px;
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       'player-b'
       'lane'
       'player-a';
-    gap: 16px;
-    padding: 16px 16px 28px;
+    gap: 0;
+    padding: 0 16px;
     overflow-x: visible;
+  }
+
+  .game-message ~ .board-panel {
+    margin-top: 0;
   }
 
   .board-player {
@@ -2521,7 +2463,7 @@
     grid-template-areas:
       'endpoint stats spell .'
       'endpoint graveyard spell .';
-    padding: 0 22px 12px 24px;
+    padding: 0 22px 0 24px;
   }
 
   .board-player-playerB {
@@ -2530,7 +2472,7 @@
     grid-template-areas:
       '. spell stats endpoint'
       '. spell graveyard endpoint';
-    padding: 12px 24px 0 22px;
+    padding: 0 24px 0 22px;
   }
 
   .board-player-stats {
@@ -2581,26 +2523,26 @@
     width: calc(100% + 68px);
   }
 
+  .board-lane-grid {
+    /* The attack row adds 38px beneath the card; 12px completes the shadow room. */
+    padding-bottom: 12px;
+  }
+
+  .hand-panel-bottom {
+    padding: 32px 10px 6px;
+  }
+
 }
 
 @media (min-width: 721px) and (max-height: 980px) {
   .game-shell {
     gap: 8px;
     padding-top: calc(8px + env(safe-area-inset-top, 0px));
-    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: calc(4px + env(safe-area-inset-bottom, 0px));
   }
 
   .board-panel {
-    gap: 8px;
-    padding: 8px 16px;
-  }
-
-  .board-player-playerA {
-    padding: 0 22px 6px 24px;
-  }
-
-  .board-player-playerB {
-    padding: 6px 24px 0 22px;
+    margin-top: -44px;
   }
 
   .board-lane-flow {
@@ -2609,7 +2551,7 @@
 
   .hand-panel-bottom {
     gap: 8px;
-    padding: 34px 8px 10px;
+    padding: 32px 8px 6px;
   }
 
   .hand-panel-top {
@@ -2726,19 +2668,8 @@
     gap: 8px;
   }
 
-  .game-header-controls {
-    width: auto;
-    display: flex;
-    margin-left: auto;
-  }
-
   .game-header h1 {
     font-size: 20px;
-  }
-
-  .scenario-progress,
-  .phase-bar {
-    display: none;
   }
 
   .board-panel {
