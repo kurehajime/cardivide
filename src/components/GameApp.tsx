@@ -482,6 +482,7 @@ const GameSession = ({
             >
               <motion.div
                 className="game-result-band"
+                data-result={winnerId === 'playerA' ? 'win' : 'loss'}
                 initial={{ opacity: 0, scale: 0.88 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.08, duration: 0.38, ease: 'easeOut' }}

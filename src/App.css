@@ -611,6 +611,15 @@
     0 10px 28px rgb(20 10 6 / 72%);
 }
 
+.game-result-band[data-result='loss'] {
+  background: rgb(58 24 27 / 38%);
+  border-color: rgb(255 218 214 / 38%);
+}
+
+.game-result-band[data-result='loss'] .game-result-message {
+  color: #ffe3e0;
+}
+
 .game-result-confirm {
   grid-column: 3;
   justify-self: end;
@@ -659,6 +668,24 @@
   color: #fff;
   backdrop-filter: blur(5px) saturate(0.75);
   pointer-events: auto;
+}
+
+.scenario-result-dialog[data-result='loss'] {
+  background: rgb(58 24 27 / 52%);
+  border-color: rgb(255 218 214 / 44%);
+  box-shadow: 0 18px 56px rgb(42 10 15 / 58%);
+}
+
+.scenario-result-dialog[data-result='loss'] :is(
+  .scenario-result-header span,
+  .scenario-opponent-order,
+  .scenario-opponent strong
+) {
+  color: #ffe3e0;
+}
+
+.scenario-result-dialog[data-result='loss'] .scenario-result-header h2 {
+  color: #ff2020;
 }
 
 .scenario-result-header {
@@ -719,8 +746,9 @@
   grid-auto-flow: column;
   grid-auto-columns: minmax(126px, 1fr);
   gap: 12px;
-  margin: 0;
-  padding: 0 0 12px;
+  /* Keep the glow inside the horizontal scroller without increasing its height. */
+  margin: -12px -12px -12px;
+  padding: 12px 28px 24px;
   overflow-x: auto;
   list-style: none;
 }
@@ -837,13 +865,11 @@
   color: #26342f;
 }
 
-.scenario-opponent-next .scenario-opponent-icon {
+.scenario-opponent-next .scenario-opponent-icon,
+.scenario-opponent-failed .scenario-opponent-icon {
   width: 108px;
   height: 140px;
   border-color: transparent;
-  box-shadow:
-    0 0 0 4px rgb(255 255 255 / 90%),
-    0 10px 26px rgb(10 4 2 / 72%);
   transform: translateY(-5px);
 }
 
@@ -865,9 +891,23 @@
   color: #fff;
 }
 
-.scenario-opponent-failed .scenario-opponent-icon {
+.scenario-opponent:is(.scenario-opponent-next, .scenario-opponent-failed)
+  .scenario-opponent-icon {
   border-color: transparent;
-  box-shadow: 0 0 0 4px rgb(255 255 255 / 90%);
+  box-shadow:
+    0 0 10px 2px rgb(255 255 255 / 65%),
+    0 0 24px 5px rgb(255 255 255 / 32%),
+    0 8px 18px rgb(10 4 2 / 35%);
+  animation: scenario-opponent-halo 2.8s ease-in-out infinite;
+}
+
+@keyframes scenario-opponent-halo {
+  50% {
+    box-shadow:
+      0 0 14px 4px rgb(255 255 255 / 95%),
+      0 0 34px 10px rgb(255 255 255 / 60%),
+      0 8px 18px rgb(10 4 2 / 35%);
+  }
 }
 
 .scenario-result-confirm {
@@ -963,6 +1003,11 @@
   font-weight: 900;
 }
 
+.scenario-result-dialog.scenario-result-with-rewards {
+  /* Offset the taller opponent portrait across the three section gaps. */
+  row-gap: 16px;
+}
+
 .scenario-result-with-rewards .scenario-opponent-icon {
   width: 48px;
   height: 62px;
@@ -970,8 +1015,8 @@
 }
 
 .scenario-result-with-rewards .scenario-opponent-next .scenario-opponent-icon {
-  width: 66px;
-  height: 86px;
+  width: 78px;
+  height: 102px;
 }
 
 .scenario-result-with-rewards .scenario-opponent:not(:last-child)::after {
@@ -985,6 +1030,10 @@
 @media (max-width: 720px) {
   .scenario-result-dialog {
     max-height: calc(100dvh - 24px);
+  }
+
+  .scenario-result-dialog.scenario-result-with-rewards {
+    row-gap: 12px;
   }
 
   .scenario-reward-choices {
@@ -2983,6 +3032,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .scenario-opponent:is(.scenario-opponent-next, .scenario-opponent-failed)
+    .scenario-opponent-icon {
+    animation: none;
+  }
+
   .card-foil-layer.card-foil-playing {
     animation: none;
   }
