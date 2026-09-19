@@ -1997,6 +1997,30 @@
   opacity: 0.1;
 }
 
+/* Reuse the foil layers for a single flash when a card enters the battlefield. */
+.card-foil-rainbow.card-foil-playing {
+  animation: card-foil-play-rainbow 600ms ease-out;
+}
+
+.card-foil-glare.card-foil-playing {
+  animation: card-foil-play-glare 600ms ease-out;
+}
+
+@keyframes card-foil-play-rainbow {
+  35% {
+    background-position: 85% 75%;
+    filter: brightness(1.5);
+    opacity: 0.48;
+  }
+}
+
+@keyframes card-foil-play-glare {
+  35% {
+    background-position: 50% 50%;
+    opacity: 0.75;
+  }
+}
+
 .hand-card-unavailable > .card-foil {
   filter: none;
   opacity: 1;
@@ -2939,6 +2963,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .card-foil-layer.card-foil-playing {
+    animation: none;
+  }
+
   .board-lane-flow {
     animation: none;
     background-position-x: center;

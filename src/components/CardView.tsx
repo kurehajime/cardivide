@@ -23,6 +23,7 @@ type CardViewProps = {
   compact?: boolean
   detailOpen?: boolean
   faceDown?: boolean
+  flashFoilOnMount?: boolean
   jitterArt?: boolean
   label?: string
   mobileDetailPlacement?: 'top' | 'bottom'
@@ -291,6 +292,7 @@ const CardView = ({
   compact = false,
   detailOpen = false,
   faceDown = false,
+  flashFoilOnMount = false,
   jitterArt = false,
   label,
   mobileDetailPlacement = 'bottom',
@@ -519,7 +521,7 @@ const CardView = ({
           jitterArt={jitterArt}
           statModifier={statModifier}
         />
-        {card.foil && <CardFoil />}
+        {card.foil && <CardFoil flashOnMount={flashFoilOnMount} />}
       </CardSurface>
       {detailVisible &&
         createPortal(
