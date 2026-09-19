@@ -14,16 +14,16 @@ export type BattleMode = 'scenario' | 'free'
 
 export type GameSetupSelection =
   | {
-      mode: 'scenario'
-      playerDeckId: ThemeDeckId
-      difficulty: AiDifficulty
-    }
+    mode: 'scenario'
+    playerDeckId: ThemeDeckId
+    difficulty: AiDifficulty
+  }
   | {
-      mode: 'free'
-      playerDeckId: ThemeDeckId
-      comDeckId: ThemeDeckId
-      difficulty: AiDifficulty
-    }
+    mode: 'free'
+    playerDeckId: ThemeDeckId
+    comDeckId: ThemeDeckId
+    difficulty: AiDifficulty
+  }
 
 type GameSetupProps = {
   initialMode: BattleMode
@@ -37,10 +37,10 @@ const AI_DIFFICULTIES: readonly {
   value: AiDifficulty
   label: string
 }[] = [
-  { value: 'easy', label: 'Easy' },
-  { value: 'normal', label: 'Normal' },
-  { value: 'hard', label: 'Hard' },
-]
+    { value: 'easy', label: 'Easy' },
+    { value: 'normal', label: 'Normal' },
+    { value: 'hard', label: 'Hard' },
+  ]
 
 const COLOR_LABELS: Record<CardColor, string> = {
   red: '赤',
@@ -178,7 +178,7 @@ const GameSetup = ({
       style={getDeckBackgroundStyle(playerDeckId)}
     >
       <header className="setup-header">
-        <h1>NUSA</h1>
+        <h1>nusa</h1>
         <span>対戦設定</span>
       </header>
       <section className="setup-panel" aria-label="デッキ選択">

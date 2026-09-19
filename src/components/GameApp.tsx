@@ -175,9 +175,9 @@ const GameSession = ({
   const playerDamageMarker =
     state.pendingCombat?.playerWasHit === true
       ? {
-          playerId: state.pendingCombat.defendingPlayerId,
-          damage: state.pendingCombat.playerDamage,
-        }
+        playerId: state.pendingCombat.defendingPlayerId,
+        damage: state.pendingCombat.playerDamage,
+      }
       : null
   const manaRefundCardIds =
     state.pendingCombat?.destroyedCardIds.filter(
@@ -370,7 +370,7 @@ const GameSession = ({
           style={getDeckBackgroundStyle(comDeckId)}
         >
           <header className="game-header">
-            <h1>NUSA</h1>
+            <h1>nusa</h1>
           </header>
           {message && winnerId === null && (
             <div className="game-message" role="status">
