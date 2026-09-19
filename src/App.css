@@ -590,7 +590,7 @@
   align-items: center;
   padding: 30px 24px 34px;
   border-block: 1px solid rgb(255 250 241 / 28%);
-  background: rgb(24 16 12 / 68%);
+  background: rgb(24 16 12 / 38%);
   box-shadow: 0 12px 36px rgb(20 10 6 / 38%);
   backdrop-filter: blur(4px) saturate(0.72);
   pointer-events: auto;
@@ -606,8 +606,9 @@
   line-height: 1.15;
   text-align: center;
   text-shadow:
-    0 3px 3px rgb(20 10 6 / 82%),
-    0 10px 28px rgb(20 10 6 / 68%);
+    0 2px 2px rgb(20 10 6 / 95%),
+    0 0 8px rgb(20 10 6 / 85%),
+    0 10px 28px rgb(20 10 6 / 72%);
 }
 
 .game-result-confirm {
@@ -640,7 +641,7 @@
 
 .scenario-result-overlay {
   padding: 24px;
-  background: rgb(20 10 6 / 18%);
+  background: rgb(20 10 6 / 8%);
   pointer-events: auto;
 }
 
@@ -653,7 +654,7 @@
   padding: 24px 28px 28px;
   border: 1px solid rgb(255 250 241 / 38%);
   border-radius: 8px;
-  background: rgb(31 23 19 / 92%);
+  background: rgb(31 23 19 / 52%);
   box-shadow: 0 18px 56px rgb(20 10 6 / 58%);
   color: #fff;
   backdrop-filter: blur(5px) saturate(0.75);
@@ -665,6 +666,17 @@
   justify-items: center;
   gap: 4px;
   text-align: center;
+}
+
+.scenario-result-header,
+.scenario-opponent-order,
+.scenario-opponent strong,
+.scenario-rewards h3,
+.scenario-reward-choice > strong,
+.scenario-reward-choice > span {
+  text-shadow:
+    0 1px 2px rgb(10 4 2 / 95%),
+    0 2px 6px rgb(10 4 2 / 85%);
 }
 
 .scenario-result-header p,
@@ -684,7 +696,10 @@
   font-size: 42px;
   font-weight: 400;
   line-height: 1.1;
-  text-shadow: 0 5px 18px rgb(10 4 2 / 80%);
+  text-shadow:
+    0 2px 2px rgb(10 4 2 / 95%),
+    0 0 8px rgb(10 4 2 / 85%),
+    0 5px 18px rgb(10 4 2 / 80%);
 }
 
 .scenario-result-dialog:is([data-result='win'], [data-result='loss'])
@@ -718,7 +733,12 @@
   align-content: start;
   gap: 6px;
   color: #fff;
-  opacity: 0.5;
+  opacity: 0.35;
+}
+
+.scenario-opponent:not(.scenario-opponent-next):not(.scenario-opponent-failed)
+  .scenario-opponent-icon {
+  filter: brightness(0.55);
 }
 
 .scenario-opponent:not(:last-child)::after {
@@ -804,7 +824,7 @@
 }
 
 .scenario-opponent-defeated {
-  opacity: 0.78;
+  opacity: 0.45;
 }
 
 .scenario-opponent-next {
@@ -822,7 +842,7 @@
   height: 140px;
   border-color: transparent;
   box-shadow:
-    0 0 0 4px rgb(255 250 241 / 20%),
+    0 0 0 4px rgb(255 255 255 / 90%),
     0 10px 26px rgb(10 4 2 / 72%);
   transform: translateY(-5px);
 }
@@ -847,7 +867,7 @@
 
 .scenario-opponent-failed .scenario-opponent-icon {
   border-color: transparent;
-  box-shadow: 0 0 0 4px rgb(217 107 96 / 18%);
+  box-shadow: 0 0 0 4px rgb(255 255 255 / 90%);
 }
 
 .scenario-result-confirm {
